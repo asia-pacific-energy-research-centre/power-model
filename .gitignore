@@ -1,6 +1,6 @@
 # User added
 *.xlsx
-
+/tmp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
