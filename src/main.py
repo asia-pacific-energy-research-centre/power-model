@@ -22,9 +22,12 @@ model_start = time.strftime("%Y-%m-%d-%H%M%S")
 
 # model run inputs
 # replace this with a read in from Excel
-economy = '01_AUS'
-scenario = 'Reference'
-years = 2030
+
+df_prefs = pd.read_excel('../data/data-sheet-power.xlsx', sheet_name='START',usecols="A:B",nrows=3,header=None)
+
+economy = df_prefs.loc[0][1]
+scenario = df_prefs.loc[1][1]
+years = df_prefs.loc[2][1]
 
 config_dict = {}
 config_dict['economy'] = economy
@@ -177,7 +180,7 @@ filedata = filedata.replace("param ResultsPath, symbolic default 'results';","pa
 # Write the file out again
 with open('../{}/model_{}.txt'.format(tmp_directory,economy), 'w') as file:
   file.write(filedata)
-subprocess.run("glpsol -d ../tmp/01_AUS/datafile_from_python_01_AUS.txt -m ../tmp/01_AUS/model_01_AUS.txt",shell=True)
+subprocess.run("glpsol -d ../tmp/{}/datafile_from_python_{}.txt -m ../tmp/01_AUS/model_{}.txt".format(economy,economy,economy),shell=True)
 
 # Now we take the CSV files and combine them into an Excel file
 # First we need to make a dataframe from the CSV files
