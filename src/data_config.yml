@@ -1,0 +1,356 @@
+AccumulatedAnnualDemand:
+    indices: [REGION,FUEL,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+AnnualEmissionLimit:
+    indices: [REGION,EMISSION,YEAR]
+    type: param
+    dtype: float
+    default: -1
+    short: None
+AnnualExogenousEmission:
+    indices: [REGION,EMISSION,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+AvailabilityFactor:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: param
+    dtype: float
+    default: 1
+    short: None
+CapacityFactor:
+    indices: [REGION,TECHNOLOGY,TIMESLICE,YEAR]
+    type: param
+    dtype: float
+    default: 1
+    short: None
+CapacityOfOneTechnologyUnit:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+CapacityToActivityUnit:
+    indices: [REGION,TECHNOLOGY]
+    type: param
+    dtype: float
+    default: 1
+    short: None
+CapitalCost:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+CapitalCostStorage:
+    indices: [REGION,STORAGE,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+Conversionld:
+    indices: [TIMESLICE,DAYTYPE]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+Conversionlh:
+    indices: [TIMESLICE,DAILYTIMEBRACKET]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+Conversionls:
+    indices: [TIMESLICE,SEASON]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+DAILYTIMEBRACKET:
+    dtype: int
+    type: set
+    short: None
+DaysInDayType:
+    indices: [SEASON,DAYTYPE,YEAR]
+    type: param
+    dtype: float
+    default: 7
+    short: None
+DaySplit:
+    indices: [DAILYTIMEBRACKET,YEAR]
+    type: param
+    dtype: float
+    default: 0.00137
+    short: None
+DAYTYPE:
+    dtype: int
+    type: set
+    short: None
+DepreciationMethod:
+    indices: [REGION]
+    type: param
+    dtype: float
+    default: 1
+    short: None
+DiscountRate:
+    indices: [REGION,TECHNOLOGY]
+    type: param
+    dtype: float
+    default: 0.05
+    short: None
+EMISSION:
+    dtype: str
+    type: set
+    short: None
+EmissionActivityRatio:
+    indices: [REGION,TECHNOLOGY,FUEL,MODE_OF_OPERATION,EMISSION,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+EmissionsPenalty:
+    indices: [REGION,EMISSION,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+FixedCost:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+FUEL:
+    dtype: str
+    type: set
+    short: None
+InputActivityRatio:
+    indices: [REGION,TECHNOLOGY,FUEL,MODE_OF_OPERATION,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+MinStorageCharge:
+    indices: [REGION,STORAGE,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+MODE_OF_OPERATION:
+    dtype: int
+    type: set
+    short: None
+ModelPeriodEmissionLimit:
+    indices: [REGION,EMISSION]
+    type: param
+    dtype: float
+    default: -1
+    short: None
+ModelPeriodExogenousEmission:
+    indices: [REGION,EMISSION]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+OperationalLife:
+    indices: [REGION,TECHNOLOGY]
+    type: param
+    dtype: float
+    default: 1
+    short: None
+OperationalLifeStorage:
+    indices: [REGION,STORAGE]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+OutputActivityRatio:
+    indices: [REGION,TECHNOLOGY,FUEL,MODE_OF_OPERATION,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+REGION:
+    dtype: str
+    type: set
+    short: None
+REMinProductionTarget:
+    indices: [REGION,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+ReserveMargin:
+    indices: [REGION,YEAR]
+    type: param
+    dtype: float
+    default: 1
+    short: None
+ReserveMarginTagFuel:
+    indices: [REGION,FUEL,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+ReserveMarginTagTechnology:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+ResidualCapacity:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+ResidualStorageCapacity:
+    indices: [REGION,STORAGE,YEAR]
+    type: param
+    dtype: float
+    default: 999
+    short: None
+RETagFuel:
+    indices: [REGION,FUEL,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+RETagTechnology:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+SEASON:
+    dtype: int
+    type: set
+    short: None
+SpecifiedAnnualDemand:
+    indices: [REGION,FUEL,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+SpecifiedDemandProfile:
+    indices: [REGION,FUEL,TIMESLICE,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+STORAGE:
+    dtype: str
+    type: set
+    short: None
+StorageLevelStart:
+    indices: [REGION,STORAGE]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+StorageMaxChargeRate:
+    indices: [REGION,STORAGE]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+StorageMaxDischargeRate:
+    indices: [REGION,STORAGE]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+TECHNOLOGY:
+    dtype: str
+    type: set
+    short: None
+TechnologyFromStorage:
+    indices: [REGION,TECHNOLOGY,STORAGE,MODE_OF_OPERATION]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+TechnologyToStorage:
+    indices: [REGION,TECHNOLOGY,STORAGE,MODE_OF_OPERATION]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+TIMESLICE:
+    dtype: str
+    type: set
+    short: None
+TotalAnnualMaxCapacity:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: param
+    dtype: float
+    default: -1
+    short: None
+TotalAnnualMaxCapacityInvestment:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: param
+    dtype: float
+    default: -1
+    short: TotalAnnualMaxCapacityInvestmen
+TotalAnnualMinCapacity:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+TotalAnnualMinCapacityInvestment:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: TotalAnnualMinCapacityInvestmen
+TotalTechnologyAnnualActivityLowerLimit:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: TotalTechnologyAnnualActivityLo
+TotalTechnologyAnnualActivityUpperLimit:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: param
+    dtype: float
+    default: -1
+    short: TotalTechnologyAnnualActivityUp
+TotalTechnologyModelPeriodActivityLowerLimit:
+    indices: [REGION,TECHNOLOGY]
+    type: param
+    dtype: float
+    default: 0
+    short: TotalTechnologyModelPeriodActLo
+TotalTechnologyModelPeriodActivityUpperLimit:
+    indices: [REGION,TECHNOLOGY]
+    type: param
+    dtype: float
+    default: -1
+    short: TotalTechnologyModelPeriodActUp
+TradeRoute:
+    indices: [REGION,FUEL,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+VariableCost:
+    indices: [REGION,TECHNOLOGY,MODE_OF_OPERATION,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
+YEAR:
+    dtype: int
+    type: set
+    short: None
+YearSplit:
+    indices: [TIMESLICE,YEAR]
+    type: param
+    dtype: float
+    default: 0
+    short: None
