@@ -29,7 +29,7 @@ Make sure you did Step 1 (only need to do it once).
 
 4. The model will run. Pay attention to the OSeMOSYS statements. There should not be any issues with the python script.
 
-## Debugging model runs
+## 3. Debugging model runs
 When the script runs, the following temporary files are saved in `./tmp/ECONOMY NAME`:
 - combined_data_ECONOMYNAME.xlsx
 - datafile_from_python_ECONOMYNAME.txt
@@ -41,6 +41,12 @@ If the model solves successfully, a bunch of CSV files will be written to the sa
 
 If there is an error message saying the model is infeasible, check your model data. If the model is infeasible, the results files will not be written and you will get a "file not found" error message. This is your clue that the model did not solve. You always want to see a message in the solver output saying "OPTIMAL LP SOLUTION FOUND".
 
+## 4. Adding results
+To add results (e.g., capacity factor) you need to edit the following files:
+- osemosys_fast.txt
+- results_config.yml
+
+The `osemosys_fast.txt` file is where the calculations occur. Following the pattern from the other results. The `results_config.yml` file tells the script to include that result and add it to the combined results Excel file.
 
 
 
