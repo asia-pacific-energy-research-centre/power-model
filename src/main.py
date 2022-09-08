@@ -16,11 +16,10 @@ import time
 import importlib.resources as resources
 
 # the processing script starts from here
-
 # get the time you started the model so the results will have the time in the filename
 model_start = time.strftime("%Y-%m-%d-%H%M%S")
 root_dir = '.' # because this file is in src, the root may change if it is run from this file or from command line
-
+print("Script started at {}...\n".format(model_start))
 # model run inputs
 
 df_prefs = pd.read_excel('{}/data/data-sheet-power.xlsx'.format(root_dir), sheet_name='START',usecols="A:B",nrows=3,header=None)
@@ -49,6 +48,7 @@ keep_list = [x if y == 'None' else y for x,y in keep_dict.items()]
 # read in the data file and filter based on the specific scenario and preferences
 subset_of_economies = economy
 _dict = pd.read_excel("{}/data/data-sheet-power.xlsx".format(root_dir),sheet_name=None) # creates dict of dataframes
+print("Excel file successfully read.\n")
 __dict = {k: _dict[k] for k in keep_list}
 filtered_data = {}
 list_of_dicts = []
@@ -116,6 +116,7 @@ for key in a_dict.keys():
 with pd.ExcelWriter('{}/combined_data_{}.xlsx'.format(tmp_directory,economy)) as writer:
     for k, v in combined_data.items():
         v.to_excel(writer, sheet_name=k, index=False, merge_cells=False)
+print("Combined file of Excel input data has been written to the tmp folder.\n")
 
 # The data needs to be converted from the Excel format to the text file format. We use otoole for this task.
 subset_of_years = config_dict['years']
@@ -149,6 +150,8 @@ for key,value in contents.items():
         filtered_data2[key] = _df
 output_file = '{}/datafile_from_python_{}.txt'.format(tmp_directory,economy)
 writer.write(filtered_data2, output_file, default_values)
+
+print("data file in text format has been written and saved in the tmp folder.\n")
 
 # Now we are ready to solve the model.
 # We first make a copy of osemosys_fast.txt so that we can modify where the results are written.
@@ -224,6 +227,7 @@ for key,value in results_dfs.items():
 results_tables = {k: v for k, v in _result_tables.items() if not v.empty}
 
 # We take the dataframe of results and save to an Excel file
+print("Creating the Excel file of results. Results saved in the results folder.")
 scenario = scenario.lower()
 if bool(results_tables):
     with pd.ExcelWriter('{}/results/{}/{}_results_{}_{}.xlsx'.format(root_dir,economy,economy,scenario,model_start)) as writer:
