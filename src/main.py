@@ -1,3 +1,7 @@
+# this script takes in the power data sheet and runs the osemosys model
+# configure the model run in the START tab of the excel file
+# run this file from the command line
+
 # the following python packages are imported:
 
 import pandas as pd
@@ -7,23 +11,19 @@ import os
 from pathlib import Path
 from otoole.read_strategies import ReadExcel
 from otoole.write_strategies import WriteDatafile
-#import click
 import subprocess
 import time
 import importlib.resources as resources
-#import glob
-#import shutil
 
 # the processing script starts from here
 
-
 # get the time you started the model so the results will have the time in the filename
 model_start = time.strftime("%Y-%m-%d-%H%M%S")
+root_dir = '.' # because this file is in src, the root may change if it is run from this file or from command line
 
 # model run inputs
-# replace this with a read in from Excel
 
-df_prefs = pd.read_excel('../data/data-sheet-power.xlsx', sheet_name='START',usecols="A:B",nrows=3,header=None)
+df_prefs = pd.read_excel('{}/data/data-sheet-power.xlsx'.format(root_dir), sheet_name='START',usecols="A:B",nrows=3,header=None)
 
 economy = df_prefs.loc[0][1]
 scenario = df_prefs.loc[1][1]
@@ -35,7 +35,7 @@ config_dict['years'] = years
 config_dict['scenario'] = scenario
 
 # get the names of parameters to read in the next step
-with open('data_config.yml') as f:
+with open('{}/src/data_config.yml'.format(root_dir)) as f:
     data_config = yaml.safe_load(f)
 keep_dict={}
 for key,value in data_config.items():
@@ -48,7 +48,7 @@ keep_list = [x if y == 'None' else y for x,y in keep_dict.items()]
 
 # read in the data file and filter based on the specific scenario and preferences
 subset_of_economies = economy
-_dict = pd.read_excel("../data/data-sheet-power.xlsx",sheet_name=None) # creates dict of dataframes
+_dict = pd.read_excel("{}/data/data-sheet-power.xlsx".format(root_dir),sheet_name=None) # creates dict of dataframes
 __dict = {k: _dict[k] for k in keep_list}
 filtered_data = {}
 list_of_dicts = []
@@ -92,16 +92,14 @@ __dict = {k: filtered_data[k] for k in keep_list}
 list_of_dicts.append(__dict)
 
 # create a dataframe containing the filtered input data
-tmp_directory = '../tmp/{}'.format(economy)
+tmp_directory = '{}/tmp/{}'.format(root_dir,economy)
 try:
-    os.mkdir('../tmp')
+    os.mkdir('{}'.format(tmp_directory))
 except OSError:
-    #print ("Creation of the directory %s failed" % path)
     pass
 try:
-    os.mkdir('../tmp/{}'.format(economy))
+    os.mkdir('{}'.format(tmp_directory))
 except OSError:
-    #print ("Creation of the directory failed")
     pass
 combined_data = {}
 a_dict = list_of_dicts[0]
@@ -114,24 +112,20 @@ for key in a_dict.keys():
     _dfs = _dfs.drop_duplicates()
     combined_data[key] = _dfs
 
-
 # write the dataframe from the last step as an Excel file. This is the input data OSeMOSYS will use.
-tmp_directory = '../tmp/{}'.format(economy)
-with pd.ExcelWriter('./{}/combined_data_{}.xlsx'.format(tmp_directory,economy)) as writer:
+with pd.ExcelWriter('{}/combined_data_{}.xlsx'.format(tmp_directory,economy)) as writer:
     for k, v in combined_data.items():
         v.to_excel(writer, sheet_name=k, index=False, merge_cells=False)
 
-
 # The data needs to be converted from the Excel format to the text file format. We use otoole for this task.
-tmp_directory = './tmp/{}'.format(economy)
 subset_of_years = config_dict['years']
 # prepare using otoole
-_path='../{}/combined_data_{}.xlsx'.format(tmp_directory,economy)
+_path='{}/combined_data_{}.xlsx'.format(tmp_directory,economy)
 reader = ReadExcel()
 writer = WriteDatafile()
 data, default_values = reader.read(_path)
 # edit data (the dict of dataframes)
-with open('data_config.yml') as f:
+with open('{}/src/data_config.yml'.format(root_dir)) as f:
     contents = yaml.safe_load(f)
 filtered_data2 = {}
 for key,value in contents.items():
@@ -153,40 +147,32 @@ for key,value in contents.items():
             filtered_data2[key] = _df
     else:
         filtered_data2[key] = _df
-output_file = '../{}/datafile_from_python_{}.txt'.format(tmp_directory,economy)
+output_file = '{}/datafile_from_python_{}.txt'.format(tmp_directory,economy)
 writer.write(filtered_data2, output_file, default_values)
 
 # Now we are ready to solve the model.
 # We first make a copy of osemosys_fast.txt so that we can modify where the results are written.
 # Results from OSeMOSYS come in csv files. We first save these to the tmp directory for each economy.
-tmp_directory = 'tmp/{}'.format(economy)
-# update OSeMOSYS model file with the tmp directory for results
-try:
-    os.mkdir(tmp_directory)
-except OSError:
-    #print ("Creation of the directory %s failed" % path)
-    pass
 # making a copy of the model file in the tmp directory so it can be modified
-with open('../osemosys_fast.txt') as t:
+with open('{}/osemosys_fast.txt'.format(root_dir)) as t:
     model_text = t.read()
-f = open('../{}/model_{}.txt'.format(tmp_directory,economy),'w')
+f = open('{}/model_{}.txt'.format(tmp_directory,economy),'w')
 f.write('%s\n'% model_text)
 f.close()
 # Read in the file
-with open('../{}/model_{}.txt'.format(tmp_directory,economy), 'r') as file :
+with open('{}/model_{}.txt'.format(tmp_directory,economy), 'r') as file :
   filedata = file.read()
 # Replace the target string
-filedata = filedata.replace("param ResultsPath, symbolic default 'results';","param ResultsPath, symbolic default '../{}';".format(tmp_directory))
+filedata = filedata.replace("param ResultsPath, symbolic default 'results';","param ResultsPath, symbolic default '{}';".format(tmp_directory))
 # Write the file out again
-with open('../{}/model_{}.txt'.format(tmp_directory,economy), 'w') as file:
+with open('{}/model_{}.txt'.format(tmp_directory,economy), 'w') as file:
   file.write(filedata)
-subprocess.run("glpsol -d ../tmp/{}/datafile_from_python_{}.txt -m ../tmp/01_AUS/model_{}.txt".format(economy,economy,economy),shell=True)
+subprocess.run("glpsol -d {}/datafile_from_python_{}.txt -m {}/model_{}.txt".format(tmp_directory,economy,tmp_directory,economy),shell=True)
 
 # Now we take the CSV files and combine them into an Excel file
 # First we need to make a dataframe from the CSV files
 # Note: if you add any new result parameters to osemosys_fast.txt, you need to update results_config.yml
-tmp_directory = 'tmp/{}'.format(economy)
-parent_directory = "../results/"
+parent_directory = "{}/results/".format(root_dir)
 child_directory = economy
 path = os.path.join(parent_directory,child_directory)
 try:
@@ -194,12 +180,12 @@ try:
 except OSError:
     #print ("Creation of the directory %s failed" % path)
     pass
-with open('results_config.yml') as f:
+with open('{}/src/results_config.yml'.format(root_dir)) as f:
     contents_var = yaml.safe_load(f)
 results_df={}
 for key,value in contents_var.items():
     if contents_var[key]['type'] == 'var':
-        fpath = '../{}/'.format(tmp_directory)+key+'.csv'
+        fpath = '{}/'.format(tmp_directory)+key+'.csv'
         #print(fpath)
         _df = pd.read_csv(fpath).reset_index(drop=True)
         results_df[key] = _df
@@ -240,7 +226,7 @@ results_tables = {k: v for k, v in _result_tables.items() if not v.empty}
 # We take the dataframe of results and save to an Excel file
 scenario = scenario.lower()
 if bool(results_tables):
-    with pd.ExcelWriter('../results/{}/{}_results_{}_{}.xlsx'.format(economy,economy,scenario,model_start)) as writer:
+    with pd.ExcelWriter('{}/results/{}/{}_results_{}_{}.xlsx'.format(root_dir,economy,economy,scenario,model_start)) as writer:
         for k, v in results_tables.items():
             v.to_excel(writer, sheet_name=k, merge_cells=False)
 
