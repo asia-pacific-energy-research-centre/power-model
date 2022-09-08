@@ -13,7 +13,9 @@ You need to create a conda environment. To install, move to your working directo
 
 `conda create --prefix ./env python=3.9 pandas numpy xlrd glpk`
 
-Install otoole:
+Install otoole. Activate your environment before installing otoole!!
+
+`conda activate ./env`
 
 `pip install otoole`
 
