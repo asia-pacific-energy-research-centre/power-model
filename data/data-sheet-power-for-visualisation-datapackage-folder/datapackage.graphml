@@ -1,0 +1,2482 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d13" for="edge" attr.name="Demand" attr.type="double" />
+  <key id="d12" for="edge" attr.name="xlabel" attr.type="string" />
+  <key id="d11" for="edge" attr.name="ouput_ratio" attr.type="double" />
+  <key id="d10" for="edge" attr.name="input_ratio" attr.type="double" />
+  <key id="d9" for="edge" attr.name="emission_ratio" attr.type="double" />
+  <key id="d8" for="edge" attr.name="dir" attr.type="string" />
+  <key id="d7" for="edge" attr.name="output_ratio" attr.type="double" />
+  <key id="d6" for="node" attr.name="width" attr.type="double" />
+  <key id="d5" for="node" attr.name="height" attr.type="double" />
+  <key id="d4" for="node" attr.name="label" attr.type="string" />
+  <key id="d3" for="node" attr.name="style" attr.type="string" />
+  <key id="d2" for="node" attr.name="shape" attr.type="string" />
+  <key id="d1" for="node" attr.name="fillcolor" attr.type="string" />
+  <key id="d0" for="node" attr.name="type" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="POW_Other_Coal_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Other_Coal_PP</data>
+    </node>
+    <node id="POW_Black_Coal_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Black_Coal_PP</data>
+    </node>
+    <node id="POW_Sub_BituCoal_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Sub_BituCoal_PP</data>
+    </node>
+    <node id="POW_Sub_Brown_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Sub_Brown_PP</data>
+    </node>
+    <node id="POW_OCGT_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_OCGT_PP</data>
+    </node>
+    <node id="POW_CCGT_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_CCGT_PP</data>
+    </node>
+    <node id="POW_SolarPV_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_SolarPV_PP</data>
+    </node>
+    <node id="POW_SolarCSP_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_SolarCSP_PP</data>
+    </node>
+    <node id="POW_SolarRoofPV_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_SolarRoofPV_PP</data>
+    </node>
+    <node id="POW_SolarFloatPV_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_SolarFloatPV_PP</data>
+    </node>
+    <node id="POW_Wind_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Wind_PP</data>
+    </node>
+    <node id="POW_Solid_Biomass_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Solid_Biomass_PP</data>
+    </node>
+    <node id="POW_Hydro_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Hydro_PP</data>
+    </node>
+    <node id="POW_Storage_Hydro_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Storage_Hydro_PP</data>
+    </node>
+    <node id="POW_Diesel_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Diesel_PP</data>
+    </node>
+    <node id="POW_EmbeddedBattery_Storage">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_EmbeddedBattery_Storage</data>
+    </node>
+    <node id="POW_AggregatedEnergy_Storage_VPP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_AggregatedEnergy_Storage_VPP</data>
+    </node>
+    <node id="POW_Pumped_Hydro">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Pumped_Hydro</data>
+    </node>
+    <node id="POW_WindOff_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_WindOff_PP</data>
+    </node>
+    <node id="POW_Nuclear_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Nuclear_PP</data>
+    </node>
+    <node id="POW_Geothermal_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Geothermal_PP</data>
+    </node>
+    <node id="POW_WasteToEnergy_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_WasteToEnergy_PP</data>
+    </node>
+    <node id="POW_Transmission">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Transmission</data>
+    </node>
+    <node id="POW_SUN">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_SUN</data>
+    </node>
+    <node id="POW_SUN_PV">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_SUN_PV</data>
+    </node>
+    <node id="POW_AIR">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_AIR</data>
+    </node>
+    <node id="POW_Geothermal">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Geothermal</data>
+    </node>
+    <node id="POW_WATER">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_WATER</data>
+    </node>
+    <node id="POW_URANIUM">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_URANIUM</data>
+    </node>
+    <node id="POW_CHP_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_CHP_PP</data>
+    </node>
+    <node id="POW_CHP_GAS_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_CHP_GAS_PP</data>
+    </node>
+    <node id="POW_CHP_COAL_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_CHP_COAL_PP</data>
+    </node>
+    <node id="POW_CHP_BIO_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_CHP_BIO_PP</data>
+    </node>
+    <node id="POW_HEAT_HP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_HEAT_HP</data>
+    </node>
+    <node id="POW_TIDAL_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_TIDAL_PP</data>
+    </node>
+    <node id="POW_Ultra_CHP_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Ultra_CHP_PP</data>
+    </node>
+    <node id="POW_Ultra_BituCoal_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Ultra_BituCoal_PP</data>
+    </node>
+    <node id="POW_IPP_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_IPP_PP</data>
+    </node>
+    <node id="POW_IMPORTS_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_IMPORTS_PP</data>
+    </node>
+    <node id="POW_Biogas_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_Biogas_PP</data>
+    </node>
+    <node id="POW_FuelOil_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_FuelOil_PP</data>
+    </node>
+    <node id="POW_PetCoke_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_PetCoke_PP</data>
+    </node>
+    <node id="POW_IMP_Nuclear_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_IMP_Nuclear_PP</data>
+    </node>
+    <node id="POW_IMP_Hydro_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_IMP_Hydro_PP</data>
+    </node>
+    <node id="POW_IMP_URANIUM">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_IMP_URANIUM</data>
+    </node>
+    <node id="POW_IMP_WATER">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_IMP_WATER</data>
+    </node>
+    <node id="POW_IMPORT_ELEC_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_IMPORT_ELEC_PP</data>
+    </node>
+    <node id="POW_EXPORT_ELEC_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_EXPORT_ELEC_PP</data>
+    </node>
+    <node id="POW_ELECTRICITY">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_ELECTRICITY</data>
+    </node>
+    <node id="POW_HEAT_COKE_HP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_HEAT_COKE_HP</data>
+    </node>
+    <node id="POW_FuelOil_HP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_FuelOil_HP</data>
+    </node>
+    <node id="POW_OilProducts_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_OilProducts_PP</data>
+    </node>
+    <node id="POW_IMPORT_ELEC">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_IMPORT_ELEC</data>
+    </node>
+    <node id="POW_WasteToHeat_HP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_WasteToHeat_HP</data>
+    </node>
+    <node id="POW_15_5_other_biomass">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_15_5_other_biomass</data>
+    </node>
+    <node id="POW_16_1_biogas">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_16_1_biogas</data>
+    </node>
+    <node id="POW_16_2_industrial_waste">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_16_2_industrial_waste</data>
+    </node>
+    <node id="POW_16_5_biogasoline">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_16_5_biogasoline</data>
+    </node>
+    <node id="POW_16_6_biodiesel">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_16_6_biodiesel</data>
+    </node>
+    <node id="POW_16_x_hydrogen">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_16_x_hydrogen</data>
+    </node>
+    <node id="POW_1_5_lignite">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_1_5_lignite</data>
+    </node>
+    <node id="POW_1_x_coal_thermal">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_1_x_coal_thermal</data>
+    </node>
+    <node id="POW_2_coal_products">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_2_coal_products</data>
+    </node>
+    <node id="POW_6_1_crude_oil">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_6_1_crude_oil</data>
+    </node>
+    <node id="POW_7_10_refinery_gas_not_liquefied">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_7_10_refinery_gas_not_liquefied</data>
+    </node>
+    <node id="POW_7_11_ethane">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_7_11_ethane</data>
+    </node>
+    <node id="POW_7_1_motor_gasoline">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_7_1_motor_gasoline</data>
+    </node>
+    <node id="POW_7_3_naphtha">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_7_3_naphtha</data>
+    </node>
+    <node id="POW_7_6_kerosene">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_7_6_kerosene</data>
+    </node>
+    <node id="POW_7_7_gas_diesel_oil">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_7_7_gas_diesel_oil</data>
+    </node>
+    <node id="POW_7_8_fuel_oil">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_7_8_fuel_oil</data>
+    </node>
+    <node id="POW_7_9_lpg">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_7_9_lpg</data>
+    </node>
+    <node id="POW_7_x_other_petroleum_products">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_7_x_other_petroleum_products</data>
+    </node>
+    <node id="POW_8_1_natural_gas">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_8_1_natural_gas</data>
+    </node>
+    <node id="POW_15_1_fuelwood_and_woodwaste">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_15_1_fuelwood_and_woodwaste</data>
+    </node>
+    <node id="POW_15_2_bagasse">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_15_2_bagasse</data>
+    </node>
+    <node id="POW_15_4_black_liquor">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_15_4_black_liquor</data>
+    </node>
+    <node id="POW_16_3_municipal_solid_waste_renewable">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_16_3_municipal_solid_waste_renewable</data>
+    </node>
+    <node id="POW_16_4_municipal_solid_waste_nonrenewable">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_16_4_municipal_solid_waste_nonrenewable</data>
+    </node>
+    <node id="POW_16_8_other_liquid_biofuels">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_16_8_other_liquid_biofuels</data>
+    </node>
+    <node id="POW_2_1_coke_oven_coke">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_2_1_coke_oven_coke</data>
+    </node>
+    <node id="POW_2_2_coke_oven_gas">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_2_2_coke_oven_gas</data>
+    </node>
+    <node id="POW_2_3_blast_furnace_gas">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_2_3_blast_furnace_gas</data>
+    </node>
+    <node id="POW_7_16_petroleum_coke">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_7_16_petroleum_coke</data>
+    </node>
+    <node id="POW_COAL_CCS_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_COAL_CCS_PP</data>
+    </node>
+    <node id="POW_CCGT_CCS_PP">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">POW_CCGT_CCS_PP</data>
+    </node>
+    <node id="INV_BAT">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">INV_BAT</data>
+    </node>
+    <node id="YYY_1_1_coking_coal">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_1_1_coking_coal</data>
+    </node>
+    <node id="YYY_1_5_lignite">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_1_5_lignite</data>
+    </node>
+    <node id="YYY_1_x_coal_thermal">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_1_x_coal_thermal</data>
+    </node>
+    <node id="YYY_17_electricity">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_17_electricity</data>
+    </node>
+    <node id="YYY_17_electricity_Dx">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_17_electricity_Dx</data>
+    </node>
+    <node id="YYY_18_heat">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_18_heat</data>
+    </node>
+    <node id="YYY_2_coal_products">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_2_coal_products</data>
+    </node>
+    <node id="YYY_6_1_crude_oil">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_6_1_crude_oil</data>
+    </node>
+    <node id="YYY_6_x_ngls">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_6_x_ngls</data>
+    </node>
+    <node id="YYY_7_1_motor_gasoline">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_7_1_motor_gasoline</data>
+    </node>
+    <node id="YYY_7_2_aviation_gasoline">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_7_2_aviation_gasoline</data>
+    </node>
+    <node id="YYY_7_x_other_petroleum_products">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_7_x_other_petroleum_products</data>
+    </node>
+    <node id="YYY_7_3_naphtha">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_7_3_naphtha</data>
+    </node>
+    <node id="YYY_7_x_jet_fuel">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_7_x_jet_fuel</data>
+    </node>
+    <node id="YYY_7_6_kerosene">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_7_6_kerosene</data>
+    </node>
+    <node id="YYY_7_7_gas_diesel_oil">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_7_7_gas_diesel_oil</data>
+    </node>
+    <node id="YYY_7_8_fuel_oil">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_7_8_fuel_oil</data>
+    </node>
+    <node id="YYY_7_9_lpg">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_7_9_lpg</data>
+    </node>
+    <node id="YYY_7_10_refinery_gas_not_liquefied">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_7_10_refinery_gas_not_liquefied</data>
+    </node>
+    <node id="YYY_7_11_ethane">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_7_11_ethane</data>
+    </node>
+    <node id="YYY_8_1_natural_gas">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_8_1_natural_gas</data>
+    </node>
+    <node id="YYY_15_1_fuelwood_and_woodwaste">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_15_1_fuelwood_and_woodwaste</data>
+    </node>
+    <node id="YYY_15_2_bagasse">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_15_2_bagasse</data>
+    </node>
+    <node id="YYY_15_3_charcoal">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_15_3_charcoal</data>
+    </node>
+    <node id="YYY_15_5_other_biomass">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_15_5_other_biomass</data>
+    </node>
+    <node id="YYY_16_1_biogas">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_16_1_biogas</data>
+    </node>
+    <node id="YYY_16_2_industrial_waste">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_16_2_industrial_waste</data>
+    </node>
+    <node id="YYY_16_4_municipal_solid_waste_nonrenewable">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_16_4_municipal_solid_waste_nonrenewable</data>
+    </node>
+    <node id="YYY_16_5_biogasoline">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_16_5_biogasoline</data>
+    </node>
+    <node id="YYY_16_6_biodiesel">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_16_6_biodiesel</data>
+    </node>
+    <node id="YYY_16_8_other_liquid_biofuels">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_16_8_other_liquid_biofuels</data>
+    </node>
+    <node id="YYY_15_4_black_liquor">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_15_4_black_liquor</data>
+    </node>
+    <node id="YYY_16_x_hydrogen">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_16_x_hydrogen</data>
+    </node>
+    <node id="YYY_16_3_municipal_solid_waste_renewable">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_16_3_municipal_solid_waste_renewable</data>
+    </node>
+    <node id="YYY_11_geothermal">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_11_geothermal</data>
+    </node>
+    <node id="YYY_12_solar">
+      <data key="d0">technology</data>
+      <data key="d1">yellow</data>
+      <data key="d2">rectangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">YYY_12_solar</data>
+    </node>
+    <node id="BAT">
+      <data key="d0">storage</data>
+      <data key="d1">lightblue</data>
+      <data key="d2">triangle</data>
+      <data key="d3">filled</data>
+      <data key="d4">BAT</data>
+    </node>
+    <node id="1_5_lignite">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="1_x_coal_thermal">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="10_hydro">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="11_geothermal">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="12_1_of_which_photovoltaics">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="14_wind">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="15_1_fuelwood_and_woodwaste">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="15_2_bagasse">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="15_4_black_liquor">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="15_5_other_biomass">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="16_1_biogas">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="16_2_industrial_waste">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="16_3_municipal_solid_waste_renewable">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="16_4_municipal_solid_waste_nonrenewable">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="16_6_biodiesel">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="16_x_hydrogen">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="16_8_other_liquid_biofuels">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="16_9_other_sources">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="17_electricity">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="17_electricity_Dx">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="17_electricity_export">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="17_electricity_import">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="18_heat">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="2_1_coke_oven_coke">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="2_2_coke_oven_gas">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="2_3_blast_furnace_gas">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="2_coal_products">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="6_1_crude_oil">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="7_10_refinery_gas_not_liquefied">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="7_16_petroleum_coke">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="7_3_naphtha">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="7_6_kerosene">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="7_7_gas_diesel_oil">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="7_8_fuel_oil">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="7_9_lpg">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="7_x_other_petroleum_products">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="8_1_natural_gas">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="9_nuclear">
+      <data key="d0">fuel</data>
+      <data key="d3">filled</data>
+      <data key="d2">circle</data>
+      <data key="d5">0.1</data>
+      <data key="d6">0.1</data>
+      <data key="d4" />
+    </node>
+    <node id="1_x_coal_thermal_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">1_x_coal_thermal_CO2</data>
+    </node>
+    <node id="1_5_lignite_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">1_5_lignite_CO2</data>
+    </node>
+    <node id="8_1_natural_gas_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">8_1_natural_gas_CO2</data>
+    </node>
+    <node id="15_5_other_biomass_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">15_5_other_biomass_CO2</data>
+    </node>
+    <node id="7_7_gas_diesel_oil_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">7_7_gas_diesel_oil_CO2</data>
+    </node>
+    <node id="16_4_municipal_solid_waste_nonrenewable_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">16_4_municipal_solid_waste_nonrenewable_CO2</data>
+    </node>
+    <node id="16_3_municipal_solid_waste_renewable_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">16_3_municipal_solid_waste_renewable_CO2</data>
+    </node>
+    <node id="16_1_biogas_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">16_1_biogas_CO2</data>
+    </node>
+    <node id="2_coal_products_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">2_coal_products_CO2</data>
+    </node>
+    <node id="6_1_crude_oil_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">6_1_crude_oil_CO2</data>
+    </node>
+    <node id="7_3_naphtha_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">7_3_naphtha_CO2</data>
+    </node>
+    <node id="7_8_fuel_oil_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">7_8_fuel_oil_CO2</data>
+    </node>
+    <node id="7_9_lpg_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">7_9_lpg_CO2</data>
+    </node>
+    <node id="7_10_refinery_gas_not_liquefied_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">7_10_refinery_gas_not_liquefied_CO2</data>
+    </node>
+    <node id="7_x_other_petroleum_products_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">7_x_other_petroleum_products_CO2</data>
+    </node>
+    <node id="16_2_industrial_waste_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">16_2_industrial_waste_CO2</data>
+    </node>
+    <node id="7_16_petroleum_coke_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">7_16_petroleum_coke_CO2</data>
+    </node>
+    <node id="15_2_bagasse_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">15_2_bagasse_CO2</data>
+    </node>
+    <node id="15_4_black_liquor_CO2">
+      <data key="d0">emission</data>
+      <data key="d1">grey</data>
+      <data key="d2">circle</data>
+      <data key="d3">filled</data>
+      <data key="d4">15_4_black_liquor_CO2</data>
+    </node>
+    <node id="AnnualDemand">
+      <data key="d0">demand</data>
+      <data key="d1">green</data>
+      <data key="d4">AccumulatedAnnualDemand</data>
+      <data key="d3">filled</data>
+    </node>
+    <edge source="POW_Other_Coal_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Other_Coal_PP" target="18_heat">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Other_Coal_PP" target="1_x_coal_thermal_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Other_Coal_PP" target="2_coal_products_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Black_Coal_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Black_Coal_PP" target="1_x_coal_thermal_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Sub_BituCoal_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Sub_BituCoal_PP" target="18_heat">
+      <data key="d7">0.1446356978353639</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Sub_BituCoal_PP" target="1_x_coal_thermal_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Sub_Brown_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Sub_Brown_PP" target="18_heat">
+      <data key="d7">0.5485279782005485</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Sub_Brown_PP" target="1_5_lignite_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_OCGT_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_OCGT_PP" target="8_1_natural_gas_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_OCGT_PP" target="7_7_gas_diesel_oil_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CCGT_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CCGT_PP" target="18_heat">
+      <data key="d7">0.1446356978353639</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CCGT_PP" target="8_1_natural_gas_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_SolarPV_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_SolarPV_PP" target="BAT">
+      <data key="d10">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_SolarCSP_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_SolarRoofPV_PP" target="17_electricity_Dx">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_SolarFloatPV_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Wind_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Solid_Biomass_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Solid_Biomass_PP" target="18_heat">
+      <data key="d7">0.1433070866141732</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Solid_Biomass_PP" target="15_5_other_biomass_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Solid_Biomass_PP" target="15_2_bagasse_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Solid_Biomass_PP" target="15_4_black_liquor_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Solid_Biomass_PP" target="16_1_biogas_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Hydro_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Storage_Hydro_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Diesel_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Diesel_PP" target="18_heat">
+      <data key="d7">0.9785182714227749</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Diesel_PP" target="7_7_gas_diesel_oil_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Diesel_PP" target="6_1_crude_oil_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Diesel_PP" target="7_8_fuel_oil_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_EmbeddedBattery_Storage" target="17_electricity_Dx">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_AggregatedEnergy_Storage_VPP" target="17_electricity_Dx">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Pumped_Hydro" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_WindOff_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Nuclear_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Nuclear_PP" target="18_heat">
+      <data key="d7">0.01865002903550472</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Geothermal_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_WasteToEnergy_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_WasteToEnergy_PP" target="18_heat">
+      <data key="d7">0.2317801672640382</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_WasteToEnergy_PP" target="16_3_municipal_solid_waste_renewable_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_WasteToEnergy_PP" target="16_4_municipal_solid_waste_nonrenewable_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_WasteToEnergy_PP" target="16_2_industrial_waste_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Transmission" target="17_electricity_Dx">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_SUN" target="12_1_of_which_photovoltaics">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_SUN_PV" target="12_1_of_which_photovoltaics">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_AIR" target="14_wind">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Geothermal" target="11_geothermal">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_WATER" target="10_hydro">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_URANIUM" target="9_nuclear">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_PP" target="17_electricity">
+      <data key="d7">0.6822558459422283</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_PP" target="18_heat">
+      <data key="d7">0.3177441540577717</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_PP" target="1_x_coal_thermal_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_PP" target="1_5_lignite_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_PP" target="7_7_gas_diesel_oil_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_PP" target="8_1_natural_gas_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_PP" target="16_3_municipal_solid_waste_renewable_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_PP" target="16_4_municipal_solid_waste_nonrenewable_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_PP" target="15_5_other_biomass_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_GAS_PP" target="18_heat">
+      <data key="d7">0.250084934798576</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_GAS_PP" target="17_electricity_Dx">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_GAS_PP" target="17_electricity">
+      <data key="d7">0.749915065201424</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_GAS_PP" target="8_1_natural_gas_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_GAS_PP" target="16_3_municipal_solid_waste_renewable_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_GAS_PP" target="16_4_municipal_solid_waste_nonrenewable_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_GAS_PP" target="7_7_gas_diesel_oil_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_GAS_PP" target="15_5_other_biomass_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_GAS_PP" target="7_8_fuel_oil_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_COAL_PP" target="18_heat">
+      <data key="d7">0.291340502180449</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_COAL_PP" target="17_electricity">
+      <data key="d7">0.708659497819551</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_COAL_PP" target="1_x_coal_thermal_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_COAL_PP" target="2_coal_products_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_BIO_PP" target="17_electricity">
+      <data key="d7">0.708659497819551</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_BIO_PP" target="18_heat">
+      <data key="d7">0.291340502180449</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_BIO_PP" target="15_5_other_biomass_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_BIO_PP" target="16_3_municipal_solid_waste_renewable_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_BIO_PP" target="16_4_municipal_solid_waste_nonrenewable_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CHP_BIO_PP" target="7_7_gas_diesel_oil_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_HEAT_HP" target="18_heat">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_HEAT_HP" target="2_coal_products_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_HEAT_HP" target="7_3_naphtha_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_HEAT_HP" target="7_7_gas_diesel_oil_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_HEAT_HP" target="7_8_fuel_oil_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_HEAT_HP" target="7_9_lpg_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_HEAT_HP" target="7_10_refinery_gas_not_liquefied_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_HEAT_HP" target="7_x_other_petroleum_products_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_HEAT_HP" target="15_5_other_biomass_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_HEAT_HP" target="8_1_natural_gas_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_HEAT_HP" target="1_x_coal_thermal_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_HEAT_HP" target="16_3_municipal_solid_waste_renewable_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_HEAT_HP" target="16_4_municipal_solid_waste_nonrenewable_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_TIDAL_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Ultra_CHP_PP" target="17_electricity">
+      <data key="d7">0.6211235812045163</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Ultra_CHP_PP" target="18_heat">
+      <data key="d7">0.3788764187954838</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Ultra_CHP_PP" target="1_x_coal_thermal_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Ultra_CHP_PP" target="8_1_natural_gas_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Ultra_BituCoal_PP" target="17_electricity">
+      <data key="d7">0.3157274134222095</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Ultra_BituCoal_PP" target="18_heat">
+      <data key="d7">0.6842725865777906</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Ultra_BituCoal_PP" target="1_x_coal_thermal_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Biogas_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Biogas_PP" target="18_heat">
+      <data key="d7">0.08274350327109103</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_Biogas_PP" target="16_1_biogas_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_FuelOil_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_FuelOil_PP" target="18_heat">
+      <data key="d7">0.002539698494853693</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_FuelOil_PP" target="17_electricity_Dx">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_FuelOil_PP" target="7_8_fuel_oil_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_FuelOil_PP" target="7_7_gas_diesel_oil_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_FuelOil_PP" target="7_10_refinery_gas_not_liquefied_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_PetCoke_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_PetCoke_PP" target="7_16_petroleum_coke_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_IMP_Hydro_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_IMP_WATER" target="10_hydro">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_IMPORT_ELEC_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_EXPORT_ELEC_PP" target="17_electricity_export">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_ELECTRICITY" target="17_electricity_import">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_OilProducts_PP" target="17_electricity">
+      <data key="d7">0.754237439404487</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_OilProducts_PP" target="18_heat">
+      <data key="d7">0.245762560595513</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_OilProducts_PP" target="7_7_gas_diesel_oil_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_OilProducts_PP" target="7_8_fuel_oil_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_OilProducts_PP" target="7_10_refinery_gas_not_liquefied_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_OilProducts_PP" target="7_x_other_petroleum_products_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_OilProducts_PP" target="6_1_crude_oil_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_OilProducts_PP" target="7_3_naphtha_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_OilProducts_PP" target="7_9_lpg_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_WasteToHeat_HP" target="17_electricity">
+      <data key="d7">0.0741242818892894</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_WasteToHeat_HP" target="18_heat">
+      <data key="d7">0.9258757181107106</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_WasteToHeat_HP" target="16_2_industrial_waste_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_15_5_other_biomass" target="15_5_other_biomass">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_16_1_biogas" target="16_1_biogas">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_16_2_industrial_waste" target="16_2_industrial_waste">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_16_6_biodiesel" target="16_6_biodiesel">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_16_x_hydrogen" target="16_x_hydrogen">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_1_5_lignite" target="1_5_lignite">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_1_x_coal_thermal" target="1_x_coal_thermal">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_2_coal_products" target="2_coal_products">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_6_1_crude_oil" target="6_1_crude_oil">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_7_10_refinery_gas_not_liquefied" target="7_10_refinery_gas_not_liquefied">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_7_3_naphtha" target="7_3_naphtha">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_7_6_kerosene" target="7_6_kerosene">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_7_7_gas_diesel_oil" target="7_7_gas_diesel_oil">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_7_8_fuel_oil" target="7_8_fuel_oil">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_7_9_lpg" target="7_9_lpg">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_7_x_other_petroleum_products" target="7_x_other_petroleum_products">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_8_1_natural_gas" target="8_1_natural_gas">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_15_1_fuelwood_and_woodwaste" target="15_1_fuelwood_and_woodwaste">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_15_2_bagasse" target="15_2_bagasse">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_15_4_black_liquor" target="15_4_black_liquor">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_16_3_municipal_solid_waste_renewable" target="16_3_municipal_solid_waste_renewable">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_16_4_municipal_solid_waste_nonrenewable" target="16_4_municipal_solid_waste_nonrenewable">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_16_8_other_liquid_biofuels" target="16_8_other_liquid_biofuels">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_2_1_coke_oven_coke" target="2_1_coke_oven_coke">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_2_2_coke_oven_gas" target="2_2_coke_oven_gas">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_2_3_blast_furnace_gas" target="2_3_blast_furnace_gas">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_7_16_petroleum_coke" target="7_16_petroleum_coke">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_COAL_CCS_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_COAL_CCS_PP" target="1_x_coal_thermal_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CCGT_CCS_PP" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CCGT_CCS_PP" target="18_heat">
+      <data key="d7">0.1446356978353639</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="POW_CCGT_CCS_PP" target="8_1_natural_gas_CO2">
+      <data key="d9">0.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="INV_BAT" target="17_electricity_Dx">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_1_5_lignite" target="1_5_lignite">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_1_x_coal_thermal" target="1_x_coal_thermal">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_17_electricity" target="17_electricity">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_17_electricity_Dx" target="17_electricity_Dx">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_18_heat" target="18_heat">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_2_coal_products" target="2_coal_products">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_6_1_crude_oil" target="6_1_crude_oil">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_7_x_other_petroleum_products" target="7_x_other_petroleum_products">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_7_3_naphtha" target="7_3_naphtha">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_7_7_gas_diesel_oil" target="7_7_gas_diesel_oil">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_7_8_fuel_oil" target="7_8_fuel_oil">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_7_9_lpg" target="7_9_lpg">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_7_10_refinery_gas_not_liquefied" target="7_10_refinery_gas_not_liquefied">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_8_1_natural_gas" target="8_1_natural_gas">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_15_1_fuelwood_and_woodwaste" target="15_1_fuelwood_and_woodwaste">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_15_2_bagasse" target="15_2_bagasse">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_15_5_other_biomass" target="15_5_other_biomass">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_16_1_biogas" target="16_1_biogas">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_16_2_industrial_waste" target="16_2_industrial_waste">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_16_4_municipal_solid_waste_nonrenewable" target="16_4_municipal_solid_waste_nonrenewable">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_16_6_biodiesel" target="16_6_biodiesel">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_16_8_other_liquid_biofuels" target="16_8_other_liquid_biofuels">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_15_4_black_liquor" target="15_4_black_liquor">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_16_x_hydrogen" target="16_x_hydrogen">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_16_3_municipal_solid_waste_renewable" target="16_3_municipal_solid_waste_renewable">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="YYY_11_geothermal" target="11_geothermal">
+      <data key="d7">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="BAT" target="INV_BAT">
+      <data key="d11">1.0</data>
+      <data key="d8">none</data>
+    </edge>
+    <edge source="1_5_lignite" target="POW_Sub_Brown_PP">
+      <data key="d10">3.015972222222226</data>
+      <data key="d12">1_5_lignite</data>
+    </edge>
+    <edge source="1_5_lignite" target="POW_CHP_PP">
+      <data key="d10">0.2128063196163069</data>
+      <data key="d12">1_5_lignite</data>
+    </edge>
+    <edge source="1_x_coal_thermal" target="POW_Other_Coal_PP">
+      <data key="d10">3.38888888888889</data>
+      <data key="d12">1_x_coal_thermal</data>
+    </edge>
+    <edge source="1_x_coal_thermal" target="POW_Black_Coal_PP">
+      <data key="d10">3.02777777777778</data>
+      <data key="d12">1_x_coal_thermal</data>
+    </edge>
+    <edge source="1_x_coal_thermal" target="POW_Sub_BituCoal_PP">
+      <data key="d10">3.20559102737372</data>
+      <data key="d12">1_x_coal_thermal</data>
+    </edge>
+    <edge source="1_x_coal_thermal" target="POW_CHP_PP">
+      <data key="d10">0.2044609737490009</data>
+      <data key="d12">1_x_coal_thermal</data>
+    </edge>
+    <edge source="1_x_coal_thermal" target="POW_COAL_CCS_PP">
+      <data key="d10">3.211601721328766</data>
+      <data key="d12">1_x_coal_thermal</data>
+    </edge>
+    <edge source="1_x_coal_thermal" target="POW_CHP_COAL_PP">
+      <data key="d10">2.61258361427822</data>
+      <data key="d12">1_x_coal_thermal</data>
+    </edge>
+    <edge source="1_x_coal_thermal" target="POW_HEAT_HP">
+      <data key="d10">0.6884681583476765</data>
+      <data key="d12">1_x_coal_thermal</data>
+    </edge>
+    <edge source="1_x_coal_thermal" target="POW_Ultra_CHP_PP">
+      <data key="d10">1.893834502993537</data>
+      <data key="d12">1_x_coal_thermal</data>
+    </edge>
+    <edge source="1_x_coal_thermal" target="POW_Ultra_BituCoal_PP">
+      <data key="d10">3.02777777777778</data>
+      <data key="d12">1_x_coal_thermal</data>
+    </edge>
+    <edge source="10_hydro" target="POW_Hydro_PP">
+      <data key="d10">1.0</data>
+      <data key="d12">10_hydro</data>
+    </edge>
+    <edge source="10_hydro" target="POW_Storage_Hydro_PP">
+      <data key="d10">1.0</data>
+      <data key="d12">10_hydro</data>
+    </edge>
+    <edge source="10_hydro" target="POW_Pumped_Hydro">
+      <data key="d10">1.0</data>
+      <data key="d12">10_hydro</data>
+    </edge>
+    <edge source="10_hydro" target="POW_TIDAL_PP">
+      <data key="d10">1.0</data>
+      <data key="d12">10_hydro</data>
+    </edge>
+    <edge source="10_hydro" target="POW_IMP_Hydro_PP">
+      <data key="d10">1.0</data>
+      <data key="d12">10_hydro</data>
+    </edge>
+    <edge source="11_geothermal" target="POW_Geothermal_PP">
+      <data key="d10">10.0</data>
+      <data key="d12">11_geothermal</data>
+    </edge>
+    <edge source="12_1_of_which_photovoltaics" target="POW_SolarPV_PP">
+      <data key="d10">1.0</data>
+      <data key="d12">12_1_of_which_photovoltaics</data>
+    </edge>
+    <edge source="12_1_of_which_photovoltaics" target="POW_SolarCSP_PP">
+      <data key="d10">1.0</data>
+      <data key="d12">12_1_of_which_photovoltaics</data>
+    </edge>
+    <edge source="12_1_of_which_photovoltaics" target="POW_SolarRoofPV_PP">
+      <data key="d10">1.0</data>
+      <data key="d12">12_1_of_which_photovoltaics</data>
+    </edge>
+    <edge source="12_1_of_which_photovoltaics" target="POW_EmbeddedBattery_Storage">
+      <data key="d10">1.312</data>
+      <data key="d12">12_1_of_which_photovoltaics</data>
+    </edge>
+    <edge source="12_1_of_which_photovoltaics" target="POW_AggregatedEnergy_Storage_VPP">
+      <data key="d10">1.312</data>
+      <data key="d12">12_1_of_which_photovoltaics</data>
+    </edge>
+    <edge source="12_1_of_which_photovoltaics" target="POW_SolarFloatPV_PP">
+      <data key="d10">1.0</data>
+      <data key="d12">12_1_of_which_photovoltaics</data>
+    </edge>
+    <edge source="14_wind" target="POW_Wind_PP">
+      <data key="d10">1.0</data>
+      <data key="d12">14_wind</data>
+    </edge>
+    <edge source="14_wind" target="POW_WindOff_PP">
+      <data key="d10">1.0</data>
+      <data key="d12">14_wind</data>
+    </edge>
+    <edge source="15_2_bagasse" target="POW_Solid_Biomass_PP">
+      <data key="d10">34.75107747040073</data>
+      <data key="d12">15_2_bagasse</data>
+    </edge>
+    <edge source="15_4_black_liquor" target="POW_Solid_Biomass_PP">
+      <data key="d10">0.09998179416131799</data>
+      <data key="d12">15_4_black_liquor</data>
+    </edge>
+    <edge source="15_5_other_biomass" target="POW_Solid_Biomass_PP">
+      <data key="d10">3.71944444444444</data>
+      <data key="d12">15_5_other_biomass</data>
+    </edge>
+    <edge source="15_5_other_biomass" target="POW_CHP_PP">
+      <data key="d10">0.5514018691588785</data>
+      <data key="d12">15_5_other_biomass</data>
+    </edge>
+    <edge source="15_5_other_biomass" target="POW_CHP_GAS_PP">
+      <data key="d10">0.3864447086801427</data>
+      <data key="d12">15_5_other_biomass</data>
+    </edge>
+    <edge source="15_5_other_biomass" target="POW_CHP_BIO_PP">
+      <data key="d10">1.152454277118825</data>
+      <data key="d12">15_5_other_biomass</data>
+    </edge>
+    <edge source="16_1_biogas" target="POW_Biogas_PP">
+      <data key="d10">3.751612903225807</data>
+      <data key="d12">16_1_biogas</data>
+    </edge>
+    <edge source="16_1_biogas" target="POW_Solid_Biomass_PP">
+      <data key="d10">3.71944444444444</data>
+      <data key="d12">16_1_biogas</data>
+    </edge>
+    <edge source="16_2_industrial_waste" target="POW_WasteToEnergy_PP">
+      <data key="d10">1.69683333333333</data>
+      <data key="d12">16_2_industrial_waste</data>
+    </edge>
+    <edge source="16_2_industrial_waste" target="POW_WasteToHeat_HP">
+      <data key="d10">1.310068519509358</data>
+      <data key="d12">16_2_industrial_waste</data>
+    </edge>
+    <edge source="16_3_municipal_solid_waste_renewable" target="POW_WasteToEnergy_PP">
+      <data key="d10">1.69683333333333</data>
+      <data key="d12">16_3_municipal_solid_waste_renewable</data>
+    </edge>
+    <edge source="16_3_municipal_solid_waste_renewable" target="POW_CHP_PP">
+      <data key="d10">0.05422979299452874</data>
+      <data key="d12">16_3_municipal_solid_waste_renewable</data>
+    </edge>
+    <edge source="16_3_municipal_solid_waste_renewable" target="POW_CHP_GAS_PP">
+      <data key="d10">0.0332187070151307</data>
+      <data key="d12">16_3_municipal_solid_waste_renewable</data>
+    </edge>
+    <edge source="16_3_municipal_solid_waste_renewable" target="POW_HEAT_HP">
+      <data key="d10">0.1133390705679862</data>
+      <data key="d12">16_3_municipal_solid_waste_renewable</data>
+    </edge>
+    <edge source="16_3_municipal_solid_waste_renewable" target="POW_CHP_BIO_PP">
+      <data key="d10">0.556933514246945</data>
+      <data key="d12">16_3_municipal_solid_waste_renewable</data>
+    </edge>
+    <edge source="16_4_municipal_solid_waste_nonrenewable" target="POW_WasteToEnergy_PP">
+      <data key="d10">1.69683333333333</data>
+      <data key="d12">16_4_municipal_solid_waste_nonrenewable</data>
+    </edge>
+    <edge source="16_4_municipal_solid_waste_nonrenewable" target="POW_CHP_PP">
+      <data key="d10">0.05422979299452874</data>
+      <data key="d12">16_4_municipal_solid_waste_nonrenewable</data>
+    </edge>
+    <edge source="16_4_municipal_solid_waste_nonrenewable" target="POW_CHP_GAS_PP">
+      <data key="d10">0.0142365887207703</data>
+      <data key="d12">16_4_municipal_solid_waste_nonrenewable</data>
+    </edge>
+    <edge source="16_4_municipal_solid_waste_nonrenewable" target="POW_HEAT_HP">
+      <data key="d10">0.1133390705679862</data>
+      <data key="d12">16_4_municipal_solid_waste_nonrenewable</data>
+    </edge>
+    <edge source="16_4_municipal_solid_waste_nonrenewable" target="POW_CHP_BIO_PP">
+      <data key="d10">0.556933514246945</data>
+      <data key="d12">16_4_municipal_solid_waste_nonrenewable</data>
+    </edge>
+    <edge source="16_6_biodiesel" target="POW_WasteToEnergy_PP">
+      <data key="d10">1.69683333333333</data>
+      <data key="d12">16_6_biodiesel</data>
+    </edge>
+    <edge source="16_8_other_liquid_biofuels" target="POW_Biogas_PP">
+      <data key="d10">1.846379026685428</data>
+      <data key="d12">16_8_other_liquid_biofuels</data>
+    </edge>
+    <edge source="17_electricity" target="POW_EXPORT_ELEC_PP">
+      <data key="d10">1.0</data>
+      <data key="d12">17_electricity</data>
+    </edge>
+    <edge source="17_electricity" target="POW_Transmission">
+      <data key="d10">1.0</data>
+      <data key="d12">17_electricity</data>
+    </edge>
+    <edge source="17_electricity" target="POW_EmbeddedBattery_Storage">
+      <data key="d10">1.0</data>
+      <data key="d12">17_electricity</data>
+    </edge>
+    <edge source="17_electricity" target="POW_AggregatedEnergy_Storage_VPP">
+      <data key="d10">1.0</data>
+      <data key="d12">17_electricity</data>
+    </edge>
+    <edge source="17_electricity" target="INV_BAT">
+      <data key="d10">1.3889</data>
+      <data key="d12">17_electricity</data>
+    </edge>
+    <edge source="17_electricity" target="AnnualDemand">
+      <data key="d13">1558.77814619887</data>
+      <data key="d12">17_electricity</data>
+    </edge>
+    <edge source="17_electricity_Dx" target="AnnualDemand">
+      <data key="d13">2542.09508654853</data>
+      <data key="d12">17_electricity_Dx</data>
+    </edge>
+    <edge source="17_electricity_export" target="AnnualDemand">
+      <data key="d13">31.7490696</data>
+      <data key="d12">17_electricity_export</data>
+    </edge>
+    <edge source="17_electricity_import" target="POW_IMPORT_ELEC_PP">
+      <data key="d10">1.0</data>
+      <data key="d12">17_electricity_import</data>
+    </edge>
+    <edge source="17_electricity_import" target="POW_IMPORTS_PP">
+      <data key="d10">2.10555555555556</data>
+      <data key="d12">17_electricity_import</data>
+    </edge>
+    <edge source="18_heat" target="AnnualDemand">
+      <data key="d13">439.088294415553</data>
+      <data key="d12">18_heat</data>
+    </edge>
+    <edge source="2_coal_products" target="POW_Other_Coal_PP">
+      <data key="d10">2.354313790455155</data>
+      <data key="d12">2_coal_products</data>
+    </edge>
+    <edge source="2_coal_products" target="POW_HEAT_HP">
+      <data key="d10">3.203720818226425</data>
+      <data key="d12">2_coal_products</data>
+    </edge>
+    <edge source="2_coal_products" target="POW_CHP_COAL_PP">
+      <data key="d10">1.545861416513508</data>
+      <data key="d12">2_coal_products</data>
+    </edge>
+    <edge source="6_1_crude_oil" target="POW_OilProducts_PP">
+      <data key="d10">0.0317691219266209</data>
+      <data key="d12">6_1_crude_oil</data>
+    </edge>
+    <edge source="6_1_crude_oil" target="POW_Diesel_PP">
+      <data key="d10">1.261740639551857</data>
+      <data key="d12">6_1_crude_oil</data>
+    </edge>
+    <edge source="7_10_refinery_gas_not_liquefied" target="POW_OilProducts_PP">
+      <data key="d10">0.459716615391879</data>
+      <data key="d12">7_10_refinery_gas_not_liquefied</data>
+    </edge>
+    <edge source="7_10_refinery_gas_not_liquefied" target="POW_HEAT_HP">
+      <data key="d10">0.7909760034871385</data>
+      <data key="d12">7_10_refinery_gas_not_liquefied</data>
+    </edge>
+    <edge source="7_10_refinery_gas_not_liquefied" target="POW_FuelOil_PP">
+      <data key="d10">1.814313706959014</data>
+      <data key="d12">7_10_refinery_gas_not_liquefied</data>
+    </edge>
+    <edge source="7_16_petroleum_coke" target="POW_PetCoke_PP">
+      <data key="d10">2.424372544488098</data>
+      <data key="d12">7_16_petroleum_coke</data>
+    </edge>
+    <edge source="7_3_naphtha" target="POW_OilProducts_PP">
+      <data key="d10">0.5207674475353837</data>
+      <data key="d12">7_3_naphtha</data>
+    </edge>
+    <edge source="7_3_naphtha" target="POW_HEAT_HP">
+      <data key="d10">0.3606582789670028</data>
+      <data key="d12">7_3_naphtha</data>
+    </edge>
+    <edge source="7_6_kerosene" target="POW_OilProducts_PP">
+      <data key="d10">0.04149721792145474</data>
+      <data key="d12">7_6_kerosene</data>
+    </edge>
+    <edge source="7_7_gas_diesel_oil" target="POW_Diesel_PP">
+      <data key="d10">2.383602534768457</data>
+      <data key="d12">7_7_gas_diesel_oil</data>
+    </edge>
+    <edge source="7_7_gas_diesel_oil" target="POW_CHP_PP">
+      <data key="d10">1.037486603869366</data>
+      <data key="d12">7_7_gas_diesel_oil</data>
+    </edge>
+    <edge source="7_7_gas_diesel_oil" target="POW_OilProducts_PP">
+      <data key="d10">0.09661409830013745</data>
+      <data key="d12">7_7_gas_diesel_oil</data>
+    </edge>
+    <edge source="7_7_gas_diesel_oil" target="POW_CHP_GAS_PP">
+      <data key="d10">1.037486603869366</data>
+      <data key="d12">7_7_gas_diesel_oil</data>
+    </edge>
+    <edge source="7_7_gas_diesel_oil" target="POW_HEAT_HP">
+      <data key="d10">0.3498278829604131</data>
+      <data key="d12">7_7_gas_diesel_oil</data>
+    </edge>
+    <edge source="7_7_gas_diesel_oil" target="POW_OCGT_PP">
+      <data key="d10">0.03027380141479149</data>
+      <data key="d12">7_7_gas_diesel_oil</data>
+    </edge>
+    <edge source="7_7_gas_diesel_oil" target="POW_FuelOil_PP">
+      <data key="d10">0.02121340137983177</data>
+      <data key="d12">7_7_gas_diesel_oil</data>
+    </edge>
+    <edge source="7_7_gas_diesel_oil" target="POW_CHP_BIO_PP">
+      <data key="d10">0.3261329715061058</data>
+      <data key="d12">7_7_gas_diesel_oil</data>
+    </edge>
+    <edge source="7_8_fuel_oil" target="POW_OilProducts_PP">
+      <data key="d10">0.51228435655468</data>
+      <data key="d12">7_8_fuel_oil</data>
+    </edge>
+    <edge source="7_8_fuel_oil" target="POW_HEAT_HP">
+      <data key="d10">0.293416073354887</data>
+      <data key="d12">7_8_fuel_oil</data>
+    </edge>
+    <edge source="7_8_fuel_oil" target="POW_FuelOil_PP">
+      <data key="d10">3.084919509813187</data>
+      <data key="d12">7_8_fuel_oil</data>
+    </edge>
+    <edge source="7_8_fuel_oil" target="POW_CHP_GAS_PP">
+      <data key="d10">0.2187871581450654</data>
+      <data key="d12">7_8_fuel_oil</data>
+    </edge>
+    <edge source="7_8_fuel_oil" target="POW_Diesel_PP">
+      <data key="d10">0.8166719794510738</data>
+      <data key="d12">7_8_fuel_oil</data>
+    </edge>
+    <edge source="7_9_lpg" target="POW_OilProducts_PP">
+      <data key="d10">0.001216806073976641</data>
+      <data key="d12">7_9_lpg</data>
+    </edge>
+    <edge source="7_9_lpg" target="POW_HEAT_HP">
+      <data key="d10">0.02000134259444163</data>
+      <data key="d12">7_9_lpg</data>
+    </edge>
+    <edge source="7_x_other_petroleum_products" target="POW_OilProducts_PP">
+      <data key="d10">0.899343648173771</data>
+      <data key="d12">7_x_other_petroleum_products</data>
+    </edge>
+    <edge source="7_x_other_petroleum_products" target="POW_HEAT_HP">
+      <data key="d10">0.6262751497793112</data>
+      <data key="d12">7_x_other_petroleum_products</data>
+    </edge>
+    <edge source="8_1_natural_gas" target="POW_OCGT_PP">
+      <data key="d10">3.26388888888889</data>
+      <data key="d12">8_1_natural_gas</data>
+    </edge>
+    <edge source="8_1_natural_gas" target="POW_CCGT_PP">
+      <data key="d10">1.964009743308385</data>
+      <data key="d12">8_1_natural_gas</data>
+    </edge>
+    <edge source="8_1_natural_gas" target="POW_CHP_PP">
+      <data key="d10">0.1852151841615432</data>
+      <data key="d12">8_1_natural_gas</data>
+    </edge>
+    <edge source="8_1_natural_gas" target="POW_CCGT_CCS_PP">
+      <data key="d10">1.964009743308385</data>
+      <data key="d12">8_1_natural_gas</data>
+    </edge>
+    <edge source="8_1_natural_gas" target="POW_CHP_GAS_PP">
+      <data key="d10">1.890421532702817</data>
+      <data key="d12">8_1_natural_gas</data>
+    </edge>
+    <edge source="8_1_natural_gas" target="POW_HEAT_HP">
+      <data key="d10">1.312820512820513</data>
+      <data key="d12">8_1_natural_gas</data>
+    </edge>
+    <edge source="8_1_natural_gas" target="POW_Ultra_CHP_PP">
+      <data key="d10">0.08087308195551327</data>
+      <data key="d12">8_1_natural_gas</data>
+    </edge>
+    <edge source="9_nuclear" target="POW_Nuclear_PP">
+      <data key="d10">1.0</data>
+      <data key="d12">9_nuclear</data>
+    </edge>
+  </graph>
+</graphml>
