@@ -235,3 +235,47 @@ if bool(results_tables):
             v.to_excel(writer, sheet_name=k, merge_cells=False)
 
 # END
+
+#%%
+
+
+################# INSERT CREATE_LONG_DATAFRAME HERE #################
+
+folder = tmp_directory
+#MAKE FOLDER WHERE ALL THE CSV FILES ARE SAVED ABOVE
+#%%
+#iterate through sheets 
+for file in os.listdir(folder):
+    #if file is not a csv or is in this list then skip it
+    ignored_files = ['SelectedResults.csv']
+    if file.split('.')[-1] != 'csv' or file in ignored_files:
+        continue
+    #load in sheet
+    sheet_data = pd.read_csv(folder+'/'+file)
+
+    #The trade file will have two Region columns. Set the second one to be 'REGION_TRADE'
+    if file == 'Trade.csv':
+        sheet_data.rename(columns={'REGION.1':'REGION_TRADE'}, inplace=True)
+
+    #add file name as a column (split out .csv)
+    sheet_data['SHEET_NAME'] = file.split('\\')[-1].split('.')[0]
+    #if this is the first sheet then create a dataframe to hold the data
+    if file == os.listdir(folder)[0]:
+        combined_data = sheet_data
+    #if this is not the first sheet then append the data to the combined data
+    else:
+        combined_data = pd.concat([combined_data, sheet_data], ignore_index=True)
+
+#remove any coluymns with all na's
+combined_data = combined_data.dropna(axis=1, how='all')
+
+#count number of na's in each column and then order the cols in a list by the number of na's. We'll use this to order the cols in the final dataframe
+na_counts = combined_data.isna().sum().sort_values(ascending=True)
+ordered_cols = list(na_counts.index)
+
+#reorder the columns so the year cols are at the end, the ordered first cols are at start and the rest of the cols are in the middle
+new_combined_data = combined_data[ordered_cols]
+
+#save combined data to csv
+new_combined_data.to_csv(folder + '/ALL_OUTPUT_CSVS.csv', index=False)
+#%%
