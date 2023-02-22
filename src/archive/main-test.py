@@ -1,8 +1,13 @@
+#Script is called main-test as it is the one that has been made easier to test the model with. However new cahgnes to it will need to be made to the main.py file.
+
 # this script takes in the power data sheet and runs the osemosys model
 # configure the model run in the START tab of the excel file
 # run this file from the command line
 
+#todo:
+# https://anaconda.org/conda-forge/coincbc
 # the following python packages are imported:
+
 
 #%%
 
@@ -17,25 +22,35 @@ import subprocess
 import time
 import importlib.resources as resources
 
-#make directory the root of the project
-if os.getcwd().split('\\')[-1] == 'src':
-    os.chdir('..')
-    print("Changed directory to root of project")
 #%%
-# the processing script starts from here
 # get the time you started the model so the results will have the time in the filename
 model_start = time.strftime("%Y-%m-%d-%H%M%S")
 root_dir = '.' # because this file is in src, the root may change if it is run from this file or from command line
 print("Script started at {}...\n".format(model_start))
-# model run inputs
 
 #%%
-#load in model preferences and set them as variables
-df_prefs = pd.read_excel('{}/data/data-sheet-power-test.xlsx'.format(root_dir), sheet_name='START',usecols="A:B",nrows=3,header=None)
+################################################################################
+#NOT IN MAIN.PY:
 
-economy = df_prefs.loc[0][1]
-scenario = df_prefs.loc[1][1]
-years = df_prefs.loc[2][1]
+#make directory the root of the project
+if os.getcwd().split('\\')[-1] == 'src':
+    os.chdir('..')
+    print("Changed directory to root of project")
+
+#Set variables:
+PREFERENCES_FILE = 'data-sheet-power-test.xlsx'
+################################################################################
+#%%
+################################################################################
+#PREPARE DATA
+################################################################################
+
+#load in model preferences and set them as variables
+df_prefs = pd.read_excel('{}/data/{}'.format(root_dir,PREFERENCES_FILE), sheet_name='START',usecols="A:B",nrows=3,header=None)
+
+economy = df_prefs.loc[0][1]#extract economy from excel file
+scenario = df_prefs.loc[1][1]#extract scenario from excel file
+years = df_prefs.loc[2][1]#extract years from excel file
 
 config_dict = {}
 config_dict['economy'] = economy
@@ -58,7 +73,7 @@ keep_list = [x if y == 'None' else y for x,y in keep_dict.items()]
 #%%
 # read in the data file and filter based on the specific scenario and preferences
 subset_of_economies = economy
-_dict = pd.read_excel("{}/data/data-sheet-power-test.xlsx".format(root_dir),sheet_name=None) # creates dict of dataframes
+_dict = pd.read_excel("{}/data/{}".format(root_dir,PREFERENCES_FILE),sheet_name=None) # creates dict of dataframes
 print("Excel file successfully read.\n")
 __dict = {k: _dict[k] for k in keep_list}
 filtered_data = {}
@@ -167,6 +182,9 @@ writer.write(filtered_data2, output_file, default_values)
 print("data file in text format has been written and saved in the tmp folder.\n")
 
 #%%
+################################################################################
+#SOLVE MODEL
+################################################################################
 
 # Now we are ready to solve the model.
 # We first make a copy of osemosys_fast.txt so that we can modify where the results are written.
@@ -187,6 +205,10 @@ with open('{}/model_{}.txt'.format(tmp_directory,economy), 'w') as file:
   file.write(filedata)
 subprocess.run("glpsol -d {}/datafile_from_python_{}.txt -m {}/model_{}.txt".format(tmp_directory,economy,tmp_directory,economy),shell=True)
 
+
+################################################################################
+#Save results as Excel workbook
+################################################################################
 #%%
 # Now we take the CSV files and combine them into an Excel file
 # First we need to make a dataframe from the CSV files
@@ -252,23 +274,19 @@ if bool(results_tables):
         for k, v in results_tables.items():
             v.to_excel(writer, sheet_name=k, merge_cells=False)
 
-# END
-# %%
+################################################################################
+#SAVE RESULTS AS LONG CSV HERE
+################################################################################
 
-
-################# INSERT CREATE_LONG_DATAFRAME HERE #################
-
-folder = tmp_directory
-#MAKE FOLDER WHERE ALL THE CSV FILES ARE SAVED ABOVE
 #%%
-#iterate through sheets 
-for file in os.listdir(folder):
+#iterate through sheets in tmp
+for file in os.listdir(tmp_directory):
     #if file is not a csv or is in this list then skip it
     ignored_files = ['SelectedResults.csv']
     if file.split('.')[-1] != 'csv' or file in ignored_files:
         continue
     #load in sheet
-    sheet_data = pd.read_csv(folder+'/'+file)
+    sheet_data = pd.read_csv(tmp_directory+'/'+file)
 
     #The trade file will have two Region columns. Set the second one to be 'REGION_TRADE'
     if file == 'Trade.csv':
@@ -277,7 +295,7 @@ for file in os.listdir(folder):
     #add file name as a column (split out .csv)
     sheet_data['SHEET_NAME'] = file.split('\\')[-1].split('.')[0]
     #if this is the first sheet then create a dataframe to hold the data
-    if file == os.listdir(folder)[0]:
+    if file == os.listdir(tmp_directory)[0]:
         combined_data = sheet_data
     #if this is not the first sheet then append the data to the combined data
     else:
@@ -294,5 +312,6 @@ ordered_cols = list(na_counts.index)
 new_combined_data = combined_data[ordered_cols]
 
 #save combined data to csv
-new_combined_data.to_csv(folder + '/ALL_OUTPUT_CSVS.csv', index=False)
+new_combined_data.to_csv(parent_directory + '/all_results_long.csv', index=False)
+
 #%%

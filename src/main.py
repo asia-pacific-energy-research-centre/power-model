@@ -3,7 +3,7 @@
 # run this file from the command line
 
 # the following python packages are imported:
-
+#%%
 import pandas as pd
 import numpy as np
 import yaml
@@ -21,8 +21,37 @@ model_start = time.strftime("%Y-%m-%d-%H%M%S")
 root_dir = '.' # because this file is in src, the root may change if it is run from this file or from command line
 print("Script started at {}...\n".format(model_start))
 # model run inputs
+#%%
+################################################################################
+#FOR RUNNING THROUGH JUPYTER INTERACTIVE NOTEBOOK (FINNS SETUP, need to make root of project the cwd)
+
+def is_notebook() -> bool:
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True   # Jupyter notebook or qtconsole
+        elif shell == 'TerminalInteractiveShell':
+            return False  # Terminal running IPython
+        else:
+            return False  # Other type (?)
+    except NameError:
+        return False      # Probably standard Python interpreter
+    
+if is_notebook():
+    #make directory the root of the project
+    if os.getcwd().split('\\')[-1] == 'src':
+        os.chdir('..')
+        print("Changed directory to root of project")
+
+################################################################################
+#%%
+
+################################################################################
+#PREPARE DATA
+################################################################################
 
 df_prefs = pd.read_excel('{}/data/data-sheet-power.xlsx'.format(root_dir), sheet_name='START',usecols="A:B",nrows=3,header=None)
+
 
 economy = df_prefs.loc[0][1]
 scenario = df_prefs.loc[1][1]
@@ -152,8 +181,11 @@ output_file = '{}/datafile_from_python_{}.txt'.format(tmp_directory,economy)
 writer.write(filtered_data2, output_file, default_values)
 
 print("data file in text format has been written and saved in the tmp folder.\n")
+#%%
+################################################################################
+#SOLVE MODEL
+################################################################################
 
-# Now we are ready to solve the model.
 # We first make a copy of osemosys_fast.txt so that we can modify where the results are written.
 # Results from OSeMOSYS come in csv files. We first save these to the tmp directory for each economy.
 # making a copy of the model file in the tmp directory so it can be modified
@@ -171,6 +203,12 @@ filedata = filedata.replace("param ResultsPath, symbolic default 'results';","pa
 with open('{}/model_{}.txt'.format(tmp_directory,economy), 'w') as file:
   file.write(filedata)
 subprocess.run("glpsol -d {}/datafile_from_python_{}.txt -m {}/model_{}.txt".format(tmp_directory,economy,tmp_directory,economy),shell=True)
+
+
+
+################################################################################
+#Save results as Excel workbook
+################################################################################
 
 # Now we take the CSV files and combine them into an Excel file
 # First we need to make a dataframe from the CSV files
@@ -234,24 +272,20 @@ if bool(results_tables):
         for k, v in results_tables.items():
             v.to_excel(writer, sheet_name=k, merge_cells=False)
 
-# END
+
+################################################################################
+#SAVE RESULTS AS LONG CSV HERE
+################################################################################
 
 #%%
-
-
-################# INSERT CREATE_LONG_DATAFRAME HERE #################
-
-folder = tmp_directory
-#MAKE FOLDER WHERE ALL THE CSV FILES ARE SAVED ABOVE
-#%%
-#iterate through sheets 
-for file in os.listdir(folder):
+#iterate through sheets in tmp
+for file in os.listdir(tmp_directory):
     #if file is not a csv or is in this list then skip it
     ignored_files = ['SelectedResults.csv']
     if file.split('.')[-1] != 'csv' or file in ignored_files:
         continue
     #load in sheet
-    sheet_data = pd.read_csv(folder+'/'+file)
+    sheet_data = pd.read_csv(tmp_directory+'/'+file)
 
     #The trade file will have two Region columns. Set the second one to be 'REGION_TRADE'
     if file == 'Trade.csv':
@@ -260,7 +294,7 @@ for file in os.listdir(folder):
     #add file name as a column (split out .csv)
     sheet_data['SHEET_NAME'] = file.split('\\')[-1].split('.')[0]
     #if this is the first sheet then create a dataframe to hold the data
-    if file == os.listdir(folder)[0]:
+    if file == os.listdir(tmp_directory)[0]:
         combined_data = sheet_data
     #if this is not the first sheet then append the data to the combined data
     else:
@@ -277,5 +311,6 @@ ordered_cols = list(na_counts.index)
 new_combined_data = combined_data[ordered_cols]
 
 #save combined data to csv
-new_combined_data.to_csv(folder + '/ALL_OUTPUT_CSVS.csv', index=False)
+new_combined_data.to_csv(path + '/tall_{}_results_{}_{}.csv'.format(economy,scenario,model_start), index=False)
 #%%
+
