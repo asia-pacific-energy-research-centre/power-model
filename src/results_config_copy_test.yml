@@ -1,0 +1,151 @@
+#AccumulatedAnnualDemand:
+#    indices: [REGION,FUEL,YEAR]
+#    type: param
+#    dtype: float
+#    default: 0
+AccumulatedNewCapacity:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: "True"
+AnnualEmissions:
+    indices: [REGION,EMISSION,YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: "True"
+AnnualTechnologyEmission:
+    indices: [REGION,TECHNOLOGY,EMISSION,YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: "True"
+CapitalInvestment:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: "True"
+#Demand: # TURNED OFF
+#    indices: [REGION,TIMESLICE,FUEL,YEAR]
+#    type: result
+#    dtype: float
+#DiscountedCapitalInvestment: #not in fast?
+#    indices: [REGION,TECHNOLOGY,YEAR]
+#    type: result
+#    dtype: float
+NewCapacity:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: "True"
+#RateOfActivity:
+#    indices: [REGION,TIMESLICE,TECHNOLOGY,MODE_OF_OPERATION,YEAR]
+#    type: result
+#    dtype: float
+#RateOfProductionByTechnology:
+#    indices: [REGION,TIMESLICE,TECHNOLOGY,FUEL,YEAR]
+#    type: result
+#    dtype: float
+#Production: # added to fast? # TURNED OFF
+#    indices: [REGION,TIMESLICE,FUEL,YEAR]
+#    type: result
+#    dtype: float
+ProductionByTechnology:
+    indices: [REGION,TIMESLICE,TECHNOLOGY,FUEL,YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: "True"
+##ProductionAnnual: #added to fast
+##    indices: [REGION,FUEL,YEAR]
+##    type: result
+##    dtype: float
+ProductionByTechnologyAnnual:
+    indices: [REGION,TECHNOLOGY,FUEL,YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: "True"
+#SpecifiedAnnualDemand:
+#    indices: [REGION,FUEL,YEAR]
+#    type: param
+#    dtype: float
+#    default: 0
+TotalCapacityAnnual:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: "True"
+TotalTechnologyAnnualActivity:
+    indices: [REGION,TECHNOLOGY,YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: "True"
+UseByTechnology:
+    indices: [REGION,TIMESLICE,TECHNOLOGY,FUEL,YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: "True"
+#UseAnnual: # need to add to osemosys_fast.txt
+#    indices: [REGION,FUEL,YEAR]
+#    type: result
+#    dtype: float
+###EnergyBalanceEachYear4: # not in regular osemosys
+###    indices: [REGION,YEAR,FUEL]
+###    type: equ
+###    dtype: float
+#############
+#testing here start
+RateOfActivity:
+    indices: [REGION,TIMESLICE,TECHNOLOGY,MODE_OF_OPERATION,YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: "True"
+NewStorageCapacity:
+    indices: [REGION,STORAGE,YEAR]
+    type: result
+    dtype: float
+    default: 0
+    calculated: "True"
+#testing here finished
+#############
+TIMESLICE:
+    dtype: str
+    type: set
+TECHNOLOGY:
+    dtype: str
+    type: set
+STORAGE:
+    dtype: str
+    type: set
+SEASON:
+    dtype: int
+    type: set
+EMISSION:
+    dtype: str
+    type: set
+DAYTYPE:
+    dtype: int
+    type: set
+DAILYTIMEBRACKET:
+    dtype: int
+    type: set
+YEAR:
+    dtype: int
+    type: set
+FUEL:
+    dtype: str
+    type: set
+REGION:
+    dtype: str
+    type: set
+MODE_OF_OPERATION:
+    dtype: str
+    type: set

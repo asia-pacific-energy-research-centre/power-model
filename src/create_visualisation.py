@@ -9,6 +9,8 @@
 #Now with the datapackage.json file, you can then use it to:
 #create a visualisation of the data using the command: otoole viz res DATAPACKAGE res.png && open res.png
 
+#NOTE THAT IT LOOKS LIKE THE DATAPACKAGE FORMAT HAS BEEN DEPRECATED. SO WE SHOULD UPDATE THIS SCRIPT TO USE THE NEW FORMAT. https://otoole.readthedocs.io/en/latest/functionality.html#otoole-viz
+
 #%%
 import pandas as pd
 import numpy as np
