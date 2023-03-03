@@ -204,38 +204,50 @@ with open('{}/model_{}.txt'.format(tmp_directory,economy), 'w') as file:
   
 print("Time taken: {}".format(time.time()-start))
 #%%
-#previous method:
+#start new timer to time the solving process
+start = time.time()
+#previous solving method:
 use_glpsol = False
 if use_glpsol:
     result = subprocess.run("glpsol -d {}/datafile_from_python_{}.txt -m {}/model_{}.txt".format(tmp_directory,economy,tmp_directory,economy),shell=True, capture_output=True, text=True)
     print(result.stdout)
     print(result.stderr)
+    print("Time taken: {} for glpsol".format(time.time()-start))
 
-#new method:
+#%%
+#new solving method (faster apparently):
+#start new timer to time the solving process
+start = time.time()
+
 #create a lp file to input into cbc
 result = subprocess.run("glpsol -d {}/datafile_from_python_{}.txt -m {}/model_{}.txt --wlp {}/cbc_input_{}.lp".format(tmp_directory,economy,tmp_directory,economy,tmp_directory,economy),shell=True, capture_output=True, text=True)
 print("\n Printing command line output from converting to lp file \n")
 print(result.stdout)
 print(result.stderr)
+print("\n Time taken: {} for converting to lp file \n".format(time.time()-start))
 
 #input into cbc solver:
+start = time.time()
 result = subprocess.run("cbc {}/cbc_input_{}.lp solve solu {}/cbc_results_{}.txt".format(tmp_directory,economy,tmp_directory,economy),shell=True, capture_output=True, text=True)
 print("\n Printing command line output from CBC solver \n")
 print(result.stdout)
 print(result.stderr)
+print("\n Time taken: {} for CBC solver \n".format(time.time()-start))
 
 #convert to csv
+start = time.time()
 result = subprocess.run("otoole results cbc csv {}/cbc_results_{}.txt {}/results_cbc_{}.txt {}/src/{}".format(tmp_directory,economy,tmp_directory,economy,root_dir, results_config_file),shell=True, capture_output=True, text=True)
 print("\n Printing command line output from converting cbc output to csv \n")
 print(result.stdout)
 print(result.stderr)
-print('Time taken: {}'.format(time.time()-start))
-#  otoole results [-h] [--input_datafile INPUT_DATAFILE] [--input_datapackage INPUT_DATAPACKAGE] [--write_defaults] {cbc,cplex,gurobi} {csv} from_path to_path config
+print('\n Time taken: {} for converting cbc output to csv \n'.format(time.time()-start))
 
 #%%
 ################################################################################
 #Save results as Excel workbook
 ################################################################################
+#start new timer to tiome the post-processing
+start = time.time()
 
 # Now we take the CSV files and combine them into an Excel file
 # First we need to make a dataframe from the CSV files
@@ -300,6 +312,7 @@ if bool(results_tables):
         for k, v in results_tables.items():
             v.to_excel(writer, sheet_name=k, merge_cells=False)
 
+print("Time taken: {} for creating the Excel file of results.".format(time.time()-start))
 
 ################################################################################
 #SAVE RESULTS AS LONG CSV HERE
@@ -340,5 +353,7 @@ new_combined_data = combined_data[ordered_cols]
 
 #save combined data to csv
 new_combined_data.to_csv(path + '/tall_{}_results_{}_{}.csv'.format(economy,scenario,model_start), index=False)
+
+print("Time taken: {} for creating the tall csv file of results.".format(time.time()-start))
 #%%
 
