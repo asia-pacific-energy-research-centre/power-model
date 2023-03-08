@@ -162,7 +162,7 @@ def prepare_data_for_osemosys(data_config_short_names, data_config, path_to_comb
 
     writer.write(filtered_data2, path_to_input_data_file, default_values)
     
-    print(f"data file in text format has been written and saved in the tmp folder as {path_to_input_data_file}\n")
+    print(f"Data file in text format has been written and saved in the tmp folder as {path_to_input_data_file}. This is the file you would use in OsEMOSYS Cloud as data if you are using that.\n")
     return 
 
 def compare_combined_data_to_data_config(data_config,combined_data):

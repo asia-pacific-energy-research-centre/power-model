@@ -162,12 +162,17 @@ def create_res_visualisation(path_to_results_config,scenario,economy,path_to_inp
     return
 
 def extract_osmosys_cloud_results_to_csv(tmp_directory, path_to_results_config):
-    #load in the results.txt file from osmosys cloud and make it into csvs like we would if we ran osemosys locally. Note that this is the results.txt file you get when you downlaod result_####.zip from osmosys cloud and extract the results.txt file
+    #load in the result.txt file from osmosys cloud and make it into csvs like we would if we ran osemosys locally. Note that this is the result.txt file you get when you downlaod result_####.zip from osmosys cloud and extract the result.txt file
     #we will just run the file through the f"otoole results cbc csv {tmp_directory}/cbc_results_{economy}_{scenario}.txt {tmp_directory} {path_to_results_config}" script to make the csvs. That script is from the model_solving_functions.solve_model() function
     #remember to put the results file in the tmp directory
 
     #convert to csv
     start = time.time()
+    #check the result.txt file is in the tmp directory
+    if 'result.txt' not in os.listdir(tmp_directory):
+        print('The result.txt file is not in the tmp directory. Please get it from osemosys-cloud.com, put it in the tmp directory and try again. There is documentation in the documentation folder if you want to know how to do this.')
+        return False
+    
     command=f"otoole results cbc csv {tmp_directory}/result.txt {tmp_directory} {path_to_results_config}"
     result = subprocess.run(command,shell=True, capture_output=True, text=True)
     print("\n Printing command line output from converting OsMOSYS CLOUD output to csv \n")#results_cbc_{economy}_{scenario}.txt
@@ -175,5 +180,5 @@ def extract_osmosys_cloud_results_to_csv(tmp_directory, path_to_results_config):
     print(result.stdout+'\n')
     print(result.stderr+'\n')
     print('\n Time taken: {} for converting OsMOSYS CLOUD output to csv \n\n########################\n '.format(time.time()-start))
-    return
+    return True
 

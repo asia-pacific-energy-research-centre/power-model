@@ -35,16 +35,19 @@ Make sure you did Step 1 (only need to do it once).
 4. The model will run. Pay attention to the OSeMOSYS statements. There should not be any issues with the python script.
 
 ## 3. Debugging model runs
-When the script runs, the following temporary files are saved in `./tmp/ECONOMY NAME`:
-- combined_data_ECONOMYNAME.xlsx
-- datafile_from_python_ECONOMYNAME.txt
-- model_ECONOMYNAME.txt
-
+When the script runs, the following temporary files are saved in `./tmp/ECONOMY NAME/SCENARIO`:
+- combined_data_ECONOMYNAME_SCENARIO.xlsx
+- datafile_from_python_ECONOMYNAME_SCENARIO.txt
+- model_ECONOMYNAME_SCENARIO.txt
+- process_output_{economy}_{scenario}.txt
 The above files are created before OSeMOSYS runs. If you notice that OSeMOSYS gives you an error, check these files. The combined data Excel file is easy to check. You can see if there is missing data, typos, etc. This Excel file is converted to the text version (datafile_from_python). Finally, check the model text file. This is the file with sets, parameters, and equations that contains the OSeMOSYS model.
 
 If the model solves successfully, a bunch of CSV files will be written to the same tmp folder. These are then combined and saved in the `results` folder as an Excel file.
 
-If there is an error message saying the model is infeasible, check your model data. If the model is infeasible, the results files will not be written and you will get a "file not found" error message. This is your clue that the model did not solve. You always want to see a message in the solver output saying "OPTIMAL LP SOLUTION FOUND".
+If there is an error message saying the model is infeasible, check your model data. You can also double check the process_output_{economy}_{scenario}.txt file for outputs from the solving process. If the model is infeasible, the results files will not be written and you will get a "file not found" error message. This is your clue that the model did not solve. You always want to see a message in the solver output saying "OPTIMAL LP SOLUTION FOUND".
+
+## Running OsEMOSYS CLOUD
+It may be better to use OsEMOSYS CLOUD. In this case refer to the ./documentation/Running_osemosys_cloud.docx file for instructions.
 
 ## 4. Adding results
 To add results (e.g., capacity factor) you need to edit the following files:
@@ -53,6 +56,8 @@ To add results (e.g., capacity factor) you need to edit the following files:
 
 The `osemosys_fast.txt` file is where the calculations occur. Following the pattern from the other results. The `results_config.yml` file tells the script to include that result and add it to the combined results Excel file.
 
+## 5. Using results
+Saved in the results folder will be a few different files. The ones with name ~ tall_...xlsx, will be a combination of all the results.
 
-
-
+## Creating visualisation of RES
+You can create a visualisaton of the RES as stated within the config/config.yml files. The script to run this will be outputted at the end of each model run, but you will need to run it in command line yourself.
