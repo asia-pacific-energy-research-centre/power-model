@@ -30,17 +30,11 @@ def remove_apostrophes_from_region_names(tmp_directory, path_to_results_config):
             _df.to_csv(fpath,index=False)
     return
 
-def save_results_as_excel(tmp_directory, path_to_results_config, economy, scenario, root_dir,model_start):
+def save_results_as_excel(tmp_directory, results_directory,path_to_results_config, economy, scenario, model_start):
         
     # Now we take the CSV files and combine them into an Excel file
     # First we need to make a dataframe from the CSV files
     # Note: if you add any new result parameters to osemosys_fast.txt, you need to update results_config.yml
-    results_directory = f"{root_dir}/results/{economy}/{scenario}"
-    try:
-        os.mkdir(results_directory)
-    except OSError:
-        #print ("Creation of the directory %s failed" % path)
-        pass
     with open(f'{path_to_results_config}') as f:
         contents_var = yaml.safe_load(f)
     results_df={}
@@ -95,9 +89,10 @@ def save_results_as_excel(tmp_directory, path_to_results_config, economy, scenar
                 v.to_excel(writer, sheet_name=k, merge_cells=False)
     return
 
-def save_results_as_long_csv(root_dir,tmp_directory, economy, scenario, model_start):
-    print('There are probably significant issues with this function because it is also saving the data config files to the long csv')
-    results_directory = f"{root_dir}/results/{economy}/{scenario}"
+def save_results_as_long_csv(tmp_directory,results_directory, economy, scenario, model_start):
+
+    # print('There are probably significant issues with this function because it is also saving the data config files to the long csv')
+    
     #create_lsit of csvs in tmp_directory:
     csv_list = [x for x in os.listdir(tmp_directory) if x.split('.')[-1] == 'csv']
 
@@ -149,7 +144,7 @@ def save_results_as_long_csv(root_dir,tmp_directory, economy, scenario, model_st
     return
 
 
-def create_res_visualisation(path_to_results_config,root_dir,scenario,economy,path_to_input_data_file,results_directory):
+def create_res_visualisation(path_to_results_config,scenario,economy,path_to_input_data_file,results_directory):
     #run visualisation tool
     #https://otoole.readthedocs.io/en/latest/
 

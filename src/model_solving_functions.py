@@ -17,7 +17,7 @@ if os.getcwd().split('\\')[-1] == 'src':
 #Pull in the prepared data file and solve the model
 ################################################################################
 
-def prepare_solving_process(root_dir, config_dir, results_config_file, tmp_directory, economy, scenario,path_to_results_config,osemosys_model_script='osemosys_fast.txt'):
+def prepare_solving_process(root_dir, config_dir,  tmp_directory, economy, scenario,osemosys_model_script='osemosys_fast.txt'):
     #start time
     start = time.time()
     # We first make a copy of osemosys_fast.txt so that we can modify where the results are written.

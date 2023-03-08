@@ -28,6 +28,8 @@ results_config_file = "results_config_copy_test.yml"
 #define the model script you will use (one of osemosys_fast.txt, osemosys.txt, osemosys_short.txt)
 osemosys_model_script = 'osemosys_fast.txt'
 osemosys_cloud = True
+
+solving_methods = ['glpsol','coin-cbc']#pick from glpsol, coin-cbc 
 #%%
 ################################################################################
 #FOR RUNNING THROUGH JUPYTER INTERACTIVE NOTEBOOK (FINNS SETUP, need to make root of project the cwd)
@@ -93,17 +95,12 @@ if not osemosys_cloud:
     for osemosys_model_script in ['osemosys_fast.txt']:#,'osemosys.txt', 'osemosys_short.txt']:
         print(f'\n######################## \n Running solve process using{osemosys_model_script}')
 
-        osemosys_model_script_path,model_file_path,log_file_path,cbc_intermediate_data_file_path,cbc_results_data_file_path = prepare_solving_process(root_dir, config_dir, results_config_file, tmp_directory, economy, scenario,path_to_results_config,osemosys_model_script)
+        osemosys_model_script_path,model_file_path,log_file_path,cbc_intermediate_data_file_path,cbc_results_data_file_path = prepare_solving_process(root_dir, config_dir,  tmp_directory, economy, scenario,osemosys_model_script='osemosys_fast.txt')
 
-        solving_method = 'glpsol'
-        solve_model(solving_method, tmp_directory, path_to_results_config,log_file_path,model_file_path,path_to_input_data_file,cbc_intermediate_data_file_path,cbc_results_data_file_path)
-        print(f'\n######################## \n Running solve process using{osemosys_model_script} for {solving_method} {economy} {scenario}')
-        print("Time taken for solve_model: {}\n########################\n ".format(time.time()-start))
-
-        solving_method = 'coin-cbc'
-        solve_model(solving_method, tmp_directory, path_to_results_config,log_file_path,model_file_path,path_to_input_data_file,cbc_intermediate_data_file_path,cbc_results_data_file_path)
-        print(f'\n######################## \n Running solve process using{osemosys_model_script} for {solving_method} {economy} {scenario}')
-        print("Time taken for solve_model: {}\n########################\n ".format(time.time()-start))
+        for solving_method in solving_methods:
+            solve_model(solving_method, tmp_directory, path_to_results_config,log_file_path,model_file_path,path_to_input_data_file,cbc_intermediate_data_file_path,cbc_results_data_file_path)
+            print(f'\n######################## \n Running solve process using{osemosys_model_script} for {solving_method} {economy} {scenario}')
+            print("Time taken for solve_model: {}\n########################\n ".format(time.time()-start))
 
 #%%
 ################################################################################
@@ -118,15 +115,15 @@ if osemosys_cloud:
     # save_results_as_excel_OSMOSYS_CLOUD(tmp_directory, path_to_results_config, economy, scenario, root_dir,model_start)
     # tmp_directory, path_to_results_config, economy, scenario, root_dir,model_start = 
 else:
-    save_results_as_excel(tmp_directory, path_to_results_config, economy, scenario, root_dir,model_start)
+    save_results_as_excel(tmp_directory, results_directory,path_to_results_config, economy, scenario, model_start)
 
 print("\nTime taken for save_results_as_excel: {}\n########################\n ".format(time.time()-start))
 
-save_results_as_long_csv(root_dir, tmp_directory, economy, scenario, model_start)
+save_results_as_long_csv(tmp_directory, results_directory,economy, scenario, model_start)
 print("\nTime taken for save_results_as_long_csv: {}\n########################\n ".format(time.time()-start))
 
 #Visualisation:
 path_to_results_config = path_to_data_config
-create_res_visualisation(path_to_results_config,root_dir,scenario,economy,path_to_input_data_file,results_directory)
+create_res_visualisation(path_to_results_config,scenario,economy,path_to_input_data_file,results_directory)
 print("\nTime taken for create_res_visualisation: {}\n########################\n ".format(time.time()-start))
 #%%
