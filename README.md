@@ -19,6 +19,9 @@ Install otoole. Activate your environment before installing otoole!!
 
 `pip install otoole`
 
+# Installing coin cbc solver
+This will help to run the model faster. However it's installation is a little tricky. Go to the word document in ./documentation/ called "Installing CBC solver.docx" and follow the instructions. If you dont use this you will need to set 'use_coincbc' to False in the main.py file, and use use_glpsol to True.
+
 ## 2. To run the model 
 Make sure you did Step 1 (only need to do it once).
 

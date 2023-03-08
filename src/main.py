@@ -1,6 +1,6 @@
 # this script takes in the power data sheet and runs the osemosys model
 # configure the model run in the START tab of the excel file
-# run this file from the command line
+# You can run this file from the command line or using jupyter interactive notebook. 
 
 # the following python packages are imported:
 #%%
@@ -8,18 +8,17 @@ import pandas as pd
 import numpy as np
 import yaml
 import os
-from pathlib import Path
-from otoole.read_strategies import ReadExcel
+from otoole.read_strategies import ReadExcel#had to isntall this pyparsing previously. ist this still necessary?
 from otoole.write_strategies import WriteDatafile
 import subprocess
 import time
-import importlib.resources as resources
-from tests import compare_combined_data_to_data_config
+from post_processing_functions import compare_combined_data_to_data_config, create_res_visualisation
 # the processing script starts from here
 # get the time you started the model so the results will have the time in the filename
 model_start = time.strftime("%Y-%m-%d-%H%M%S")
 root_dir = '.' # because this file is in src, the root may change if it is run from this file or from command line
-print("Script started at {}...\n".format(model_start))
+config_dir = 'config'
+print(f"Script started at {model_start}...\n")
 # model run inputs
 #%%
 ################################################################################
@@ -46,17 +45,23 @@ if is_notebook():
 ################################################################################
 #save name of the inputted data sheet here for ease of use:
 input_data_sheet_file= "data-sheet-power-finn-test.xlsx"#current data-sheet-power has no data in it
-data_config_file = "data_config copy.yml"
+data_config_file = "data_config_copy.yml"
 results_config_file = "results_config_copy_test.yml"
+#define the model script you will use (one of osemosys_fast.txt, osemosys.txt, osemosys_short.txt)
+osemosys_model_script = 'osemosys_fast.txt'
 #%%
 
 ################################################################################
 #PREPARE DATA
+#preparation is done to clean up the input data that was manually created in the excel file. This most notably involves filtering for the specific scenario economy and years we want to model, and removing columns that are not needed.
+# The output is a txt file that is the input data for OSeMOSYS. This is saved in the tmp folder for the economy and we are running the model for.
+#this is like the otoole Convert step but allows for customised use of the data sheet
 ################################################################################
+
 #start timer
 start = time.time()
 
-df_prefs = pd.read_excel('{}/data/{}'.format(root_dir, input_data_sheet_file), sheet_name='START',usecols="A:B",nrows=3,header=None)
+df_prefs = pd.read_excel(f'{root_dir}/data/{input_data_sheet_file}', sheet_name='START',usecols="A:B",nrows=3,header=None)
 
 economy = df_prefs.loc[0][1]
 scenario = df_prefs.loc[1][1]
@@ -67,8 +72,11 @@ config_dict['economy'] = economy
 config_dict['years'] = years
 config_dict['scenario'] = scenario
 
+#print the config_dict details
+print(f'Running model for economy: {economy}, scenario: {scenario}, upto year: {years}')
+
 # get the names of parameters to read in the next step
-with open('{}/src/{}'.format(root_dir, data_config_file)) as f:
+with open(f'{root_dir}/config/{data_config_file}') as f:
     data_config = yaml.safe_load(f)
 
 ##change to handle v1.0 of otoole:
@@ -90,7 +98,7 @@ print("Time taken: {}".format(time.time()-start))
 #%%
 # read in the data file and filter based on the specific scenario and preferences
 subset_of_economies = economy
-input_data_raw = pd.read_excel("{}/data/{}".format(root_dir,input_data_sheet_file),sheet_name=None) # creates dict of dataframes
+input_data_raw = pd.read_excel(f"{root_dir}/data/{input_data_sheet_file}",sheet_name=None) # creates dict of dataframes
 print("Excel file successfully read.\n")
 
 print("Time taken: {}".format(time.time()-start))
@@ -124,13 +132,13 @@ for key,value in input_data.items():
 print("Time taken: {}".format(time.time()-start))
 #%%
 # write the data from the last step as an Excel file. This is the input data OSeMOSYS will use.
-tmp_directory = '{}/tmp/{}'.format(root_dir,economy)
-try:
-    os.mkdir('{}'.format(tmp_directory))
-except OSError:
-    pass
+tmp_directory = f'{root_dir}/tmp/{economy}/{scenario}'
+#check if tmp directory, and the economy subdir exists, if not create it
+if not os.path.exists(tmp_directory):
+    os.makedirs(tmp_directory)
 
-with pd.ExcelWriter('{}/combined_data_{}.xlsx'.format(tmp_directory,economy)) as writer:
+path_to_data_sheet = f'{tmp_directory}/combined_data_{economy}_{scenario}.xlsx'
+with pd.ExcelWriter(path_to_data_sheet) as writer:
     for k, v in filtered_data.items():
         v.to_excel(writer, sheet_name=k, index=False, merge_cells=False)
 print("Combined file of Excel input data has been written to the tmp folder.\n")
@@ -140,13 +148,13 @@ subset_of_years = config_dict['years']
 
 print("Time taken: {}".format(time.time()-start))
 #%%
-_path='{}/combined_data_{}.xlsx'.format(tmp_directory,economy)
+_path=f'{tmp_directory}/combined_data_{economy}_{scenario}.xlsx'
 #run testing function to check for issues with the data
 compare_combined_data_to_data_config(data_config_short_names,filtered_data)
 
 #%%
 # prepare data using otoole
-_path='{}/combined_data_{}.xlsx'.format(tmp_directory,economy)
+_path=f'{tmp_directory}/combined_data_{economy}_{scenario}.xlsx'
 reader = ReadExcel(user_config=data_config)
 writer = WriteDatafile(user_config=data_config)
 data, default_values = reader.read(_path)
@@ -175,7 +183,7 @@ for key in data_config.keys():
         filtered_data2[key] = _df
 
 #%%
-output_file = '{}/datafile_from_python_{}.txt'.format(tmp_directory,economy)
+output_file = f'{tmp_directory}/datafile_from_python_{economy}_{scenario}.txt'
 writer.write(filtered_data2, output_file, default_values)
 
 print("data file in text format has been written and saved in the tmp folder.\n")
@@ -183,65 +191,96 @@ print("Time taken: {}".format(time.time()-start))
 #%%
 ################################################################################
 #SOLVE MODEL
+#Pull in the prepared data file and solve the model
 ################################################################################
-
+#start new timer to time the solving process
+start = time.time()
+path_to_results_config = f'{root_dir}/{config_dir}/{results_config_file}'
+#save copy of outputs to txt file in case of error:
+log_file = open(f'{tmp_directory}/process_output_{economy}_{scenario}.txt','w')
 # We first make a copy of osemosys_fast.txt so that we can modify where the results are written.
 # Results from OSeMOSYS come in csv files. We first save these to the tmp directory for each economy.
 # making a copy of the model file in the tmp directory so it can be modified
-with open('{}/osemosys_fast.txt'.format(root_dir)) as t:
-    model_text = t.read()
-f = open('{}/model_{}.txt'.format(tmp_directory,economy),'w')
-f.write('%s\n'% model_text)
-f.close()
-# Read in the file
-with open('{}/model_{}.txt'.format(tmp_directory,economy), 'r') as file :
-  filedata = file.read()
-# Replace the target string
-filedata = filedata.replace("param ResultsPath, symbolic default 'results';","param ResultsPath, symbolic default '{}';".format(tmp_directory))
-# Write the file out again
-with open('{}/model_{}.txt'.format(tmp_directory,economy), 'w') as file:
-  file.write(filedata)
+
+#testing:
+for osemosys_model_script in ['osemosys_fast.txt']:#,'osemosys.txt', 'osemosys_short.txt']:
+    print(f'\n######################## \n Running solve process using{osemosys_model_script}')
+    with open(f'{root_dir}/{config_dir}/{osemosys_model_script}') as t:
+        model_text = t.read()
+    f = open(f'{tmp_directory}/model_{economy}_{scenario}.txt','w')
+    f.write('%s\n'% model_text)
+    f.close()
+    # Read in the file
+    with open(f'{tmp_directory}/model_{economy}_{scenario}.txt', 'r') as file:
+        filedata = file.read()
+    # Replace the target string
+    filedata = filedata.replace("param ResultsPath, symbolic default 'results';",f"param ResultsPath, symbolic default '{tmp_directory}';")
+    # Write the file out again
+    with open(f'{tmp_directory}/model_{economy}_{scenario}.txt', 'w') as file:
+        file.write(filedata)
   
-print("Time taken: {}".format(time.time()-start))
-#%%
-#start new timer to time the solving process
-start = time.time()
-#previous solving method:
-use_glpsol = False
-if use_glpsol:
-    result = subprocess.run("glpsol -d {}/datafile_from_python_{}.txt -m {}/model_{}.txt".format(tmp_directory,economy,tmp_directory,economy),shell=True, capture_output=True, text=True)
-    print(result.stdout)
-    print(result.stderr)
-    print("Time taken: {} for glpsol".format(time.time()-start))
+    print("\nTime taken: {}\n########################\n ".format(time.time()-start))
 
-#%%
-#new solving method (faster apparently):
-#start new timer to time the solving process
-start = time.time()
+    #previous solving method:
+    use_glpsol = True
+    if use_glpsol:
+        result = subprocess.run(f"glpsol -d {tmp_directory}/datafile_from_python_{economy}_{scenario}.txt -m {tmp_directory}/model_{economy}_{scenario}.txt",shell=True, capture_output=True, text=True)
+        print(result.stdout)
+        print(result.stderr)
+        print("Time taken: {} for glpsol\n########################\n ".format(time.time()-start))
+        #save stdout and err to file
+        log_file.write(result.stdout)
+        log_file.write(result.stderr)
+        #save time taken to log_file
+        log_file.write("\n Time taken: {} for converting to lp file \n\n########################\n ".format(time.time()-start))
 
-#create a lp file to input into cbc
-result = subprocess.run("glpsol -d {}/datafile_from_python_{}.txt -m {}/model_{}.txt --wlp {}/cbc_input_{}.lp".format(tmp_directory,economy,tmp_directory,economy,tmp_directory,economy),shell=True, capture_output=True, text=True)
-print("\n Printing command line output from converting to lp file \n")
-print(result.stdout)
-print(result.stderr)
-print("\n Time taken: {} for converting to lp file \n".format(time.time()-start))
+    use_coincbc = True
+    if use_coincbc:
+        #new solving method (faster apparently):
+        #start new timer to time the solving process
+        start = time.time()
 
-#input into cbc solver:
-start = time.time()
-result = subprocess.run("cbc {}/cbc_input_{}.lp solve solu {}/cbc_results_{}.txt".format(tmp_directory,economy,tmp_directory,economy),shell=True, capture_output=True, text=True)
-print("\n Printing command line output from CBC solver \n")
-print(result.stdout)
-print(result.stderr)
-print("\n Time taken: {} for CBC solver \n".format(time.time()-start))
+        #create a lp file to input into cbc
+        result = subprocess.run(f"glpsol -d {tmp_directory}/datafile_from_python_{economy}_{scenario}.txt -m {tmp_directory}/model_{economy}_{scenario}.txt --wlp {tmp_directory}/cbc_input_{economy}_{scenario}.lp",shell=True, capture_output=True, text=True)
+        print("\n Printing command line output from converting to lp file \n")
+        print(result.stdout)
+        print(result.stderr)
+        print("\n Time taken: {} for converting to lp file \n\n########################\n ".format(time.time()-start))
+        #save stdout and err to file
+        log_file.write(result.stdout)
+        log_file.write(result.stderr)
+        #save time taken to log_file
+        log_file.write("\n Time taken: {} for converting to lp file \n\n########################\n ".format(time.time()-start))
 
-#convert to csv
-start = time.time()
-result = subprocess.run("otoole results cbc csv {}/cbc_results_{}.txt {}/results_cbc_{}.txt {}/src/{}".format(tmp_directory,economy,tmp_directory,economy,root_dir, results_config_file),shell=True, capture_output=True, text=True)
-print("\n Printing command line output from converting cbc output to csv \n")
-print(result.stdout)
-print(result.stderr)
-print('\n Time taken: {} for converting cbc output to csv \n'.format(time.time()-start))
+        #input into cbc solver:
+        start = time.time()
+        result = subprocess.run(f"cbc {tmp_directory}/cbc_input_{economy}_{scenario}.lp solve solu {tmp_directory}/cbc_results_{economy}_{scenario}.txt",shell=True, capture_output=True, text=True)
+        print("\n Printing command line output from CBC solver \n")
+        print(result.stdout)
+        print(result.stderr)
+        print("\n Time taken: {} for CBC solver \n\n########################\n ".format(time.time()-start))
+        #save stdout and err to file
+        log_file.write(result.stdout)
+        log_file.write(result.stderr)
+        #save time taken to log_file
+        log_file.write("\n Time taken: {} for CBC solver \n\n########################\n ".format(time.time()-start))
 
+        #convert to csv
+        start = time.time()
+        result = subprocess.run(f"otoole results cbc csv {tmp_directory}/cbc_results_{economy}_{scenario}.txt {tmp_directory} {path_to_results_config}",shell=True, capture_output=True, text=True)
+        print("\n Printing command line output from converting cbc output to csv \n")#results_cbc_{economy}_{scenario}.txt
+        print(result.stdout)
+        print(result.stderr)
+        print('\n Time taken: {} for converting cbc output to csv \n\n########################\n '.format(time.time()-start))
+        #save stdout and err to log_file
+        log_file.write(result.stdout)
+        log_file.write(result.stderr)
+        #save time taken to log_file
+        log_file.write("\n Time taken: {} for converting cbc output to csv \n\n########################\n ".format(time.time()-start))
+
+#close log_file
+log_file.close()
+    
 #%%
 ################################################################################
 #Save results as Excel workbook
@@ -252,20 +291,18 @@ start = time.time()
 # Now we take the CSV files and combine them into an Excel file
 # First we need to make a dataframe from the CSV files
 # Note: if you add any new result parameters to osemosys_fast.txt, you need to update results_config.yml
-parent_directory = "{}/results/".format(root_dir)
-child_directory = economy
-path = os.path.join(parent_directory,child_directory)
+results_directory = f"{root_dir}/results/{economy}/{scenario}"
 try:
-    os.mkdir(path)
+    os.mkdir(results_directory)
 except OSError:
     #print ("Creation of the directory %s failed" % path)
     pass
-with open('{}/src/{}'.format(root_dir,results_config_file)) as f:
+with open(f'{path_to_results_config}') as f:
     contents_var = yaml.safe_load(f)
 results_df={}
 for key,value in contents_var.items():
     if contents_var[key]['type'] == 'result':
-        fpath = '{}/'.format(tmp_directory)+key+'.csv'
+        fpath = f'{tmp_directory}/{key}.csv'
         #print(fpath)
         _df = pd.read_csv(fpath).reset_index(drop=True)
         results_df[key] = _df
@@ -307,8 +344,9 @@ results_tables = {k: v for k, v in _result_tables.items() if not v.empty}
 # We take the dataframe of results and save to an Excel file
 print("Creating the Excel file of results. Results saved in the results folder.")
 scenario = scenario.lower()
-if bool(results_tables):
-    with pd.ExcelWriter('{}/results/{}/{}_results_{}_{}.xlsx'.format(root_dir,economy,economy,scenario,model_start)) as writer:
+#if results tables not empty then save to excel
+if results_tables:
+    with pd.ExcelWriter(f'{results_directory}/{economy}_results_{scenario}_{model_start}.xlsx') as writer:
         for k, v in results_tables.items():
             v.to_excel(writer, sheet_name=k, merge_cells=False)
 
@@ -352,8 +390,17 @@ ordered_cols = list(na_counts.index)
 new_combined_data = combined_data[ordered_cols]
 
 #save combined data to csv
-new_combined_data.to_csv(path + '/tall_{}_results_{}_{}.csv'.format(economy,scenario,model_start), index=False)
+new_combined_data.to_csv(f'{results_directory}/tall_{economy}_results_{scenario}_{model_start}.csv', index=False)
 
 print("Time taken: {} for creating the tall csv file of results.".format(time.time()-start))
 #%%
 
+################################################################################
+#create visualisations:
+################################################################################
+# path_to_results_config
+path_to_data_config = f'{root_dir}/config/{data_config_file}'
+path_to_visualisation = f'{results_directory}/energy_system_visualisation_{scenario}_{economy}.png'
+create_res_visualisation(path_to_data_sheet, path_to_visualisation,path_to_data_config)
+
+#%%

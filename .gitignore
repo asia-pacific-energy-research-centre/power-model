@@ -2,6 +2,12 @@
 *.xlsx
 *.csv
 /tmp
+*.png
+*.code-workspace
+*.graphml
+
+# temporary
+testing_virtual_machine.docx 
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
