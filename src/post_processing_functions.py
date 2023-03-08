@@ -12,23 +12,34 @@ if os.getcwd().split('\\')[-1] == 'src':
     os.chdir('..')
     print("Changed directory to root of project")
 
-def remove_apostrophes_from_region_names(tmp_directory, path_to_results_config):
-
-    with open(f'{path_to_results_config}') as f:
-        contents_var = yaml.safe_load(f)
-    for key in contents_var.keys():
-        if contents_var[key]['type'] == 'result':
-            fpath = f'{tmp_directory}/{key}.csv'
-            #chekc if file exists
-            if not os.path.exists(fpath):
-                print(f'File {fpath} does not exist')#We need to double check we are handling data_config and results_config correctly
-                continue
-            #print(fpath)
+def remove_apostrophes_from_region_names(tmp_directory, path_to_results_config, remove_all_in_temp_dir):
+    if remove_all_in_temp_dir:
+        #get all csv files in the temp directory
+        files = [f for f in os.listdir(tmp_directory) if f.endswith('.csv')]
+        for f in files:
+            fpath = f'{tmp_directory}/{f}'
             _df = pd.read_csv(fpath).reset_index(drop=True)
             #change the region names to remove apostrophes if they are at the start or end of the string
             _df['REGION'] = _df['REGION'].str.strip("'")
             _df.to_csv(fpath,index=False)
-    return
+        return
+    else:
+            
+        with open(f'{path_to_results_config}') as f:
+            contents_var = yaml.safe_load(f)
+        for key in contents_var.keys():
+            if contents_var[key]['type'] == 'result':
+                fpath = f'{tmp_directory}/{key}.csv'
+                #chekc if file exists
+                if not os.path.exists(fpath):
+                    print(f'File {fpath} does not exist')#We need to double check we are handling data_config and results_config correctly
+                    continue
+                #print(fpath)
+                _df = pd.read_csv(fpath).reset_index(drop=True)
+                #change the region names to remove apostrophes if they are at the start or end of the string
+                _df['REGION'] = _df['REGION'].str.strip("'")
+                _df.to_csv(fpath,index=False)
+        return
 
 def save_results_as_excel(tmp_directory, results_directory,path_to_results_config, economy, scenario, model_start):
         

@@ -5,7 +5,7 @@
 *.png
 *.code-workspace
 *.graphml
-
+archive/
 # temporary
 testing_virtual_machine.docx 
 

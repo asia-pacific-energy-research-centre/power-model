@@ -39,12 +39,12 @@ When the script runs, the following temporary files are saved in `./tmp/ECONOMY 
 - combined_data_ECONOMYNAME_SCENARIO.xlsx
 - datafile_from_python_ECONOMYNAME_SCENARIO.txt
 - model_ECONOMYNAME_SCENARIO.txt
-- process_output_{economy}_{scenario}.txt
+- process_log_{economy}_{scenario}.txt
 The above files are created before OSeMOSYS runs. If you notice that OSeMOSYS gives you an error, check these files. The combined data Excel file is easy to check. You can see if there is missing data, typos, etc. This Excel file is converted to the text version (datafile_from_python). Finally, check the model text file. This is the file with sets, parameters, and equations that contains the OSeMOSYS model.
 
 If the model solves successfully, a bunch of CSV files will be written to the same tmp folder. These are then combined and saved in the `results` folder as an Excel file.
 
-If there is an error message saying the model is infeasible, check your model data. You can also double check the process_output_{economy}_{scenario}.txt file for outputs from the solving process. If the model is infeasible, the results files will not be written and you will get a "file not found" error message. This is your clue that the model did not solve. You always want to see a message in the solver output saying "OPTIMAL LP SOLUTION FOUND".
+If there is an error message saying the model is infeasible, check your model data. You can also double check the process_log_{economy}_{scenario}.txt file for outputs from the solving process. If the model is infeasible, the results files will not be written and you will get a "file not found" error message. This is your clue that the model did not solve. You always want to see a message in the solver output saying "OPTIMAL LP SOLUTION FOUND".
 
 ## Running OsEMOSYS CLOUD
 It may be better to use OsEMOSYS CLOUD. In this case refer to the ./documentation/Running_osemosys_cloud.docx file for instructions.

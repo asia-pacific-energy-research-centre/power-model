@@ -210,4 +210,10 @@ def compare_combined_data_to_data_config(data_config,combined_data):
     #finish
     return
 
+def prepare_osemosys_model_script_for_cbc():
+    #this is a function prepared in case we need to decrease the size of some vraiables in the osemosys model script to make it work with cbc. This is because we get errors like  ### CoinLpIO::is_invalid_name(): Name SC4_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint('19_THA',BAT,3,2,4,2022) is too long in the output when running cbc ./tmp/19_THA/Reference/cbc_input_19_THA_Reference.lp solve solu ./tmp/19_THA/Reference/cbc_results_19_THA_Reference.txt
+    # They variable names in question are stated below, although it is not clear yet that they should be changed:
+    long_vars = ['SC4_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint','SC1_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint', 'SC3_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint', 'SC2_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint']
+    return
+
 

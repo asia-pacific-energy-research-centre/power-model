@@ -23,14 +23,14 @@ model_start = time.strftime("%Y-%m-%d-%H%M%S")
 root_dir = '.' # because this file is in src, the root may change if it is run from this file or from command line
 config_dir = 'config'
 #save name of the inputted data sheet here for ease of use:
-input_data_sheet_file= "data-sheet-power-finn-test.xlsx"#current data-sheet-power has no data in it
+input_data_sheet_file= "data-sheet-power-24ts.xlsx"#"data-sheet-power-finn-test.xlsx"#current data-sheet-power has no data in it
 data_config_file = "data_config_copy.yml"
 results_config_file = "results_config_copy_test.yml"
 #define the model script you will use (one of osemosys_fast.txt, osemosys.txt, osemosys_short.txt)
 osemosys_model_script = 'osemosys_fast.txt'
 osemosys_cloud = True
 
-solving_methods = ['glpsol','coin-cbc']#pick from glpsol, coin-cbc 
+solving_methods = ['coin-cbc']#pick from glpsol, coin-cbc 
 #%%
 ################################################################################
 #FOR RUNNING THROUGH JUPYTER INTERACTIVE NOTEBOOK (FINNS SETUP, need to make root of project the cwd)
@@ -84,24 +84,23 @@ print("\nTime taken for preparation: {}\n########################\n ".format(tim
 #SOLVE MODEL
 #Pull in the prepared data file and solve the model
 ################################################################################
-#start new timer to time the solving process
-start = time.time()
-
 # We first make a copy of osemosys_fast.txt so that we can modify where the results are written.
 # Results from OSeMOSYS come in csv files. We first save these to the tmp directory for each economy.
 # making a copy of the model file in the tmp directory so it can be modified
 
 if not osemosys_cloud:
+    #start new timer to time the solving process
+    start = time.time()
     for osemosys_model_script in ['osemosys_fast.txt']:#,'osemosys.txt', 'osemosys_short.txt']:
         print(f'\n######################## \n Running solve process using{osemosys_model_script}')
 
-        osemosys_model_script_path,model_file_path,log_file_path,cbc_intermediate_data_file_path,cbc_results_data_file_path = prepare_solving_process(root_dir, config_dir,  tmp_directory, economy, scenario,osemosys_model_script='osemosys_fast.txt')
+        osemosys_model_script_path,model_file_path,log_file,cbc_intermediate_data_file_path,cbc_results_data_file_path = prepare_solving_process(root_dir, config_dir,  tmp_directory, economy, scenario,change_model_script=False,osemosys_model_script='osemosys_fast.txt')
 
         for solving_method in solving_methods:
-            solve_model(solving_method, tmp_directory, path_to_results_config,log_file_path,model_file_path,path_to_input_data_file,cbc_intermediate_data_file_path,cbc_results_data_file_path)
+            log_file = solve_model(solving_method, tmp_directory, path_to_results_config,log_file,model_file_path,path_to_input_data_file,cbc_intermediate_data_file_path,cbc_results_data_file_path)
             print(f'\n######################## \n Running solve process using{osemosys_model_script} for {solving_method} {economy} {scenario}')
             print("Time taken for solve_model: {}\n########################\n ".format(time.time()-start))
-
+        log_file.close()
 #%%
 ################################################################################
 #Post processing
@@ -115,17 +114,19 @@ if osemosys_cloud:
         print("No results found in directory.")
         sys.exit()
         
-    remove_apostrophes_from_region_names(tmp_directory, path_to_results_config)
-    # save_results_as_excel_OSMOSYS_CLOUD(tmp_directory, path_to_results_config, economy, scenario, root_dir,model_start)
-    # tmp_directory, path_to_results_config, economy, scenario, root_dir,model_start = 
+remove_apostrophes_from_region_names(tmp_directory, path_to_results_config,remove_all_in_temp_dir=True)
+# save_results_as_excel_OSMOSYS_CLOUD(tmp_directory, path_to_results_config, economy, scenario, root_dir,model_start)
+# tmp_directory, path_to_results_config, economy, scenario, root_dir,model_start = 
 
 save_results_as_excel(tmp_directory, results_directory,path_to_results_config, economy, scenario, model_start)
 
 print("\nTime taken for save_results_as_excel: {}\n########################\n ".format(time.time()-start))
+start = time.time()
 
 save_results_as_long_csv(tmp_directory, results_directory,economy, scenario, model_start)
 print("\nTime taken for save_results_as_long_csv: {}\n########################\n ".format(time.time()-start))
 
+start = time.time()
 #Visualisation:
 path_to_results_config = path_to_data_config
 create_res_visualisation(path_to_results_config,scenario,economy,path_to_input_data_file,results_directory)

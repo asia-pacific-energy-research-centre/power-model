@@ -17,51 +17,53 @@ if os.getcwd().split('\\')[-1] == 'src':
 #Pull in the prepared data file and solve the model
 ################################################################################
 
-def prepare_solving_process(root_dir, config_dir,  tmp_directory, economy, scenario,osemosys_model_script='osemosys_fast.txt'):
+def prepare_solving_process(root_dir, config_dir,  tmp_directory, economy, scenario,change_model_script,osemosys_model_script='osemosys_fast.txt'):
     #start time
     start = time.time()
     # We first make a copy of osemosys_fast.txt so that we can modify where the results are written.
     # Results from OSeMOSYS come in csv files. We first save these to the tmp directory for each economy.
     # making a copy of the model file in the tmp directory so it can be modified
 
-    print(f'\n######################## \n Running solve process using{osemosys_model_script}')
+    print(f'\n######################## \n Running solve process using {osemosys_model_script}')
 
     osemosys_model_script_path = f'{root_dir}/{config_dir}/{osemosys_model_script}'
+    model_file_path = osemosys_model_script_path
+    if change_model_script:
+        model_file_path = f'{tmp_directory}/model_{economy}_{scenario}.txt'
 
-    model_file_path = f'{tmp_directory}/model_{economy}_{scenario}.txt'
+        with open(osemosys_model_script_path) as t:
+            model_text = t.read()
+        f = open(model_file_path,'w')
+        f.write('%s\n'% model_text)
+        f.close()
 
-    with open(osemosys_model_script_path) as t:
-        model_text = t.read()
-    f = open(model_file_path,'w')
-    f.write('%s\n'% model_text)
-    f.close()
-
-    # Read in the file again to modify it
-    with open(model_file_path, 'r') as file:
-        filedata = file.read()
-    # Replace the target string
-    filedata = filedata.replace("param ResultsPath, symbolic default 'results';",f"param ResultsPath, symbolic default '{tmp_directory}';")
-    # Write the file out again
-    with open(model_file_path, 'w') as file:
-        file.write(filedata)
+        # Read in the file again to modify it
+        with open(model_file_path, 'r') as file:
+            filedata = file.read()
+        # Replace the target string
+        filedata = filedata.replace("param ResultsPath, symbolic default 'results';",f"param ResultsPath, symbolic default '{tmp_directory}';")#why are we doing this?
+        # Write the file out again
+        with open(model_file_path, 'w') as file:
+            file.write(filedata)
 
     #create path to save copy of outputs to txt file in case of error:
-    log_file_path = f'{tmp_directory}/process_output_{economy}_{scenario}.txt'
+    log_file_path = f'{tmp_directory}/process_log_{economy}_{scenario}.txt'
+    #save copy of outputs to txt file in case of error:
+    log_file = open(log_file_path,'w')
+    #TODO implement something like https://stackoverflow.com/questions/24849998/how-to-catch-exception-output-from-python-subprocess-check-output
 
-    cbc_intermediate_data_file_path = '{tmp_directory}/cbc_input_{economy}_{scenario}.lp'
-    cbc_results_data_file_path='{tmp_directory}/cbc_results_{economy}_{scenario}.txt'
+    cbc_intermediate_data_file_path = f'{tmp_directory}/cbc_input_{economy}_{scenario}.lp'
+    cbc_results_data_file_path=f'{tmp_directory}/cbc_results_{economy}_{scenario}.txt'
 
     print("\nTime taken: {}\n########################\n ".format(time.time()-start))
 
-    return osemosys_model_script_path,model_file_path,log_file_path,cbc_intermediate_data_file_path,cbc_results_data_file_path
+    return osemosys_model_script_path,model_file_path,log_file,cbc_intermediate_data_file_path,cbc_results_data_file_path
 
-def solve_model(solving_method, tmp_directory, path_to_results_config,log_file_path,model_file_path,path_to_input_data_file,cbc_intermediate_data_file_path,cbc_results_data_file_path):
-        
-    #save copy of outputs to txt file in case of error:
-    log_file = open(log_file_path,'w')
-
+def solve_model(solving_method, tmp_directory, path_to_results_config,log_file,model_file_path,path_to_input_data_file,cbc_intermediate_data_file_path,cbc_results_data_file_path):
+    
     #previous solving method:
     if solving_method == 'glpsol':
+        start = time.time()
         command =f"glpsol -d {path_to_input_data_file} -m {model_file_path}"
         result = subprocess.run(command,shell=True, capture_output=True, text=True)
 
@@ -129,10 +131,6 @@ def solve_model(solving_method, tmp_directory, path_to_results_config,log_file_p
         #save time taken to log_file
         log_file.write("\n Time taken: {} for converting cbc output to csv \n\n########################\n ".format(time.time()-start))
 
-
-    #close log_file
-    log_file.close()
-
-    return
+    return log_file
     
 
