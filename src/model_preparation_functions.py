@@ -6,6 +6,7 @@ import yaml
 import os
 from otoole.read_strategies import ReadExcel
 from otoole.write_strategies import WriteDatafile
+import shutil
 
 #make directory the root of the project
 if os.getcwd().split('\\')[-1] == 'src':
@@ -54,8 +55,6 @@ def set_up_paths(scenario, economy, root_dir, config_dir, results_config_file,da
 
     
     path_to_data_workbook = f'{tmp_directory}/combined_data_{economy}_{scenario}.xlsx'
-    # if os.path.exists(path_to_data_sheet):
-    #     os.remove(path_to_data_sheet)
 
     input_data_file_path=f"{root_dir}/data/{input_data_sheet_file}"
 
@@ -63,11 +62,33 @@ def set_up_paths(scenario, economy, root_dir, config_dir, results_config_file,da
 
     path_to_input_data_file = f'{tmp_directory}/datafile_from_python_{economy}_{scenario}.txt'
      
-    return tmp_directory, results_directory, path_to_results_config, path_to_data_config, path_to_data_config, path_to_data_workbook, input_data_file_path,path_to_combined_data_sheet,path_to_input_data_file
+    #create path to save copy of outputs to txt file in case of error:
+    log_file_path = f'{tmp_directory}/process_log_{economy}_{scenario}.txt'
 
-def import_data_config(path_to_data_config):
+    #TODO implement something like https://stackoverflow.com/questions/24849998/how-to-catch-exception-output-from-python-subprocess-check-output
 
-    with open(path_to_data_config) as f:
+    cbc_intermediate_data_file_path = f'{tmp_directory}/cbc_input_{economy}_{scenario}.lp'
+    cbc_results_data_file_path=f'{tmp_directory}/cbc_results_{economy}_{scenario}.txt'
+
+    #PUT EVERYTHING IN A DICTIONARY
+    paths_dict = {}
+    paths_dict['tmp_directory'] = tmp_directory
+    paths_dict['results_directory'] = results_directory
+    paths_dict['path_to_results_config'] = path_to_results_config
+    paths_dict['path_to_data_config'] = path_to_data_config
+    paths_dict['path_to_data_workbook'] = path_to_data_workbook
+    paths_dict['input_data_file_path'] = input_data_file_path
+    paths_dict['path_to_combined_data_sheet'] = path_to_combined_data_sheet
+    paths_dict['path_to_input_data_file'] = path_to_input_data_file
+    paths_dict['log_file_path'] = log_file_path
+    paths_dict['cbc_intermediate_data_file_path'] = cbc_intermediate_data_file_path
+    paths_dict['cbc_results_data_file_path'] = cbc_results_data_file_path
+
+    return paths_dict
+
+def import_data_config(paths_dict):
+
+    with open(paths_dict['path_to_data_config']) as f:
         data_config = yaml.safe_load(f)
 
     ##change to handle v1.0 of otoole:
@@ -87,10 +108,10 @@ def import_data_config(path_to_data_config):
     return data_config_short_names, short_to_long_name, data_config
 
 
-def import_and_clean_data(data_config_short_names, economy,scenario,input_data_file_path):
+def import_and_clean_data(data_config_short_names, economy,scenario,paths_dict):
     # read in the data file and filter based on the specific scenario and preferences
     subset_of_economies = economy
-    input_data_raw = pd.read_excel(input_data_file_path,sheet_name=None) # creates dict of dataframes
+    input_data_raw = pd.read_excel(paths_dict['input_data_file_path'],sheet_name=None) # creates dict of dataframes
     print("Excel file successfully read.\n")    
     #keep only sheets in dict where we have a key for it in the data_config (although since some sheets have shortened names we need to use data_config_short_names)
     input_data = {}
@@ -120,8 +141,8 @@ def import_and_clean_data(data_config_short_names, economy,scenario,input_data_f
 
     return filtered_data
 
-def write_data_to_tmp(filtered_data, config_dict, path_to_data_workbook):
-    with pd.ExcelWriter(path_to_data_workbook) as writer:
+def write_data_to_tmp(filtered_data, config_dict, paths_dict):
+    with pd.ExcelWriter(paths_dict['path_to_data_workbook']) as writer:
         for k, v in filtered_data.items():
             v.to_excel(writer, sheet_name=k, index=False, merge_cells=False)
     print("Combined file of Excel input data has been written to the tmp folder.\n")
@@ -132,11 +153,10 @@ def write_data_to_tmp(filtered_data, config_dict, path_to_data_workbook):
     return subset_of_years
 
 
-def prepare_data_for_osemosys(data_config_short_names, data_config, path_to_combined_data_sheet,
-    path_to_input_data_file,subset_of_years):
+def prepare_data_for_osemosys(data_config_short_names, data_config, paths_dict,subset_of_years):
     reader = ReadExcel(user_config=data_config)
     writer = WriteDatafile(user_config=data_config)
-    data, default_values = reader.read(path_to_combined_data_sheet)
+    data, default_values = reader.read(paths_dict['path_to_combined_data_sheet'])
     
     # Filter for the years we want
     filtered_data2 = {}
@@ -160,9 +180,9 @@ def prepare_data_for_osemosys(data_config_short_names, data_config, path_to_comb
         else:
             filtered_data2[key] = _df
 
-    writer.write(filtered_data2, path_to_input_data_file, default_values)
+    writer.write(filtered_data2, paths_dict['path_to_input_data_file'], default_values)
     
-    print(f"Data file in text format has been written and saved in the tmp folder as {path_to_input_data_file}. This is the file you would use in OsEMOSYS Cloud as data if you are using that.\n")
+    print(f"Data file in text format has been written and saved in the tmp folder as {paths_dict['path_to_input_data_file']}. This is the file you would use in OsEMOSYS Cloud as data if you are using that.\n")
     return 
 
 def compare_combined_data_to_data_config(data_config,combined_data):
@@ -217,3 +237,32 @@ def prepare_osemosys_model_script_for_cbc():
     return
 
 
+def prepare_model_script(economy, scenario, root_dir, config_dir, osemosys_model_script, osemosys_cloud,paths_dict):
+    #either modfiy the model script if it is being used locally so the resultsPath is in tmp_directory, or if it is being used in the cloud, then just move the model script to the tmp_directory for ease of access
+    paths_dict['osemosys_model_script_path'] = f'{root_dir}/{config_dir}/{osemosys_model_script}'
+
+    tmp_directory = paths_dict['tmp_directory']
+    paths_dict['new_osemosys_model_script_path'] = f'{tmp_directory}/model_{economy}_{scenario}.txt'
+    if not osemosys_cloud:
+
+        with open(paths_dict['osemosys_model_script_path']) as t:
+            model_text = t.read()
+        f = open(paths_dict['new_osemosys_model_script_path'],'w')
+        f.write('%s\n'% model_text)
+        f.close()
+
+        # Read in the file again to modify it
+        with open(paths_dict['new_osemosys_model_script_path'], 'r') as file:
+            filedata = file.read()
+        # Replace the target string
+        filedata = filedata.replace("param ResultsPath, symbolic default 'results';",f"param ResultsPath, symbolic default '{paths_dict['tmp_directory']}';")#this makes it so that the results are saved in the tmp directory before we format them
+
+        # Write the file out again
+        with open(paths_dict['new_osemosys_model_script_path'], 'w') as file:
+            file.write(filedata)
+    else:
+        shutil.copy(paths_dict['osemosys_model_script_path'], paths_dict['new_osemosys_model_script_path'])
+
+    print(f'\n######################## \n Running solve process using {osemosys_model_script}')
+
+    return paths_dict
