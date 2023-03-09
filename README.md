@@ -11,7 +11,7 @@ Make sure you run this command in the folder you want.
 
 You need to create a conda environment. To install, move to your working directory and copy and paste the following in your command line:
 
-`conda create --prefix ./env python=3.9 pandas numpy xlrd glpk`
+`conda env create --prefix ./env --file ./config/env.yml`
 
 Install otoole. Activate your environment before installing otoole!!
 
