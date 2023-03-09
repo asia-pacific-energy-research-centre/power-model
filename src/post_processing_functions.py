@@ -1,19 +1,21 @@
-
-
-
 import pandas as pd
 import numpy as np
 import yaml
 import os
 import time
 import subprocess
+
 #make directory the root of the project
 if os.getcwd().split('\\')[-1] == 'src':
     os.chdir('..')
     print("Changed directory to root of project")
 
-def remove_apostrophes_from_region_names(tmp_directory, path_to_results_config, remove_all_in_temp_dir):
+def remove_apostrophes_from_region_names(paths_dict, remove_all_in_temp_dir):
+    #remove apostrophes from the region names in the results files
+    #if remove_all_in_temp_dir is True, then all csv files in the temp directory will be checked for apostrophes, else only the results files will be checked. This is a way of including files that are not in the results_config file
     if remove_all_in_temp_dir:
+        tmp_directory = paths_dict['tmp_directory']
+
         #get all csv files in the temp directory
         files = [f for f in os.listdir(tmp_directory) if f.endswith('.csv')]
         for f in files:
@@ -24,6 +26,8 @@ def remove_apostrophes_from_region_names(tmp_directory, path_to_results_config, 
             _df.to_csv(fpath,index=False)
         return
     else:
+        tmp_directory = paths_dict['tmp_directory']
+        path_to_results_config = paths_dict['path_to_results_config']
             
         with open(f'{path_to_results_config}') as f:
             contents_var = yaml.safe_load(f)
@@ -41,8 +45,11 @@ def remove_apostrophes_from_region_names(tmp_directory, path_to_results_config, 
                 _df.to_csv(fpath,index=False)
         return
 
-def save_results_as_excel(tmp_directory, results_directory,path_to_results_config, economy, scenario, model_start):
-        
+def save_results_as_excel(paths_dict, economy, scenario, model_start):
+    tmp_directory = paths_dict['tmp_directory']
+    results_directory = paths_dict['results_directory']
+    path_to_results_config = paths_dict['path_to_results_config']
+
     # Now we take the CSV files and combine them into an Excel file
     # First we need to make a dataframe from the CSV files
     # Note: if you add any new result parameters to osemosys_fast.txt, you need to update results_config.yml
@@ -100,13 +107,15 @@ def save_results_as_excel(tmp_directory, results_directory,path_to_results_confi
                 v.to_excel(writer, sheet_name=k, merge_cells=False)
     return
 
-def save_results_as_long_csv(tmp_directory,results_directory, economy, scenario, model_start):
+def save_results_as_long_csv(paths_dict, economy, scenario, model_start):
+    tmp_directory = paths_dict['tmp_directory']
+    results_directory = paths_dict['results_directory']
 
     # print('There are probably significant issues with this function because it is also saving the data config files to the long csv')
     
     #create_lsit of csvs in tmp_directory:
     csv_list = [x for x in os.listdir(tmp_directory) if x.split('.')[-1] == 'csv']
-
+    combined_data = pd.DataFrame()
     #iterate through sheets in tmp
     for file in csv_list:
         #if file is not a csv or is in this list then skip it
@@ -155,7 +164,11 @@ def save_results_as_long_csv(tmp_directory,results_directory, economy, scenario,
     return
 
 
-def create_res_visualisation(path_to_results_config,scenario,economy,path_to_input_data_file,results_directory):
+def create_res_visualisation(paths_dict,scenario,economy):
+    results_directory = paths_dict['results_directory']
+    path_to_input_data_file = paths_dict['path_to_input_data_file']
+    path_to_results_config = paths_dict['path_to_results_config']
+
     #run visualisation tool
     #https://otoole.readthedocs.io/en/latest/
 
@@ -172,7 +185,10 @@ def create_res_visualisation(path_to_results_config,scenario,economy,path_to_inp
     print(command)
     return
 
-def extract_osmosys_cloud_results_to_csv(tmp_directory, path_to_results_config):
+def extract_osmosys_cloud_results_to_csv(paths_dict):
+    tmp_directory = paths_dict['tmp_directory']
+    path_to_results_config = paths_dict['path_to_results_config']
+
     #load in the result.txt file from osmosys cloud and make it into csvs like we would if we ran osemosys locally. Note that this is the result.txt file you get when you downlaod result_####.zip from osmosys cloud and extract the result.txt file
     #we will just run the file through the f"otoole results cbc csv {tmp_directory}/cbc_results_{economy}_{scenario}.txt {tmp_directory} {path_to_results_config}" script to make the csvs. That script is from the model_solving_functions.solve_model() function
     #remember to put the results file in the tmp directory
