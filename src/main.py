@@ -8,7 +8,7 @@ import time
 import os
 import sys
 from post_processing_functions import create_res_visualisation, save_results_as_excel,save_results_as_long_csv,remove_apostrophes_from_region_names, extract_osmosys_cloud_results_to_csv
-from model_preparation_functions import import_run_preferences, import_data_config, import_and_clean_data, write_data_to_tmp,compare_combined_data_to_data_config, prepare_data_for_osemosys, set_up_paths,prepare_model_script
+from model_preparation_functions import import_run_preferences, import_data_config, prepare_data_for_osemosys, set_up_paths,extract_input_data,write_data_to_temp_workbook,prepare_data_for_osemosys,prepare_model_script_for_osemosys, validate_input_data
 from model_solving_functions import solve_model
 # the processing script starts from here
 # get the time you started the model so the results will have the time in the filename
@@ -19,21 +19,23 @@ print(f"Script started at {model_start}...\n")
 #%%
 #################################################################################MANUALLY SET THESE VARIABLES
 ################################################################################
-model_start = time.strftime("%Y-%m-%d-%H%M%S")
+FILE_DATE_ID = time.strftime("%Y-%m-%d-%H%M%S")
 root_dir = '.' # because this file is in src, the root may change if it is run from this file or from command line
 config_dir = 'config'
 #save name of the inputted data sheet here for ease of use:
-input_data_sheet_file= "data-sheet-power-finn-test.xlsx"#"data-sheet-power-24ts.xlsx"#"data-sheet-power-finn-test.xlsx"#current data-sheet-power has no data in it
-data_config_file = "data_config_copy.yml"
-results_config_file = "results_config_copy_test.yml"
+input_data_sheet_file="data-sheet-power-finn-test.xlsx"# "data-sheet-power-24ts.xlsx"#"data-sheet-power-finn-test.xlsx"#"data-sheet-power-24ts.xlsx"#"data-sheet-power-finn-test.xlsx"#current data-sheet-power has no data in it
+data_config_file = "otoole_config.yml"#_copy.yml"
+# results_config_file = "results_config_copy_test.yml"
 #define the model script you will use (one of osemosys_fast.txt, osemosys.txt, osemosys_short.txt)
-osemosys_model_script = 'osemosys_fast_test.txt'# 'osemosys_fast.txt'
+osemosys_model_script = 'osemosys_fast.txt'# 'osemosys_fast.txt'
 osemosys_cloud = False
 
-solving_method = 'coin-cbc'#'glpsol'#coin-cbc'#pick from glpsol, coin-cbc 
+solving_method = 'glpsol'#'coin-cbc'#coin-cbc'#'coin-cbc'#'glpsol'#coin-cbc'#pick from glpsol, coin-cbc 
+
+strict_error_checking = True #if true, will raise errors if there are missing data or data that is not in the data config file. If false, will just print a warning and continue
 #%%
 ################################################################################
-#FOR RUNNING THROUGH JUPYTER INTERACTIVE NOTEBOOK (FINNS SETUP, need to make root of project the cwd)
+#FOR RUNNING THROUGH JUPYTER INTERACTIVE NOTEBOOK (FINNS SETUP, need to make root of project the cwd so we can import functions properly)
 ################################################################################
 def is_notebook() -> bool:
     try:
@@ -64,23 +66,22 @@ if is_notebook():
 #start timer
 start = time.time()
 
-config_dict, economy, scenario, years = import_run_preferences(root_dir, input_data_sheet_file)
-years = 2022#todo remove
+config_dict, economy, scenario, model_end_year = import_run_preferences(root_dir, input_data_sheet_file)
+model_end_year = 2030
+paths_dict = set_up_paths(scenario, economy, root_dir, config_dir ,data_config_file, input_data_sheet_file,osemosys_model_script,osemosys_cloud,FILE_DATE_ID)
 
-paths_dict = set_up_paths(scenario, economy, root_dir, config_dir, results_config_file,data_config_file, input_data_sheet_file,osemosys_cloud)
+input_keys, results_keys, data_config,data_config_short_names = import_data_config(paths_dict)
 
-data_config_short_names, short_to_long_name, data_config = import_data_config(paths_dict)
+filtered_input_data = extract_input_data(paths_dict, input_keys, model_end_year,economy,scenario)
+print("\nTime taken to extract input data: {}\n########################\n ".format(time.time()-start))
 
-filtered_data = import_and_clean_data(data_config_short_names, economy,scenario,paths_dict)
+write_data_to_temp_workbook(paths_dict, filtered_input_data)
 
-subset_of_years = write_data_to_tmp(filtered_data, config_dict, paths_dict)
+prepare_data_for_osemosys(paths_dict,data_config)
 
-prepare_data_for_osemosys(data_config_short_names, data_config, paths_dict, subset_of_years)
-
-paths_dict = prepare_model_script(economy, scenario, root_dir, config_dir, osemosys_model_script, osemosys_cloud,paths_dict)
-
-#%%
-print("\nTime taken for preparation: {}\n########################\n ".format(time.time()-start))
+prepare_model_script_for_osemosys(paths_dict, osemosys_cloud)
+# validate_input_data(paths_dict)# todo: fix this function
+print("\nTotal time taken for preparation: {}\n########################\n ".format(time.time()-start))
 #%%
 
 ################################################################################
@@ -111,31 +112,25 @@ if not osemosys_cloud:
 start = time.time()
 
 if osemosys_cloud:
-    results_in_directory = extract_osmosys_cloud_results_to_csv(paths_dict)
+    results_in_directory = extract_osmosys_cloud_results_to_csv(paths_dict,remove_results_txt_file=True)
     if not results_in_directory:
         print("No results found in directory.")
         sys.exit()
         
-remove_apostrophes_from_region_names(paths_dict,remove_all_in_temp_dir=False)
-# save_results_as_excel_OSMOSYS_CLOUD(tmp_directory, path_to_results_config, economy, scenario, root_dir,model_start)
-# tmp_directory, path_to_results_config, economy, scenario, root_dir,model_start = 
+remove_apostrophes_from_region_names(paths_dict, osemosys_cloud, results_keys, data_config_short_names)
 
-save_results_as_excel(paths_dict, economy, scenario, model_start)
+save_results_as_excel(paths_dict, scenario, results_keys,data_config_short_names)
 
 print("\nTime taken for save_results_as_excel: {}\n########################\n ".format(time.time()-start))
 start = time.time()
 
-save_results_as_long_csv(paths_dict,economy, scenario, model_start)
+save_results_as_long_csv(paths_dict,results_keys)
 print("\nTime taken for save_results_as_long_csv: {}\n########################\n ".format(time.time()-start))
 
 start = time.time()
 #Visualisation:
-paths_dict['path_to_results_config'] = paths_dict['path_to_data_config']
 create_res_visualisation(paths_dict,scenario,economy)
 print("\nTime taken for create_res_visualisation: {}\n########################\n ".format(time.time()-start))
 #%%
 
-#errors to check for:
-#files being saved to the resaults folder rather than the tmp folder, also being put in ./results/ rather than ./results/economy/scenario
-#try the same with the cloud version and compare results
-#can we get over this accumulated new error?
+

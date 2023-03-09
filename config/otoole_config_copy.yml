@@ -307,7 +307,7 @@ AnnualEmissions:
     type: result
     dtype: float
     default: 0
-    calculated: True
+    calculated: False
 AccumulatedNewCapacity:
     indices: [REGION, TECHNOLOGY, YEAR]
     type: result
@@ -319,37 +319,37 @@ AnnualFixedOperatingCost:
     type: result
     dtype: float
     default: 0
-    calculated: True
+    calculated: False
 AnnualTechnologyEmission:
     indices: [REGION, TECHNOLOGY, EMISSION, YEAR]
     type: result
     dtype: float
     default: 0
-    calculated: True
+    calculated: False
 AnnualTechnologyEmissionByMode:
     indices: [REGION, TECHNOLOGY, EMISSION, MODE_OF_OPERATION, YEAR]
     type: result
     dtype: float
     default: 0
-    calculated: True
+    calculated: False
 AnnualVariableOperatingCost:
     indices: [REGION, TECHNOLOGY, YEAR]
     type: result
     dtype: float
     default: 0
-    calculated: True
+    calculated: False
 CapitalInvestment:
     indices: [REGION, TECHNOLOGY, YEAR]
     type: result
     dtype: float
     default: 0
-    calculated: True
+    calculated: False
 Demand:
     indices: [REGION, TIMESLICE, FUEL, YEAR]
     type: result
     dtype: float
     default: 0
-    calculated: True
+    calculated: False
 DiscountedSalvageValue:
     indices: [REGION, TECHNOLOGY, YEAR]
     type: result
@@ -368,7 +368,7 @@ NewCapacity:
     type: result
     dtype: float
     default: 0
-    calculated: False
+    calculated: True
 NewStorageCapacity:
     indices: [REGION, STORAGE, YEAR]
     type: result
@@ -386,13 +386,13 @@ ProductionByTechnology:
     type: result
     dtype: float
     default: 0
-    calculated: True
+    calculated: False
 ProductionByTechnologyAnnual:
     indices: [REGION, TECHNOLOGY, FUEL, YEAR]
     type: result
     dtype: float
     default: 0
-    calculated: True
+    calculated: False
 RateOfActivity:
     indices: [REGION, TIMESLICE, TECHNOLOGY, MODE_OF_OPERATION, YEAR]
     type: result
@@ -404,7 +404,7 @@ RateOfProductionByTechnology:
     type: result
     dtype: float
     default: 0
-    calculated: True
+    calculated: False
 RateOfProductionByTechnologyByMode:
     short_name: RateOfProductionByTechByMode
     indices: [REGION, TIMESLICE, TECHNOLOGY, MODE_OF_OPERATION, FUEL, YEAR]
@@ -417,13 +417,13 @@ RateOfUseByTechnology:
     type: result
     dtype: float
     default: 0
-    calculated: True
+    calculated: False
 RateOfUseByTechnologyByMode:
     indices: [REGION, TIMESLICE, TECHNOLOGY, MODE_OF_OPERATION, FUEL, YEAR]
     type: result
     dtype: float
     default: 0
-    calculated: True
+    calculated: False
 SalvageValue:
     indices: [REGION, TECHNOLOGY, YEAR]
     type: result
@@ -484,13 +484,13 @@ TotalDiscountedCost:
     type: result
     dtype: float
     default: 0
-    calculated: True
+    calculated: False
 TotalTechnologyAnnualActivity:
     indices: [REGION, TECHNOLOGY, YEAR]
     type: result
     dtype: float
     default: 0
-    calculated: True
+    calculated: False
 TotalTechnologyModelPeriodActivity:
     short_name: TotalTechModelPeriodActivity
     indices: [REGION, TECHNOLOGY]

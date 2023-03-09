@@ -51,3 +51,11 @@ with open('../config/main_data_config.yml', 'w') as file:
 
 
 # %%
+#take a look at the unique type values in every key in otoole_config
+unique_type_values = []
+for key in otoole_config.keys():
+    unique_type_values.append(otoole_config[key]['type'])
+
+unique_type_values = list(set(unique_type_values))
+print(unique_type_values)
+# %%
