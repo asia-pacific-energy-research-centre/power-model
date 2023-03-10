@@ -23,14 +23,16 @@ FILE_DATE_ID = time.strftime("%Y-%m-%d-%H%M%S")
 root_dir = '.' # because this file is in src, the root may change if it is run from this file or from command line
 config_dir = 'config'
 #save name of the inputted data sheet here for ease of use:
-input_data_sheet_file="data-sheet-power-finn-test.xlsx"# "data-sheet-power-24ts.xlsx"#"data-sheet-power-finn-test.xlsx"#"data-sheet-power-24ts.xlsx"#"data-sheet-power-finn-test.xlsx"#current data-sheet-power has no data in it
-data_config_file = "otoole_config.yml"#_copy.yml"
+input_data_sheet_file="data-sheet-power-24ts.xlsx"#"data-sheet-power-finn-test.xlsx"# "data-sheet-power-24ts.xlsx"#"data-sheet-power-finn-test.xlsx"#"data-sheet-power-24ts.xlsx"#"data-sheet-power-finn-test.xlsx"#current data-sheet-power has no data in it
+data_config_file = "otoole_config_original.yml"#_copy.yml"
 # results_config_file = "results_config_copy_test.yml"
 #define the model script you will use (one of osemosys_fast.txt, osemosys.txt, osemosys_short.txt)
+
+#this MUST be one of osmoseys_fast.txt or osemosys.txt. Otherwise we will have to change the code around line 86 of model_solving_functions.py
 osemosys_model_script = 'osemosys_fast.txt'# 'osemosys_fast.txt'
 osemosys_cloud = False
 
-solving_method = 'glpsol'#'coin-cbc'#coin-cbc'#'coin-cbc'#'glpsol'#coin-cbc'#pick from glpsol, coin-cbc 
+solving_method = 'coin-cbc'#'glpsol'#'coin-cbc'#'coin-cbc'#coin-cbc'#'coin-cbc'#'glpsol'#coin-cbc'#pick from glpsol, coin-cbc 
 
 strict_error_checking = True #if true, will raise errors if there are missing data or data that is not in the data config file. If false, will just print a warning and continue
 #%%
@@ -67,20 +69,25 @@ if is_notebook():
 start = time.time()
 
 config_dict, economy, scenario, model_end_year = import_run_preferences(root_dir, input_data_sheet_file)
-model_end_year = 2030
+# model_end_year = 2023
 paths_dict = set_up_paths(scenario, economy, root_dir, config_dir ,data_config_file, input_data_sheet_file,osemosys_model_script,osemosys_cloud,FILE_DATE_ID)
 
-input_keys, results_keys, data_config,data_config_short_names = import_data_config(paths_dict)
+input_keys_short_names, results_keys, data_config,data_config_short_names = import_data_config(paths_dict)
 
-filtered_input_data = extract_input_data(paths_dict, input_keys, model_end_year,economy,scenario)
-print("\nTime taken to extract input data: {}\n########################\n ".format(time.time()-start))
+start2 = time.time()
+filtered_input_data = extract_input_data(paths_dict, input_keys_short_names, model_end_year,economy,scenario)
+print("\nTime taken to extract input data: {}\n########################\n ".format(time.time()-start2))
 
 write_data_to_temp_workbook(paths_dict, filtered_input_data)
 
 prepare_data_for_osemosys(paths_dict,data_config)
 
 prepare_model_script_for_osemosys(paths_dict, osemosys_cloud)
-# validate_input_data(paths_dict)# todo: fix this function
+
+start2 = time.time()
+validate_input_data(paths_dict)# todo: fix this function
+print("\nTime taken to validate data: {}\n########################\n ".format(time.time()-start2))
+
 print("\nTotal time taken for preparation: {}\n########################\n ".format(time.time()-start))
 #%%
 
@@ -117,20 +124,24 @@ if osemosys_cloud:
         print("No results found in directory.")
         sys.exit()
         
-remove_apostrophes_from_region_names(paths_dict, osemosys_cloud, results_keys, data_config_short_names)
+remove_apostrophes_from_region_names(paths_dict, osemosys_cloud, results_keys, data_config)
 
-save_results_as_excel(paths_dict, scenario, results_keys,data_config_short_names)
+#%%
+keys_to_ignore=['TotalDiscountedCost','CapitalInvestment']#dropping these because we know they are causing problems. We will add them back in later
+#drop tehse keys from the results keys list
+results_keys_new = [key for key in results_keys if key not in keys_to_ignore]
+
+save_results_as_excel(paths_dict, scenario, results_keys_new, data_config)
 
 print("\nTime taken for save_results_as_excel: {}\n########################\n ".format(time.time()-start))
 start = time.time()
 
-save_results_as_long_csv(paths_dict,results_keys)
+save_results_as_long_csv(paths_dict,results_keys_new)
 print("\nTime taken for save_results_as_long_csv: {}\n########################\n ".format(time.time()-start))
 
+#%%
 start = time.time()
 #Visualisation:
 create_res_visualisation(paths_dict,scenario,economy)
 print("\nTime taken for create_res_visualisation: {}\n########################\n ".format(time.time()-start))
 #%%
-
-

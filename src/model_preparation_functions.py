@@ -45,20 +45,21 @@ def import_data_config(paths_dict):
     if not all([type in accepted_types for type in types]):
         raise ValueError('Data config contains a type that is not expected. Accepted types are: {}'.format(accepted_types))
 
+    #we want result keys that are calculated to be in the results_keys list
+    results_keys = [key for key in data_config.keys() if data_config[key]['type'] == 'result' and data_config[key]['calculated'] == True]
+
     #repalce any keys with their short_name if they have one
     short_name_keys = [key for key in data_config.keys() if 'short_name' in data_config[key].keys()]
     for key in short_name_keys:
         data_config[data_config[key]['short_name']] = copy.deepcopy(data_config[key])
         del data_config[key]
 
-    #now extract sheets by their type. 
-    set_keys = [key for key in data_config.keys() if data_config[key]['type'] == 'set']
-    param_keys = [key for key in data_config.keys() if data_config[key]['type'] == 'param']
-    result_keys = [key for key in data_config.keys() if data_config[key]['type'] == 'result' and data_config[key]['calculated'] == True]
+    #now extract sheets by their type. We want these to be for their short names if they have one.
+    set_keys_short_names = [key for key in data_config.keys() if data_config[key]['type'] == 'set']
+    param_keys_short_names = [key for key in data_config.keys() if data_config[key]['type'] == 'param']
 
     #join the keys together
-    input_keys = set_keys + param_keys
-    results_keys = result_keys#set_keys + 
+    input_keys_short_names = set_keys_short_names + param_keys_short_names
 
     #reload data config in case it has been changed accidentally
     data_config = yaml.safe_load(open(paths_dict['path_to_data_config']))
@@ -70,17 +71,17 @@ def import_data_config(paths_dict):
         data_config_short_names[short_name] = copy.deepcopy(data_config_short_names[key])
         del data_config_short_names[key]
         
-    return input_keys, results_keys, data_config,data_config_short_names
+    return input_keys_short_names, results_keys, data_config,data_config_short_names
 
 
-def extract_input_data(paths_dict, input_keys, model_end_year,economy,scenario):
+def extract_input_data(paths_dict, input_keys_short_names, model_end_year,economy,scenario):
     #using the data extracted from the data_config.yaml file, extract the data from the excel sheet and save it to a dictionary
     # If we cant find it in the excel sheet, make the user aware.
     filtered_input_data = dict()
     #open excel workbook:
     wb = pd.ExcelFile(paths_dict['input_data_file_path'])
     #now import data from excel sheet:
-    for key in input_keys:
+    for key in input_keys_short_names:
 
         #check the sheet exists in the excel file:
         if key not in wb.sheet_names:
@@ -218,13 +219,17 @@ def set_up_paths(scenario, economy, root_dir, config_dir,data_config_file, input
     #create path to save copy of outputs to txt file in case of error:
     log_file_path = f'{tmp_directory}/process_log_{economy}_{scenario}.txt'
 
+    #check that osemosys_model_script is either 'osemosys.txt' or 'osemosys_fast.txt':
+    if osemosys_model_script not in ['osemosys.txt', 'osemosys_fast.txt']:
+        print(f'ERROR: osemosys_model_script is {osemosys_model_script}. It should be either osemosys.txt or osemosys_fast.txt')
+        raise ValueError
     osemosys_model_script_path = f'{root_dir}/{config_dir}/{osemosys_model_script}'
 
     new_osemosys_model_script_path = f'{tmp_directory}/model_{economy}_{scenario}.txt'
     #TODO implement something like https://stackoverflow.com/questions/24849998/how-to-catch-exception-output-from-python-subprocess-check-output
 
     cbc_intermediate_data_file_path = f'{tmp_directory}/cbc_input_{economy}_{scenario}.lp'
-    cbc_results_data_file_path=f'{tmp_directory}/cbc_results_{economy}_{scenario}.txt'
+    cbc_results_data_file_path=f'{tmp_directory}/cbc_results_{economy}_{scenario}.sol'
 
     results_workbook = f'{results_directory}/{economy}_results_{scenario}_{FILE_DATE_ID}.xlsx'
 
@@ -251,10 +256,12 @@ def set_up_paths(scenario, economy, root_dir, config_dir,data_config_file, input
     return paths_dict
 
 def validate_input_data(paths_dict):
-    """validate the data using otoole validate function"""
-    #for some reason all we get from this function is 
-    # BadZipFile: File is not a zip file    
-    command = f"otoole validate excel {paths_dict['path_to_input_data_file']} {paths_dict['path_to_data_config']}"
+    """validate the data using otoole validate function. One day it would be good to create a validation file for the options:
+        --validate_config VALIDATE_CONFIG
+        Path to a user-defined validation-config file
+    This would probably remove the issue with lots of fuels being labelled as invalid names."""
+
+    command = f"otoole validate datafile {paths_dict['path_to_input_data_file']} {paths_dict['path_to_data_config']}"
 
     start = time.time()
     result = subprocess.run(command,shell=True, capture_output=True, text=True)

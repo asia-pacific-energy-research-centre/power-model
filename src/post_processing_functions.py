@@ -10,7 +10,7 @@ if os.getcwd().split('\\')[-1] == 'src':
     os.chdir('..')
     print("Changed directory to root of project")
 
-def remove_apostrophes_from_region_names(paths_dict, osemosys_cloud, results_keys, data_config_short_names):
+def remove_apostrophes_from_region_names(paths_dict, osemosys_cloud, results_keys, data_config):
     #remove apostrophes from the region names in the results files if they are in there.
 
     #if remove_all_in_temp_dir is True, then all csv files in the temp directory will be checked for apostrophes, else only the results files will be checked. This is a way of including files that are not in the results_config file
@@ -30,7 +30,7 @@ def remove_apostrophes_from_region_names(paths_dict, osemosys_cloud, results_key
     else:
         tmp_directory = paths_dict['tmp_directory']
         for key in results_keys:
-            if data_config_short_names[key]['type'] == 'result':
+            if data_config[key]['type'] == 'result':
                 fpath = f'{tmp_directory}/{key}.csv'
                 #chekc if file exists
                 if not os.path.exists(fpath):
@@ -43,55 +43,58 @@ def remove_apostrophes_from_region_names(paths_dict, osemosys_cloud, results_key
                 _df.to_csv(fpath,index=False)
         return
 
-def save_results_as_excel(paths_dict, scenario, results_keys,data_config_short_names):
+def save_results_as_excel(paths_dict, scenario, results_keys,data_config):
     tmp_directory = paths_dict['tmp_directory']
 
     # Now we take the CSV files and combine them into an Excel file
     # First we need to make a dataframe from the CSV files
-    # Note: if you add any new result parameters to osemosys_fast.txt, you need to update the config.yml you are using
-
+    # Note: if you add any new result parameters to osemosys_fast.txt, you need to update the config.yml you are using        
     results_df={}
     for key in results_keys:
         fpath = f'{tmp_directory}/{key}.csv'
         #print(fpath)
-        _df = pd.read_csv(fpath).reset_index(drop=True)
-        results_df[key] = _df
+        df = pd.read_csv(fpath).reset_index(drop=True)
+        results_df[key] = df
 
     results_dfs = {}
     results_dfs = {k:v for (k,v) in results_df.items() if not v.empty}
     _result_tables = {}
-    
+
     for key in results_dfs.keys():
-        indices = data_config_short_names[key]['indices']
-        _df = results_dfs[key]
+        indices = data_config[key]['indices']
+        df = results_dfs[key]
         if 'TIMESLICE' in indices:
             unwanted_members = {'YEAR', 'VALUE'}
             _indices = [ele for ele in indices if ele not in unwanted_members]
-            df = pd.pivot_table(_df,index=_indices,columns='YEAR',values='VALUE',aggfunc=np.sum)
+            if 'YEAR' in df.columns:
+                df = pd.pivot_table(df,index=_indices,columns='YEAR',values='VALUE',aggfunc=np.sum)
             df = df.loc[(df != 0).any(axis=1)] # remove rows if all are zero
             _result_tables[key] = df
         elif 'TIMESLICE' not in indices:
-            if data_config_short_names[key]['type'] == 'result':
+            if data_config[key]['type'] == 'result':
                 unwanted_members = {'YEAR', 'VALUE'}
                 _indices = [ele for ele in indices if ele not in unwanted_members]
-                df = pd.pivot_table(_df,index=_indices,columns='YEAR',values='VALUE')
+                if 'YEAR' in df.columns:
+                    df = pd.pivot_table(df,index=_indices,columns='YEAR',values='VALUE')
                 df = df.loc[(df != 0).any(axis=1)] # remove rows if all are zero
                 _result_tables[key] = df
-            elif data_config_short_names[key]['type'] == 'param':
+            elif data_config[key]['type'] == 'param':
                 unwanted_members = {'YEAR', 'VALUE'}
                 _indices = [ele for ele in indices if ele not in unwanted_members]
-                df = pd.pivot_table(_df,index=_indices,columns='YEAR',values='VALUE')
+                if 'YEAR' in df.columns:
+                    df = pd.pivot_table(df,index=_indices,columns='YEAR',values='VALUE')
                 df = df.loc[(df != 0).any(axis=1)] # remove rows if all are zero
                 _result_tables[key] = df
-            elif data_config_short_names[key]['type'] == 'equ':
+            elif data_config[key]['type'] == 'equ':#WHAT IS THIS ONE?TODO
                 unwanted_members = {'YEAR', 'VALUE'}
                 _indices = [ele for ele in indices if ele not in unwanted_members]
-                df = pd.pivot_table(_df,index=_indices,columns='YEAR',values='VALUE')
+                if 'YEAR' in df.columns:
+                    df = pd.pivot_table(df,index=_indices,columns='YEAR',values='VALUE')
                 #df = df.loc[(df != 0).any(axis=1)] # remove rows if all are zero
                 _result_tables[key] = df
         _result_tables[key]=_result_tables[key].fillna(0)
     results_tables = {k: v for k, v in _result_tables.items() if not v.empty}
-    
+
     # We take the dataframe of results and save to an Excel file
     print("Creating the Excel file of results. Results saved in the results folder.")
     scenario = scenario.lower()
@@ -99,6 +102,9 @@ def save_results_as_excel(paths_dict, scenario, results_keys,data_config_short_n
     if results_tables:
         with pd.ExcelWriter(paths_dict['results_workbook']) as writer:
             for k, v in results_tables.items():
+                #check data_config for a short name, else use k
+                if 'short_name' in data_config[k].keys():
+                    k = data_config[k]['short_name']
                 v.to_excel(writer, sheet_name=k, merge_cells=False)
     return
 
