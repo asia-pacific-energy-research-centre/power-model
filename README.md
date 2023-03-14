@@ -61,3 +61,10 @@ Saved in the results folder will be a few different files. The ones with name ~ 
 
 ## Creating visualisation of RES
 You can create a visualisaton of the RES as stated within the config/config.yml files. The script to run this will be outputted at the end of each model run, but you will need to run it in command line yourself.
+
+## Common errors:
+3/14/2023: Used 
+    glpsol -m ./config/osemosys.txt -d ./config/simplicity.txt 
+and got the error:
+    E:/APERC/power-model/env/Library/bin/glpsol.exe: error while loading shared libraries: ucrtbased.dll: cannot open shared object file: No such file or directory
+It seems that this is because conda install glpk installs glpk on the computer you are using. But if you are using a usb drive to hold your work then you may need to run conda install glpk on the computer you are using. This will install glpk on the computer you are using, and then you can run the model, I think.
