@@ -37,7 +37,7 @@ def import_run_preferences(root_dir, input_data_sheet_file):
 def import_data_config(paths_dict):
         
     accepted_types = ['param','set','result']
-    #import then recreate dataconfig with short_name as key so that its keys can be compared to the keys in the data sheet
+    #import then recreate dataconfig with short_name as key so that its keys can be compared to the name of the corresponding data sheet in our input data
     data_config = yaml.safe_load(open(paths_dict['path_to_data_config']))
 
     #first check data_config for anything that isnt in accepted_types
@@ -45,21 +45,14 @@ def import_data_config(paths_dict):
     if not all([type in accepted_types for type in types]):
         raise ValueError('Data config contains a type that is not expected. Accepted types are: {}'.format(accepted_types))
 
-    #we want result keys that are calculated to be in the results_keys list
-    results_keys = [key for key in data_config.keys() if data_config[key]['type'] == 'result' and data_config[key]['calculated'] == True]
+    #we want result keys that are calculated to be in the results_keys list. These are the names of the sheets we will create in the output data file.
+    results_sheets = [key for key in data_config.keys() if data_config[key]['type'] == 'result' and data_config[key]['calculated'] == True]
 
     #repalce any keys with their short_name if they have one
     short_name_keys = [key for key in data_config.keys() if 'short_name' in data_config[key].keys()]
     for key in short_name_keys:
         data_config[data_config[key]['short_name']] = copy.deepcopy(data_config[key])
         del data_config[key]
-
-    #now extract sheets by their type. We want these to be for their short names if they have one.
-    set_keys_short_names = [key for key in data_config.keys() if data_config[key]['type'] == 'set']
-    param_keys_short_names = [key for key in data_config.keys() if data_config[key]['type'] == 'param']
-
-    #join the keys together
-    input_keys_short_names = set_keys_short_names + param_keys_short_names
 
     #reload data config in case it has been changed accidentally
     data_config = yaml.safe_load(open(paths_dict['path_to_data_config']))
@@ -71,57 +64,99 @@ def import_data_config(paths_dict):
         data_config_short_names[short_name] = copy.deepcopy(data_config_short_names[key])
         del data_config_short_names[key]
         
-    return input_keys_short_names, results_keys, data_config,data_config_short_names
+    return results_sheets, data_config, data_config_short_names
+
+def edit_input_data(data_config_short_names, scenario, economy, model_end_year,sheet,sheet_name):
+    """This function is passed sheets from the input data file and edits them based on the data_config_short_names. It then returns the edited sheet."""
+    #filter on and drop specifc columns:
+    if 'SCENARIO' in sheet.columns:
+        sheet = sheet[sheet['SCENARIO']==scenario].drop(['SCENARIO'],axis=1)
+    if 'REGION' in sheet.columns:
+        sheet = sheet[sheet['REGION']==economy]
+    if sheet_name == 'REGION':
+        sheet = sheet[sheet['VALUE']==economy]
+    if 'UNITS' in sheet.columns:
+        sheet = sheet.drop(['UNITS'],axis=1)
+    if 'NOTES' in sheet.columns:
+        sheet = sheet.drop(['NOTES'],axis=1)
+
+    #Based on the type of sheet, check that the required columns are present and edit values inside the sheet if necessary:
+    if data_config_short_names[sheet_name]['type'] == 'param':
+        #check the sheet has the required columns which are defined in the data_config indices list
+        for col in data_config_short_names[sheet_name]['indices']:
+            if col == 'YEAR':
+                if col not in sheet.columns:
+                    if any([str(col).isdigit() and len(str(col)) == 4 for col in sheet.columns]):
+                        #now make the year columns into a single column called YEAR
+                        sheet_cols = data_config_short_names[sheet_name]['indices'].copy()
+                        sheet_cols.remove('YEAR')
+                        sheet = pd.melt(sheet, id_vars=sheet_cols, var_name='YEAR', value_name='VALUE')
+                    else:
+                        print(f'Error: {sheet_name} sheet has no 4 digit year columns or a YEAR column. Either add 4digit year columns or a year column to the sheet. Or change the code.')
+                        sys.exit()
+                #now filter for years below the model_end_year + 1
+                sheet = sheet[sheet['YEAR']<=model_end_year]
+            elif col not in sheet.columns:
+                print(f'Error: {sheet_name} sheet is missing the column {col}. Either add it to the sheet or remove it from the config/config.yaml file.')
+                sys.exit()
+        #check for VALUE col even thogh it is not in the indices list
+        if 'VALUE' not in sheet.columns:
+            print(f'Error: {sheet_name} sheet is missing the column VALUE.')
+            sys.exit()
+
+        #now check that there are no additional columns
+        if len(sheet.columns) != len(data_config_short_names[sheet_name]['indices'])+1:
+            #find the additional columns
+            additional_cols = [col for col in sheet.columns if col not in data_config_short_names[sheet_name]['indices'] and col != 'VALUE']
+            print(f'Error: {sheet_name} sheet has additional columns: \n{additional_cols} \n and these are not in the indices list. Either remove them from the sheet or add them to the indices list in the config/config.yaml file.')
+            sys.exit()
+    elif data_config_short_names[sheet_name]['type'] == 'set':
+        #check it has a VALUE column only
+        if len(sheet.columns) != 1 and sheet.columns[0] != 'VALUE':
+            print(f'Error: {sheet_name} sheet should only have the column VALUE.')
+            sys.exit()
+        #if the sheet is called 'YEAR' then the YEAR col is called 'VALUE' and we need to filter it:
+        if sheet_name == 'YEAR':
+            sheet = sheet[sheet['VALUE']<=model_end_year]
+    else:
+        print(f'Error: {sheet_name} sheet has an invalid type. The type should be either param or set.')
+        sys.exit()
+
+    sheet = sheet.loc[(sheet != 0).any(axis=1)] # remove rows if all are zero
+
+    #drop duplicates
+    sheet = sheet.drop_duplicates()
+
+    return sheet
 
 
-def extract_input_data(paths_dict, input_keys_short_names, model_end_year,economy,scenario):
-    #using the data extracted from the data_config.yaml file, extract the data from the excel sheet and save it to a dictionary
-    # If we cant find it in the excel sheet, make the user aware.
-    filtered_input_data = dict()
+def extract_input_data(data_config_short_names,paths_dict,model_end_year,economy,scenario):
+    #using the data extracted from the data_config.yaml file, extract that data from the excel sheet and save it to a dictionary:
+    input_data = dict()
     #open excel workbook:
     wb = pd.ExcelFile(paths_dict['input_data_file_path'])
     #now import data from excel sheet:
-    for key in input_keys_short_names:
+    for sheet_name in data_config_short_names:
+
+        #ignore any results sheets:
+        if data_config_short_names[sheet_name]['type'] == 'result':
+            continue
 
         #check the sheet exists in the excel file:
-        if key not in wb.sheet_names:
-            print(f'Error: {key} is not in the excel sheet. Either add it to the sheet or remove it from the config/config.yaml file.')
+        if sheet_name not in wb.sheet_names:
+            print(f'Error: {sheet_name} is not in the excel sheet. Either add it to the sheet or remove it from the config/config.yaml file.')
             sys.exit()
 
-        #get the sheet using the key
-        sheet = wb.parse(key)
-        #handle specifc columns:
-        if 'SCENARIO' in sheet.columns:
-            sheet = sheet[sheet['SCENARIO']==scenario].drop(['SCENARIO'],axis=1)
-        if 'REGION' in sheet.columns:
-            sheet = sheet[sheet['REGION']==economy]
-        if key == 'REGION':
-            sheet = sheet[sheet['VALUE']==economy]
-        if 'UNITS' in sheet.columns:
-            sheet = sheet.drop(['UNITS'],axis=1)
-        if 'NOTES' in sheet.columns:
-            sheet = sheet.drop(['NOTES'],axis=1)
+        #get the sheet using the sheet_name
+        sheet = wb.parse(sheet_name)
 
-        #if the sheet is called 'YEAR' then the YEAR col is called 'VALUE' and we need to filter it:
-        if key == 'YEAR':
-            sheet = sheet[sheet['VALUE']<=model_end_year]
-        else:
-            #filter sheet for years below the model_end_year + 1
-            for col in sheet.columns:
-                str_col = str(col)
-                if str_col.isdigit() and len(str_col) == 4:
-                    if int(str_col) > model_end_year:
-                        sheet = sheet.drop([col],axis=1)
-
-        sheet = sheet.loc[(sheet != 0).any(axis=1)] # remove rows if all are zero
-
-        #drop duplicates
-        sheet = sheet.drop_duplicates()
-
-        filtered_input_data[key] = sheet
+        sheet = edit_input_data(data_config_short_names, scenario, economy, model_end_year,sheet,sheet_name)
+        
+        input_data[sheet_name] = sheet
     #close excel workbook:
     wb.close()
-    return filtered_input_data
+
+    return input_data
 
 def write_data_to_temp_workbook(paths_dict, filtered_input_data):
     #write the data to a temp workbook before converting to the osemosys format

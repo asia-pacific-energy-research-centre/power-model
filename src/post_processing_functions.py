@@ -10,7 +10,7 @@ if os.getcwd().split('\\')[-1] == 'src':
     os.chdir('..')
     print("Changed directory to root of project")
 
-def remove_apostrophes_from_region_names(paths_dict, osemosys_cloud, results_keys, data_config):
+def remove_apostrophes_from_region_names(paths_dict, osemosys_cloud, results_sheets, data_config):
     #remove apostrophes from the region names in the results files if they are in there.
 
     #if remove_all_in_temp_dir is True, then all csv files in the temp directory will be checked for apostrophes, else only the results files will be checked. This is a way of including files that are not in the results_config file
@@ -29,9 +29,9 @@ def remove_apostrophes_from_region_names(paths_dict, osemosys_cloud, results_key
         return
     else:
         tmp_directory = paths_dict['tmp_directory']
-        for key in results_keys:
-            if data_config[key]['type'] == 'result':
-                fpath = f'{tmp_directory}/{key}.csv'
+        for sheet in results_sheets:
+            if data_config[sheet]['type'] == 'result':
+                fpath = f'{tmp_directory}/{sheet}.csv'
                 #chekc if file exists
                 if not os.path.exists(fpath):
                     print(f'File {fpath} does not exist')#We need to double check we are handling data_config and results_config correctly
@@ -43,56 +43,56 @@ def remove_apostrophes_from_region_names(paths_dict, osemosys_cloud, results_key
                 _df.to_csv(fpath,index=False)
         return
 
-def save_results_as_excel(paths_dict, scenario, results_keys,data_config):
+def save_results_as_excel(paths_dict, scenario, results_sheets,data_config):
     tmp_directory = paths_dict['tmp_directory']
 
     # Now we take the CSV files and combine them into an Excel file
     # First we need to make a dataframe from the CSV files
     # Note: if you add any new result parameters to osemosys_fast.txt, you need to update the config.yml you are using        
     results_df={}
-    for key in results_keys:
-        fpath = f'{tmp_directory}/{key}.csv'
+    for sheet in results_sheets:
+        fpath = f'{tmp_directory}/{sheet}.csv'
         #print(fpath)
         df = pd.read_csv(fpath).reset_index(drop=True)
-        results_df[key] = df
+        results_df[sheet] = df
 
     results_dfs = {}
     results_dfs = {k:v for (k,v) in results_df.items() if not v.empty}
     _result_tables = {}
 
-    for key in results_dfs.keys():
-        indices = data_config[key]['indices']
-        df = results_dfs[key]
+    for sheet in results_dfs.keys():
+        indices = data_config[sheet]['indices']
+        df = results_dfs[sheet]
         if 'TIMESLICE' in indices:
             unwanted_members = {'YEAR', 'VALUE'}
             _indices = [ele for ele in indices if ele not in unwanted_members]
             if 'YEAR' in df.columns:
                 df = pd.pivot_table(df,index=_indices,columns='YEAR',values='VALUE',aggfunc=np.sum)
             df = df.loc[(df != 0).any(axis=1)] # remove rows if all are zero
-            _result_tables[key] = df
+            _result_tables[sheet] = df
         elif 'TIMESLICE' not in indices:
-            if data_config[key]['type'] == 'result':
+            if data_config[sheet]['type'] == 'result':
                 unwanted_members = {'YEAR', 'VALUE'}
                 _indices = [ele for ele in indices if ele not in unwanted_members]
                 if 'YEAR' in df.columns:
                     df = pd.pivot_table(df,index=_indices,columns='YEAR',values='VALUE')
                 df = df.loc[(df != 0).any(axis=1)] # remove rows if all are zero
-                _result_tables[key] = df
-            elif data_config[key]['type'] == 'param':
+                _result_tables[sheet] = df
+            elif data_config[sheet]['type'] == 'param':
                 unwanted_members = {'YEAR', 'VALUE'}
                 _indices = [ele for ele in indices if ele not in unwanted_members]
                 if 'YEAR' in df.columns:
                     df = pd.pivot_table(df,index=_indices,columns='YEAR',values='VALUE')
                 df = df.loc[(df != 0).any(axis=1)] # remove rows if all are zero
-                _result_tables[key] = df
-            elif data_config[key]['type'] == 'equ':#WHAT IS THIS ONE?TODO
+                _result_tables[sheet] = df
+            elif data_config[sheet]['type'] == 'equ':#WHAT IS THIS ONE?TODO
                 unwanted_members = {'YEAR', 'VALUE'}
                 _indices = [ele for ele in indices if ele not in unwanted_members]
                 if 'YEAR' in df.columns:
                     df = pd.pivot_table(df,index=_indices,columns='YEAR',values='VALUE')
                 #df = df.loc[(df != 0).any(axis=1)] # remove rows if all are zero
-                _result_tables[key] = df
-        _result_tables[key]=_result_tables[key].fillna(0)
+                _result_tables[sheet] = df
+        _result_tables[sheet]=_result_tables[sheet].fillna(0)
     results_tables = {k: v for k, v in _result_tables.items() if not v.empty}
 
     # We take the dataframe of results and save to an Excel file
@@ -108,7 +108,7 @@ def save_results_as_excel(paths_dict, scenario, results_keys,data_config):
                 v.to_excel(writer, sheet_name=k, merge_cells=False)
     return
 
-def save_results_as_long_csv(paths_dict, results_keys):
+def save_results_as_long_csv(paths_dict, results_sheets):
     tmp_directory = paths_dict['tmp_directory']
 
     # print('There are probably significant issues with this function because it is also saving the data config files to the long csv')
@@ -117,23 +117,23 @@ def save_results_as_long_csv(paths_dict, results_keys):
     # csv_list = [x for x in os.listdir(tmp_directory) if x.split('.')[-1] == 'csv']
     combined_data = pd.DataFrame()
     #iterate through sheets in tmp
-    for key in results_keys:
+    for sheet in results_sheets:
         # #if file is not a csv or is in this list then skip it
         # ignored_files = ['SelectedResults.csv']
         # if file.split('.')[-1] != 'csv' or file in ignored_files:
         #     continue
         #load in sheet
-        file = key+'.csv'
+        file = sheet+'.csv'
         sheet_data = pd.read_csv(tmp_directory+'/'+file)
 
         # #The trade file will have two Region columns. Set the second one to be 'REGION_TRADE'
         # if file == 'Trade.csv':
         #     sheet_data.rename(columns={'REGION.1':'REGION_TRADE'}, inplace=True)
 
-        #add key as a column 
-        sheet_data['SHEET_NAME'] = key
+        #add sheet as a column 
+        sheet_data['SHEET_NAME'] = sheet
         #if this is the first sheet then create a dataframe to hold the data
-        if key == results_keys[0]:
+        if sheet == results_sheets[0]:
             combined_data = sheet_data
         #if this is not the first sheet then append the data to the combined data
         else:

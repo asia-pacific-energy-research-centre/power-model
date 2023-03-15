@@ -62,9 +62,29 @@ Saved in the results folder will be a few different files. The ones with name ~ 
 ## Creating visualisation of RES
 You can create a visualisaton of the RES as stated within the config/config.yml files. The script to run this will be outputted at the end of each model run, but you will need to run it in command line yourself.
 
-## Common errors:
-3/14/2023: Used 
-    glpsol -m ./config/osemosys.txt -d ./config/simplicity.txt 
-and got the error:
-    E:/APERC/power-model/env/Library/bin/glpsol.exe: error while loading shared libraries: ucrtbased.dll: cannot open shared object file: No such file or directory
-It seems that this is because conda install glpk installs glpk on the computer you are using. But if you are using a usb drive to hold your work then you may need to run conda install glpk on the computer you are using. This will install glpk on the computer you are using, and then you can run the model, I think.
+## Testing using simplicity.txt
+You can test the model using the OSeMOSYS simplicity.txt setup in this repo. This may be useful for testing any changes made. You can use the following code for glpsol:
+
+```bash
+conda activate ./env
+
+# Create the GNUMathProg data file with otoole
+otoole convert csv datafile ./data/simplicity/data ./data/simplicity/simplicity.txt ./data/simplicity/config.yaml
+
+# Solve the model
+glpsol -m ./data/simplicity/OSeMOSYS.txt -d ./data/simplicity/simplicity.txt
+```
+
+And for the coin-cbc solver:
+
+```bash
+# converting to lp file 
+glpsol -d ./data/simplicity/simplicity.txt -m ./data/simplicity/OSeMOSYS.txt --wlp ./data/simplicity/simplicity.lp --check
+
+# CBC solver 
+cbc ./data/simplicity/simplicity.lp solve solu ./data/simplicity/simplicity.sol
+
+# converting cbc output to csv 
+otoole results --input_datafile ./data/simplicity/simplicity.txt cbc csv ./data/simplicity/simplicity.sol ./tmp/simplicity ./data/simplicity/config.yaml
+```
+

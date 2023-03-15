@@ -9,6 +9,10 @@ archive/
 # temporary
 testing_virtual_machine.docx 
 
+#Dont Ignore the following:
+./data/simplicity/*
+
+#
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
