@@ -17,7 +17,7 @@ Install otoole. Activate your environment before installing otoole!!
 
 `conda activate ./env`
 
-`pip install otoole`
+`pip install otoole==0.11.0`
 
 ## 2. To run the model 
 Make sure you did Step 1 (only need to do it once).
