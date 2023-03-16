@@ -1,9 +1,12 @@
 # this script takes in the power data sheet and runs the osemosys model
 # configure the model run in the START tab of the excel file
 # run this file from the command line
+#%%
+
+#python src/main.py > output.txt 2>&1
 
 # the following python packages are imported:
-
+data_sheet_name = 'data-sheet-power_36TS-most-updated.xlsx'
 import pandas as pd
 import numpy as np
 import yaml
@@ -14,6 +17,9 @@ from otoole.write_strategies import WriteDatafile
 import subprocess
 import time
 import importlib.resources as resources
+import warnings
+#ignore by message
+warnings.filterwarnings("ignore", message="In a future version of pandas all arguments of DataFrame.any and Series.any will be keyword-only.")
 
 # the processing script starts from here
 # get the time you started the model so the results will have the time in the filename
@@ -22,7 +28,7 @@ root_dir = '.' # because this file is in src, the root may change if it is run f
 print("Script started at {}...\n".format(model_start))
 # model run inputs
 
-df_prefs = pd.read_excel('{}/data/data-sheet-power.xlsx'.format(root_dir), sheet_name='START',usecols="A:B",nrows=3,header=None)
+df_prefs = pd.read_excel('{}/data/{}'.format(root_dir,data_sheet_name), sheet_name='START',usecols="A:B",nrows=3,header=None)
 
 economy = df_prefs.loc[0][1]
 scenario = df_prefs.loc[1][1]
@@ -47,7 +53,7 @@ keep_list = [x if y == 'None' else y for x,y in keep_dict.items()]
 
 # read in the data file and filter based on the specific scenario and preferences
 subset_of_economies = economy
-_dict = pd.read_excel("{}/data/data-sheet-power.xlsx".format(root_dir),sheet_name=None) # creates dict of dataframes
+_dict = pd.read_excel("{}/data/{}".format(root_dir,data_sheet_name),sheet_name=None) # creates dict of dataframes
 print("Excel file successfully read.\n")
 __dict = {k: _dict[k] for k in keep_list}
 filtered_data = {}
