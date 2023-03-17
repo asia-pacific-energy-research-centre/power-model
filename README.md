@@ -71,32 +71,6 @@ Saved in the results folder will be a few different files. The ones with name ~ 
 ## Creating visualisation of RES
 You can create a visualisaton of the RES as stated within the config/config.yml files. The script to run this will be outputted at the end of each model run, but you will need to run it in command line yourself.
 
-## Testing using simplicity.txt
-You can test the model using the OSeMOSYS simplicity.txt setup in this repo. This may be useful for testing any changes made. It also helps to understand the most basic functionality of this repo (excluding the process of cleaning and converting data from a excel data sheet to an osemosys input). You can use the following code for glpsol:
-
-```bash
-conda activate ./env
-
-# Create the GNUMathProg data file with otoole
-otoole convert csv datafile ./data/simplicity/data ./data/simplicity/simplicity.txt ./data/simplicity/config.yaml
-
-# Solve the model
-glpsol -m ./data/simplicity/OSeMOSYS.txt -d ./data/simplicity/simplicity.txt
-```
-
-And for the coin-cbc solver:
-
-```bash
-# converting to lp file 
-glpsol -d ./data/simplicity/simplicity.txt -m ./data/simplicity/OSeMOSYS.txt --wlp ./data/simplicity/simplicity.lp --check
-
-# CBC solver 
-cbc ./data/simplicity/simplicity.lp solve solu ./data/simplicity/simplicity.sol
-
-# converting cbc output to csv 
-otoole results --input_datafile ./data/simplicity/simplicity.txt cbc csv ./data/simplicity/simplicity.sol ./tmp/simplicity ./data/simplicity/config.yaml
-```
-
 ## Avoiding errors when running the system:
 I have included a few checks to make sure things in the input data are as they should be, however it is hard to cover for all of the possible ones, and a bit of a waste of time to cover for ones which will eventually be caught by otoole/cbc/osemosys. So if you find some error you dont expect take a look below:
 
