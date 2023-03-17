@@ -11,9 +11,7 @@ Make sure you run this command in the folder you want.
 
 You need to create a conda environment. To install, move to your working directory and copy and paste the following in your command line:
 
-`conda env create --prefix ./env --file ./config/env.yml`
-
-Install otoole. Activate your environment before installing otoole!!
+`conda env create --prefix ./env --file ./config/environment.yml`
 
 `conda activate ./env`
 
@@ -21,6 +19,10 @@ Install cbc solver by following instructions below:
 
 # Installing coin cbc solver
 This will help to run the model faster. However it's installation is a little tricky. Go to the word document in ./documentation/ called "Installing CBC solver.docx" and follow the instructions. If you dont use this you will need to set 'use_coincbc' to False in the main.py file, and use use_glpsol to True.
+
+Please note that on APERC computers the coin cbc sovler doesnt currently work. This is because of a ucrtbased.dll error. 
+APPARENTLY: This is a windows error and is not related to the coin cbc solver. To fix this you need to install the latest version of visual studio. This can be done by going to the following link: https://visualstudio.microsoft.com/downloads/ and downloading the latest version of visual studio. Once this is installed you should be able to run the coin cbc solver.
+BUT i havent managed to work out how to do this yet. So for now, just use the glpsol solver or OSemOSYS cloud.
 
 ## 2. To run the model 
 Make sure you did Step 1 (only need to do it once).
@@ -30,9 +32,16 @@ Make sure you did Step 1 (only need to do it once).
 
 2. Edit the data input sheet. Configure your model run using the START tab.
 
-3. Run the model by typing in `python ./src/main.py`
+3. Run the model by typing in `python ./src/main.py <input_data_sheet_file> <data_config_file> <osemosys_cloud> <solving_method>"
+    a. where <input_data_sheet_file> is the name of the input data sheet file in ./data (e.g., data.xlsx)
+    b. where <data_config_file> is the name of the data config file in ./config (e.g., config.yml)
+    c. where <osemosys_cloud> is a boolean (True or False) to indicate whether to use OSeMOSYS CLOUD or not
+    d. where <solving_method> is the solving method to use if you arent using OSemosys Cloud (glpsol or coin-cbc)
+    e. For example, `python ./src/main.py data.xlsx config.yml False glpsol`
+    f. If you want to use OSeMOSYS CLOUD, set <osemosys_cloud> to True and <solving_method> can be anything. For example, `python ./src/main.py data.xlsx config.yml True None`
+    g. You can also use > output.txt 2>&1 to save the output to a text file. For example, `python ./src/main.py data.xlsx config.yml False glpsol > output.txt 2>&1`
 
-4. The model will run. Pay attention to the OSeMOSYS statements. There should not be any issues with the python script.
+4. The model will run. Pay attention to the OSeMOSYS statements. There should not be any issues with the python script. 
 
 ## 3. Debugging model runs
 When the script runs, the following temporary files are saved in `./tmp/ECONOMY NAME/SCENARIO`:
@@ -49,7 +58,7 @@ If there is an error message saying the model is infeasible, check your model da
 ## Running OsEMOSYS CLOUD
 It may be better to use OsEMOSYS CLOUD. In this case refer to the ./documentation/Running_osemosys_cloud.docx file for instructions.
 
-## 4. Adding results
+## 4. Adding results to config yml files
 To add results (e.g., capacity factor) you need to edit the following files:
 - osemosys_fast.txt
 - results_config.yml
