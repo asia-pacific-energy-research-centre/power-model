@@ -8,7 +8,8 @@
 archive/
 # temporary
 testing_virtual_machine.docx 
-
+testing_code/*
+archive/*
 #Dont Ignore the following:
 ./data/simplicity/*
 

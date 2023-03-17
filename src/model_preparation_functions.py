@@ -223,6 +223,30 @@ def prepare_model_script_for_osemosys(paths_dict, osemosys_cloud,replace_long_va
 
     return
 
+def write_model_run_specs_to_file(paths_dict, scenario, economy, model_end_year, osemosys_cloud, FILE_DATE_ID,solving_method):
+    #write the model run specs to a file so we can keep track of what we have run and when
+    path_to_data_config = paths_dict['path_to_data_config']
+    results_workbook = paths_dict['results_workbook']
+    combined_results_tall_years = paths_dict['combined_results_tall_years']
+    combined_results_tall_sheet_names = paths_dict['combined_results_tall_sheet_names']
+    input_data_path = paths_dict['input_data_file_path']
+    osemosys_model_script_path = paths_dict['new_osemosys_model_script_path']
+    with open(paths_dict['model_run_specifications_file'], 'w') as f:
+        f.write(f'Inputs:\n')
+        f.write(f'Run Date: {FILE_DATE_ID}\n')
+        f.write(f'Run Scenario: {scenario}\n')
+        f.write(f'Run Economy: {economy}\n')
+        f.write(f'Run End Year: {model_end_year}\n')
+        f.write(f'Run Osemosys Cloud: {osemosys_cloud}\n')
+        f.write(f'Osemosys Model Script path: {osemosys_model_script_path}\n')
+        f.write(f'Input Data Config File path: {path_to_data_config}\n')
+        f.write(f'Solving Method used: {solving_method}\n')
+        f.write(f'Input data path: {input_data_path}\n')
+        f.write(f'\nResults:\n')
+        f.write(f'Results Workbook: {results_workbook}\n')
+        f.write(f'Combined Results Tall Years: {combined_results_tall_years}\n')
+        f.write(f'Combined Results Tall Sheet Names: {combined_results_tall_sheet_names}\n')     
+    return
 
 def set_up_paths(scenario, economy, root_dir, config_dir,data_config_file, input_data_sheet_file,osemosys_model_script,osemosys_cloud,FILE_DATE_ID):
     """set up the paths to the various files and folders we will need to run the model. This will create a dictionary for the paths so we dont have to keep passing lots of arguments to functions"""
@@ -230,14 +254,29 @@ def set_up_paths(scenario, economy, root_dir, config_dir,data_config_file, input
         scenario_folder=f'cloud_{scenario}'
     else:
         scenario_folder=f'{scenario}'
+
     
     tmp_directory = f'./tmp/{economy}/{scenario_folder}'
     results_directory = f'./results/{economy}/{scenario_folder}'
 
     if not os.path.exists(tmp_directory):
         os.makedirs(tmp_directory)
-    if not os.path.exists(results_directory):
+    else:
+        #if theres already file in the tmp directory then we should move those to a new folder so we dont overwrite them:
+        #check if there are files:
+        if len(os.listdir(tmp_directory)) > 0:
+            new_temp_dir = f'./tmp/{economy}/{scenario_folder}/{FILE_DATE_ID}'
+            #make the new temp directory:
+            os.makedirs(new_temp_dir)
+            #move all files:
+            for file in os.listdir(tmp_directory):
+                shutil.move(f'{tmp_directory}/{file}', new_temp_dir)
+
+    if not os.path.exists(results_directory):#no need to check if the results dir exists because the data will be saved with FILE_DATE_ID in the name, its just too hard to do that with the tmp directory
         os.makedirs(results_directory)
+
+    #create model run specifications txt file using the input variables as the details and the FILE_DATE_ID as the name:
+    model_run_specifications_file = f'{tmp_directory}/model_run_specs_{FILE_DATE_ID}.txt'
 
     path_to_data_config = f'{root_dir}/{config_dir}/{data_config_file}'
     if not os.path.exists(path_to_data_config):
@@ -287,6 +326,7 @@ def set_up_paths(scenario, economy, root_dir, config_dir,data_config_file, input
     paths_dict['results_workbook'] = results_workbook
     paths_dict['combined_results_tall_years'] = combined_results_tall_years
     paths_dict['combined_results_tall_sheet_names'] = combined_results_tall_sheet_names
+    paths_dict['model_run_specifications_file'] = model_run_specifications_file
     
     return paths_dict
 

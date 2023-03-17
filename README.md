@@ -17,7 +17,7 @@ Install otoole. Activate your environment before installing otoole!!
 
 `conda activate ./env`
 
-`pip install otoole`
+Install cbc solver by following instructions below:
 
 # Installing coin cbc solver
 This will help to run the model faster. However it's installation is a little tricky. Go to the word document in ./documentation/ called "Installing CBC solver.docx" and follow the instructions. If you dont use this you will need to set 'use_coincbc' to False in the main.py file, and use use_glpsol to True.
@@ -63,7 +63,7 @@ Saved in the results folder will be a few different files. The ones with name ~ 
 You can create a visualisaton of the RES as stated within the config/config.yml files. The script to run this will be outputted at the end of each model run, but you will need to run it in command line yourself.
 
 ## Testing using simplicity.txt
-You can test the model using the OSeMOSYS simplicity.txt setup in this repo. This may be useful for testing any changes made. You can use the following code for glpsol:
+You can test the model using the OSeMOSYS simplicity.txt setup in this repo. This may be useful for testing any changes made. It also helps to understand the most basic functionality of this repo (excluding the process of cleaning and converting data from a excel data sheet to an osemosys input). You can use the following code for glpsol:
 
 ```bash
 conda activate ./env
@@ -88,3 +88,26 @@ cbc ./data/simplicity/simplicity.lp solve solu ./data/simplicity/simplicity.sol
 otoole results --input_datafile ./data/simplicity/simplicity.txt cbc csv ./data/simplicity/simplicity.sol ./tmp/simplicity ./data/simplicity/config.yaml
 ```
 
+## Avoiding errors when running the system:
+I have included a few checks to make sure things in the input data are as they should be, however it is hard to cover for all of the possible ones, and a bit of a waste of time to cover for ones which will eventually be caught by otoole/cbc/osemosys. So if you find some error you dont expect take a look below:
+
+### Known issues:
+ - AttributeError: Can only use .str accessor with string values!
+    - this seems to happen when running the model using coin-cbc and the osemosys.txt model. It occurs in the osemosys results call of model_solving_fuctions.solve_model(). I cannot work out why it occurs but i haven't tried very hard, because it doesnt seem to occur with osemosys_fast.txt.
+ - Primal infs and other infs when running cbc solve.
+    - perhaps these also occur with glpsol. I expect this is because of bad input data, i.e. the numbers being unrealistic, but its hard to tell since there are a lot of inputs. 
+ - Something like EmissionActivityRatio['19_THA',POW_1_x_coal_thermal,1,'1_x_coal_thermal_CO2',2017] MathProg model processing error:
+    - i fixed this one by changing the indices for EmissionActivityRatio from [REGION,TECHNOLOGY,MODE_OF_OPERATION,EMISSION,YEAR] to [REGION,TECHNOLOGY,EMISSION,MODE_OF_OPERATION,YEAR] in the config file. It seems this is because that is the order they are stated in osemosys.txt/osemosys_fast.txt (the model file)
+ - blank output csvs
+    - i cant tell for sure why this is but i think its related to the primal infs issue and can also happen if the supplied input data for calculating the variable for that sheet are not available, i.e. not supplied. 
+ - SystemExit Errors. 
+    - These should be occuring because of some check i have introduced to the code to make sure the input data is closer to what it should be for the model.
+ - ./power-model/env/Library/bin/glpsol.exe: error while loading shared libraries: ucrtbased.dll: cannot open shared object file: No such file or directory
+ 
+### What can you do to avoid errors in the first place:
+ - When introducing new paramaters to the model, check they arent already stated in the osemosys_official_config.yaml as this should contain every variable calcualted or used in the osemosys.txt model file. That way you can make sure you dont make any annoying mistakes like misordering indices, supplying the wrong values etc. 
+ - If you are introducing something that isnt even in the model file then you're kind of on your own but someone who knows code might be able to help. 
+  - When removing variables from the config.yaml file be aware that this could affect other varaibles if they are calculated using them or so on. 
+
+### Validation:
+https://otoole.readthedocs.io/en/latest/functionality.html#otoole-validate
