@@ -4,11 +4,15 @@ import yaml
 import os
 import time
 import subprocess
-
+import zipfile
+import sys
+import warnings
 #make directory the root of the project
 if os.getcwd().split('\\')[-1] == 'src':
     os.chdir('..')
     print("Changed directory to root of project")
+
+warnings.filterwarnings("ignore", message="In a future version, the Index constructor will not infer numeric dtypes when passed object-dtype sequences (matching Series behavior)")
 
 def remove_apostrophes_from_region_names(paths_dict, osemosys_cloud, results_sheets, data_config):
     #remove apostrophes from the region names in the results files if they are in there.
@@ -43,7 +47,7 @@ def remove_apostrophes_from_region_names(paths_dict, osemosys_cloud, results_she
                 _df.to_csv(fpath,index=False)
         return
 
-def save_results_as_excel(paths_dict, scenario, results_sheets,data_config):
+def save_results_as_excel(paths_dict, scenario, results_sheets,data_config,sheets_to_ignore_if_error_thrown):
     tmp_directory = paths_dict['tmp_directory']
 
     # Now we take the CSV files and combine them into an Excel file
@@ -51,6 +55,15 @@ def save_results_as_excel(paths_dict, scenario, results_sheets,data_config):
     # Note: if you add any new result parameters to osemosys_fast.txt, you need to update the config.yml you are using        
     results_df={}
     for sheet in results_sheets:
+        if sheet in sheets_to_ignore_if_error_thrown:
+            try:
+                fpath = f'{tmp_directory}/{sheet}.csv'
+                #print(fpath)
+                df = pd.read_csv(fpath).reset_index(drop=True)
+                results_df[sheet] = df
+            except:
+                print(f'WARNING: error thrown when trying to read {fpath}. Ignoring it and continuing with the rest of the results')
+                continue
         fpath = f'{tmp_directory}/{sheet}.csv'
         #print(fpath)
         df = pd.read_csv(fpath).reset_index(drop=True)
@@ -108,7 +121,7 @@ def save_results_as_excel(paths_dict, scenario, results_sheets,data_config):
                 v.to_excel(writer, sheet_name=k, merge_cells=False)
     return
 
-def save_results_as_long_csv(paths_dict, results_sheets):
+def save_results_as_long_csv(paths_dict, results_sheets,sheets_to_ignore_if_error_thrown):
     tmp_directory = paths_dict['tmp_directory']
 
     # print('There are probably significant issues with this function because it is also saving the data config files to the long csv')
@@ -118,10 +131,13 @@ def save_results_as_long_csv(paths_dict, results_sheets):
     combined_data = pd.DataFrame()
     #iterate through sheets in tmp
     for sheet in results_sheets:
-        # #if file is not a csv or is in this list then skip it
-        # ignored_files = ['SelectedResults.csv']
-        # if file.split('.')[-1] != 'csv' or file in ignored_files:
-        #     continue
+        if sheet in sheets_to_ignore_if_error_thrown:
+            try:
+                file = sheet+'.csv'
+                sheet_data = pd.read_csv(tmp_directory+'/'+file)
+            except:
+                print(f'Error thrown when trying to read {file}')
+                continue
         #load in sheet
         file = sheet+'.csv'
         sheet_data = pd.read_csv(tmp_directory+'/'+file)
@@ -186,23 +202,27 @@ def create_res_visualisation(paths_dict,scenario,economy):
     
     return
 
-def extract_osmosys_cloud_results_to_csv(paths_dict,remove_results_txt_file):
-
+def extract_osmosys_cloud_results_txt_to_csv(paths_dict):#,remove_results_txt_file):
+    """This function will extract the results.txt file from the osmosys cloud and convert it to csvs like we would if we ran osemosys locally. The strength of this is it is less removed from the process used for local runs as it uses otoole to convert from the results.txt file to csvs. The weakness is that it is more complicated and requires more code. It also means that if you are using the cloud because something is not working lcoally, then this may not work either.
+    
+    Like with aggregate_and_edit_osemosys_cloud_csvs() you will need to make sure to download the correct .zip file and put it in the tmp_directory before usign this function, else it will not work."""
     tmp_directory = paths_dict['tmp_directory']
     path_to_data_config = paths_dict['path_to_data_config']
 
-    #load in the result.txt file from osmosys cloud and make it into csvs like we would if we ran osemosys locally. Note that this is the result.txt file you get when you downlaod result_####.zip from osmosys cloud and extract the result.txt file
-
-    #we will just run the file through the f"otoole results cbc csv {tmp_directory}/cbc_results_{economy}_{scenario}.txt {tmp_directory} {path_to_results_config}" script to make the csvs. That script is from the model_solving_functions.solve_model() function
-    #remember to put the results file in the tmp directory
-
-    #convert to csv
-    start = time.time()
-    #check the result.txt file is in the tmp directory
-    if 'result.txt' not in os.listdir(tmp_directory):
-        print('The result.txt file is not in the tmp directory. Please get it from osemosys-cloud.com, put it in the tmp directory and try again. There is documentation in the documentation folder if you want to know how to do this.')
-        return False
+    #load in the result.txt file from the zip file called 'output_30685.zip' where 30685 can be any number. If there are multiple zip files then trhow an error, else load in the result.txt file from the zip file
+    zip_files = [x for x in os.listdir(tmp_directory) if x.split('.')[-1] == 'zip']
+    if len(zip_files) != 1:
+        print("Error: Expected to find one output zip file in tmp directory but found {}".format(len(zip_files)))
+        sys.exit()
     
+    zip_files = zip_files[0]
+    #now unzip the file. there will be a file called data.txt, metadata.json and result.txt. We only want the result.txt file
+    with zipfile.ZipFile(os.path.join(paths_dict['tmp_directory'],zip_files), 'r') as zip_ref:
+        zip_ref.extractall(paths_dict['tmp_directory'])#todo double check no eorrrors will occur if there is already a results file in the tmp directory. maybe it jsut replaces file, but it might be worth deleting the file if ti is there first?
+    
+    #we will just run the file through the f"otoole results cbc csv {tmp_directory}/cbc_results_{economy}_{scenario}.txt {tmp_directory} {path_to_results_config}" script to make the csvs. That script is from the model_solving_functions.solve_model() function
+
+    start = time.time()
     command=f"otoole results cbc csv {tmp_directory}/result.txt {tmp_directory} {path_to_data_config}"
     result = subprocess.run(command,shell=True, capture_output=True, text=True)
     print("\n Printing command line output from converting OsMOSYS CLOUD output to csv \n")#results_cbc_{economy}_{scenario}.txt
@@ -211,9 +231,130 @@ def extract_osmosys_cloud_results_to_csv(paths_dict,remove_results_txt_file):
     print(result.stderr+'\n')
     print('\n Time taken: {} for converting OsMOSYS CLOUD output to csv \n\n########################\n '.format(time.time()-start))
 
-    if remove_results_txt_file:
-        #remove the results.txt file from the tmp directory so we don't accidentally use it again. This should normally be done unless you want to use the same results.txt file again
-        os.remove(f'{tmp_directory}/result.txt')
-        print('The result.txt file has been removed from the tmp directory. If you want to use it again, please put it back in the tmp directory and try again.')
-    return True
+    # if remove_results_txt_file:#deleted for now
+    #     #remove the results.txt file from the tmp directory so we don't accidentally use it again. This should normally be done unless you want to use the same results.txt file again
+    #     os.remove(f'{tmp_directory}/result.txt')
+    #     print('The result.txt file has been removed from the tmp directory. If you want to use it again, please put it back in the tmp directory and try again.')
+    return
 
+def aggregate_and_edit_osemosys_cloud_csvs(paths_dict, data_config, results_sheets):
+    """Osemosys cloud gives you a zip file of csvs which contain the results of the model. This function will aggregate the csvs into one csv and then edit the csv so it is in the same format as the csvs we get when we run osemosys locally. This means we can use the same functions to analyse the results from both osemosys cloud and osemosys locally. 
+    A major part of this will jsut be renaming columns from single letters to the column names used in the data config file. 
+
+    The strenght of using this function compared to extract_osmosys_cloud_results_txt_to_csv is that it is doesnt rely on otoole to extract the results and so if something is not working with the way otoole extracts the results, then this function will still work. 
+
+    Like with extract_osmosys_cloud_results_txt_to_csv() you will need to make sure to download the correct .zip file and put it in the tmp_directory before usign this function, else it will not work.
+    """
+    #take in csvs from the zip file from osemosys cloud and then the data config file and convert the column names from what they are in the csvs to what they are in the data config file. We can do this using the code from the osemosys cloud server which is hosted on github here https://github.com/ClimateCompatibleGrowth/osemosys-cloud
+
+    #first find the csv files in the tmp_directory. They will be in a zip file with the naming convention: csv_30685.zip where 30685 could be any number.
+    csv_zip_file = [f for f in os.listdir(paths_dict['tmp_directory']) if f.endswith('.zip') and f.startswith('csv_')]
+    if len(csv_zip_file) != 1:
+        print("Error: Expected to find one csv zip file in tmp directory but found {}".format(len(csv_zip_file)))
+        sys.exit()
+    csv_zip_file = csv_zip_file[0]
+    #now unzip the file. there will be the csvs in a folder called csv
+    with zipfile.ZipFile(os.path.join(paths_dict['tmp_directory'],csv_zip_file), 'r') as zip_ref:
+        zip_ref.extractall(paths_dict['tmp_directory'])#todo double check no eorrrors will occur if there is already a csv folder in the tmp directory. maybe it jsut replaces file, but it might be worth deleting the folder if ti is there first?
+
+    #now find the csvs in the csv folder
+    csv_files = [f for f in os.listdir(os.path.join(paths_dict['tmp_directory'],'csv')) if f.endswith('.csv')]
+
+    #now we need to rename the columns in the csvs to match the data config file. We can do this by using the dictionary below.
+    #the dictionary below is the set of indices used for each possible output csv from the cloud. It might change in the future so it could be worth checking this if you are having problems with the osemosys server. You can find it here https://github.com/ClimateCompatibleGrowth/osemosys-cloud/blob/e0f110235811e6f860a97c9f5e223b6126e3e6f9/scripts/postprocess_results.py#L238
+    osemosys_cols = {'NewCapacity':['r','t','y'],
+        'AccumulatedNewCapacity':['r','t','y'],
+        'TotalCapacityAnnual':['r','t','y'],
+        'CapitalInvestment':['r','t','y'],
+        'AnnualVariableOperatingCost':['r','t','y'],
+        'AnnualFixedOperatingCost':['r','t','y'],
+        'SalvageValue':['r','t','y'],
+        'DiscountedSalvageValue':['r','t','y'],
+        'TotalTechnologyAnnualActivity':['r','t','y'],
+        'RateOfActivity':['r','l','t','m','y'],
+        'RateOfTotalActivity':['r','t','l','y'],
+        'Demand':['r','l','f','y'],
+        'TotalAnnualTechnologyActivityByMode':['r','t','m','y'],
+        'TotalTechnologyModelPeriodActivity':['r','t'],
+        'ProductionByTechnology':['r','l','t','f','y'],
+        'ProductionByTechnologyAnnual':['r','t','f','y'],
+        'AnnualTechnologyEmissionByMode':['r','t','e','m','y'],
+        'AnnualTechnologyEmission':['r','t','e','y'],
+        'AnnualEmissions':['r','e','y'],
+        'DiscountedTechnologyEmissionsPenalty':['r','t','y'],
+        'RateOfProductionByTechnology':['r','l','t','f','y'],
+        'RateOfUseByTechnology':['r','l','t','f','y'],
+        'UseByTechnology':['r','l','t','f','y'],
+        'RateOfProductionByTechnologyByMode':['r','l','t','f','m','y'],
+        'RateOfUseByTechnologyByMode':['r','l','t','f','m','y'],
+        'TechnologyActivityChangeByMode':['r','t','m','y'],
+        'TechnologyActivityChangeByModeCostTotal':['r','t','m','y'],
+        'InputToNewCapacity':['r','t','f','y'],
+        'InputToTotalCapacity':['r','t','f','y'],
+        'DiscountedCapitalInvestment':['r','t','y'],
+        'DiscountedOperatingCost':['r','t','y'],
+        'TotalDiscountedCostByTechnology':['r','t','y'],
+        'NumberOfNewTechnologyUnits':['r','t','y'],
+        'NewStorageCapacity':['r','s','y'],
+        'SalvageValueStorage':['r','s','y'],
+        'StorageLevelYearStart':['r','s','y'],
+        'StorageLevelYearFinish':['r','s','y'],
+        'StorageLevelSeasonStart':['r','s','ls','y'],
+        'StorageLevelDayTypeStart':['r','s','ls','ld','y'],
+        'StorageLevelDayTypeFinish':['r','s','ls','ld','y'],
+        'DiscountedSalvageValueStorage':['r','s','y'],
+        'Charging':['r','s','f','l','y'],
+        'Discharging':['r','s','f','l','y'],
+        'RateOfNetStorageActivity':['r','s','ls','ld','lh','y'],
+        'NetChargeWithinYear':['r','s','ls','ld','lh','y'],
+        'NetChargeWithinDay':['r','s','ls','ld','lh','y'],
+        'StorageLowerLimit':['r','s','y'],
+        'StorageUpperLimit':['r','s','y'],
+        'AccumulatedNewStorageCapacity':['r','s','y'],
+        'CapitalInvestmentStorage':['r','s','y'],
+        'DiscountedCapitalInvestmentStorage':['r','s','y'],
+        'DiscountedSalvageValueStorage':['r','s','y'],
+        'TotalDiscountedStorageCost':['r','s','y'],
+        'RateOfNetStorageActivity':['r','s','ls','ld','lh','y'],
+    }
+    #for each key in the dictionary above:
+    # check if there is a csv of the same name and load it
+    # find it in the config file
+    #and then, making the assumption that the orders are the same, (they have to be unless you have cahnged the order of columns within the osemosys model file (eg. osemosys_fast.txt)) convert the column names in the csv from the single letter names in the dictionary and csv to the names in the config file.
+    list_of_missing_csvs = []
+    list_of_keys_not_in_config = []
+    list_of_keys_not_in_results = []
+    
+    for key in osemosys_cols.keys():
+        #load csv
+        if key + '.csv' in csv_files:
+            csv = pd.read_csv(os.path.join(paths_dict['tmp_directory'],'csv',key+'.csv'))
+            if key in data_config.keys() and results_sheets:
+                #rename the columns
+                for i, col in enumerate(osemosys_cols[key]):
+                    data_config_col = data_config[key]['indices'][i] 
+                    csv.rename(columns={col:data_config_col}, inplace=True)
+                #convert the col which is the same as the key to a VALUE column
+                csv.rename(columns={key:'VALUE'}, inplace=True)
+
+                #save the csv to tmp_directory
+                csv.to_csv(os.path.join(paths_dict['tmp_directory'],key+'.csv'), index=False)
+
+                # #add the csv to a results_dict
+                # results_dict[key] = csv
+            else:
+                if key in data_config.keys():
+                    list_of_keys_not_in_results.append(key)
+                else:
+                    list_of_keys_not_in_config.append(key)
+        else:
+            list_of_missing_csvs.append(key)
+
+    if list_of_missing_csvs.__len__() > 0:
+        print('\nWARNING: The following csvs were not found in the csv_files list, so their data wont be in the results data: \n{}'.format(list_of_missing_csvs))
+    if list_of_keys_not_in_config.__len__() > 0:
+        print('\nWARNING: The following keys were not found in the data_config, so their data wont be in the results data: \n{}'.format(list_of_keys_not_in_config))
+    if list_of_keys_not_in_results.__len__() > 0:
+        print('\nWARNING: The following keys were not found in the results_sheets but are in data config. This could because they have calculated:False, so their data wont be in the results data: \n{}'.format(list_of_keys_not_in_results))
+
+    return

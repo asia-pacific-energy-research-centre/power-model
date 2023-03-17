@@ -34,7 +34,55 @@ def import_run_preferences(root_dir, input_data_sheet_file):
     print(f'Running model for economy: {economy}, scenario: {scenario}, for years up to and including: {years}')
     return config_dict, economy, scenario, years
 
-def import_data_config(paths_dict):
+
+def check_indices_in_data_config(data_config, osemosys_cloud):
+
+    #first get names of possible idnices in the data config which are the keys where type: set
+    data_config_indices = [key for key in data_config.keys() if data_config[key]['type'] == 'set']
+    #now make assumptions about what indices these should be:
+
+    #if indices are not in this list then throw an error
+    possible_indices = ['DAILYTIMEBRACKET',
+    'DAYTYPE',
+    'EMISSION',
+    'FUEL',
+    'MODE_OF_OPERATION',
+    'REGION',
+    'SEASON',
+    'STORAGE',
+    'TECHNOLOGY',
+    'TIMESLICE',
+    'YEAR']
+
+    if not all([index in possible_indices for index in data_config_indices]):
+        raise ValueError('The indices in the data_config are not all in the list of possible indices. Make sure none of them have a spelling mistake. \n The possible indices are: \n {}'.format(possible_indices))
+
+    if osemosys_cloud:
+        #we need to make sure the order of some indices is correct because osemosys cloud expects this:
+        selected_indices_order = [
+            'TECHNOLOGY',
+            'FUEL',
+            'STORAGE',
+            'EMISSION',
+            'MODE_OF_OPERATION',
+            'YEAR'
+            ]
+        non_ordered_indices = [index for index in data_config_indices if index not in selected_indices_order]
+
+        #check that every indices list contains their indices in the correct order:
+        #note that all the indices will not always be there. So we just nee to check that if they are there then they are in the correct order. i.e. if the indices are ['TECHNOLOGY','FUEL','YEAR'] then we need to check that they are in the correct order (which they are). But, if they were in the order ['FUEL','TECHNOLOGY','YEAR'] then we would need to throw an error.
+        #Also not that the non ordered indices should al
+        for key in data_config:
+            if data_config[key]['type'] == 'param':
+                indices = data_config[key]['indices']
+                indices_in_selected_indices_order = [index for index in indices if index in selected_indices_order]
+                if len(indices_in_selected_indices_order) > 1:
+                    #starting from the first indice, check that the indice ahead of ti is also ahead of it in the selected_indices_order list
+                    for i in range(len(indices_in_selected_indices_order)-1):
+                        if selected_indices_order.index(indices_in_selected_indices_order[i]) > selected_indices_order.index(indices_in_selected_indices_order[i+1]):
+                            raise ValueError(f'The indices {indices_in_selected_indices_order} in the data_config are not in the correct order for {data_config[key]}. Make sure that the indices are in the correct order. \n These indices need to have the order: \n {selected_indices_order}')
+        
+def import_data_config(paths_dict,osemosys_cloud):
         
     accepted_types = ['param','set','result']
     #import then recreate dataconfig with short_name as key so that its keys can be compared to the name of the corresponding data sheet in our input data
@@ -63,7 +111,9 @@ def import_data_config(paths_dict):
         short_name = data_config_short_names[key]['short_name']
         data_config_short_names[short_name] = copy.deepcopy(data_config_short_names[key])
         del data_config_short_names[key]
-        
+    
+    check_indices_in_data_config(data_config, osemosys_cloud)
+    
     return results_sheets, data_config, data_config_short_names
 
 def edit_input_data(data_config_short_names, scenario, economy, model_end_year,sheet,sheet_name):
@@ -129,7 +179,10 @@ def edit_input_data(data_config_short_names, scenario, economy, model_end_year,s
 
     return sheet
 
-
+def check_order_of_indices_in_data_config():#TODO do this using dataconfig and ?the model file?
+    #run through the indices in the data_config and check that they are in the correct order:
+    #assuming the indices have the names:
+    return
 def extract_input_data(data_config_short_names,paths_dict,model_end_year,economy,scenario):
     #using the data extracted from the data_config.yaml file, extract that data from the excel sheet and save it to a dictionary:
     input_data = dict()
@@ -248,6 +301,29 @@ def write_model_run_specs_to_file(paths_dict, scenario, economy, model_end_year,
         f.write(f'Combined Results Tall Sheet Names: {combined_results_tall_sheet_names}\n')     
     return
 
+def create_new_directories(tmp_directory, results_directory,osemosys_cloud, FILE_DATE_ID, economy, scenario_folder):
+    #create the tmp and results directories if they dont exist. ALso check if there are files in the tmp directory and if so, move them to a new folder with the FILE_DATE_ID in the name. 
+    #EXCEPT if osemosys_cloud is True, then we dont want to do this because the user will run main.py twuice, once to prepare data and once to extract results, and we dont want to move the files in the tmp directory in between those two runs
+
+    if not os.path.exists(tmp_directory):
+        os.makedirs(tmp_directory)
+    else:
+        #if theres already file in the tmp directory then we should move those to a new folder so we dont overwrite them:
+        #check if there are files:
+        if len(os.listdir(tmp_directory)) > 0 and not osemosys_cloud:
+            new_temp_dir = f'./tmp/{economy}/{scenario_folder}/{FILE_DATE_ID}'
+            #make the new temp directory:
+            os.makedirs(new_temp_dir)
+            #move all files:
+            for file in os.listdir(tmp_directory):
+                shutil.move(f'{tmp_directory}/{file}', new_temp_dir)
+
+    if not os.path.exists(results_directory):#no need to check if the results dir exists because the data will be saved with FILE_DATE_ID in the name, its just too hard to do that with the tmp directory
+        os.makedirs(results_directory)
+
+    return
+
+
 def set_up_paths(scenario, economy, root_dir, config_dir,data_config_file, input_data_sheet_file,osemosys_model_script,osemosys_cloud,FILE_DATE_ID):
     """set up the paths to the various files and folders we will need to run the model. This will create a dictionary for the paths so we dont have to keep passing lots of arguments to functions"""
     if osemosys_cloud:
@@ -259,21 +335,7 @@ def set_up_paths(scenario, economy, root_dir, config_dir,data_config_file, input
     tmp_directory = f'./tmp/{economy}/{scenario_folder}'
     results_directory = f'./results/{economy}/{scenario_folder}'
 
-    if not os.path.exists(tmp_directory):
-        os.makedirs(tmp_directory)
-    else:
-        #if theres already file in the tmp directory then we should move those to a new folder so we dont overwrite them:
-        #check if there are files:
-        if len(os.listdir(tmp_directory)) > 0:
-            new_temp_dir = f'./tmp/{economy}/{scenario_folder}/{FILE_DATE_ID}'
-            #make the new temp directory:
-            os.makedirs(new_temp_dir)
-            #move all files:
-            for file in os.listdir(tmp_directory):
-                shutil.move(f'{tmp_directory}/{file}', new_temp_dir)
-
-    if not os.path.exists(results_directory):#no need to check if the results dir exists because the data will be saved with FILE_DATE_ID in the name, its just too hard to do that with the tmp directory
-        os.makedirs(results_directory)
+    create_new_directories(tmp_directory, results_directory,osemosys_cloud, FILE_DATE_ID, economy, scenario_folder)
 
     #create model run specifications txt file using the input variables as the details and the FILE_DATE_ID as the name:
     model_run_specifications_file = f'{tmp_directory}/model_run_specs_{FILE_DATE_ID}.txt'
@@ -348,3 +410,4 @@ def validate_input_data(paths_dict):
     print('\n Time taken: {} for validate process'.format(time.time()-start))
 
     return
+

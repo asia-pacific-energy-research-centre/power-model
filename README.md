@@ -102,7 +102,8 @@ I have included a few checks to make sure things in the input data are as they s
     - i cant tell for sure why this is but i think its related to the primal infs issue and can also happen if the supplied input data for calculating the variable for that sheet are not available, i.e. not supplied. 
  - SystemExit Errors. 
     - These should be occuring because of some check i have introduced to the code to make sure the input data is closer to what it should be for the model.
- - ./power-model/env/Library/bin/glpsol.exe: error while loading shared libraries: ucrtbased.dll: cannot open shared object file: No such file or directory
+ - ./power-model/env/Library/bin/cbc.exe: error while loading shared libraries: ucrtbased.dll: cannot open shared object file: No such file or directory
+    - This is a windows error. It doesnt occur on my home computer so i expect it is to do with the APERC laptops. I've tried a few things but no success. If this happens then you can try running the model using glpsol (is much slower), or you can try running the model on your own computer, or perhaps the OSeMOSYS CLOUD solution.
  
 ### What can you do to avoid errors in the first place:
  - When introducing new paramaters to the model, check they arent already stated in the osemosys_official_config.yaml as this should contain every variable calcualted or used in the osemosys.txt model file. That way you can make sure you dont make any annoying mistakes like misordering indices, supplying the wrong values etc. 
