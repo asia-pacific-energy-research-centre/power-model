@@ -47,7 +47,7 @@ def solve_model(solving_method,log_file,paths_dict):
         #save time taken to log_file
         log_file.write("\n Time taken: {} for converting to lp file \n\n########################\n ".format(time.time()-start))
 
-    if solving_method == 'coin-cbc':
+    if solving_method == 'coin':
         #new solving method (much faster):
         #start new timer to time the solving process
         start = time.time()
