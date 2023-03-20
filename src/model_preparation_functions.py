@@ -225,7 +225,7 @@ def extract_input_data(paths_dict,config_dict):
     #now import data from excel sheet:
     for sheet_name in data_config_short_names:
 
-        #ignore any results sheets:
+        #ignore any results sheets
         if data_config_short_names[sheet_name]['type'] == 'result':
             continue
 
@@ -330,7 +330,7 @@ def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
         f.write(f'Input data path: {input_data_path}\n')
         f.write(f"extract_osemosys_cloud_results_using_otoole: {config_dict['extract_osemosys_cloud_results_using_otoole']}\n")
 
-        f.write(f'Intermediate inputs (some may not be applicable):\n')
+        f.write(f'\nIntermediate inputs (some may not be applicable):\n')
         f.write(f'Combined Input Data workbook path: {paths_dict["path_to_combined_input_data_workbook"]}\n')
         f.write(f'Input Data File path: {paths_dict["path_to_input_data_file"]}\n')
         f.write(f'Log file path: {paths_dict["log_file_path"]}\n')
@@ -438,6 +438,7 @@ def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict):
     paths_dict['combined_results_tall_years'] = combined_results_tall_years
     paths_dict['combined_results_tall_sheet_names'] = combined_results_tall_sheet_names
     paths_dict['model_run_specifications_file'] = model_run_specifications_file
+    paths_dict['path_to_validation_config'] = f'{root_dir}/{config_dir}/validate.yaml'
     
     return paths_dict
 
@@ -446,8 +447,8 @@ def validate_input_data(paths_dict):
         --validate_config VALIDATE_CONFIG
         Path to a user-defined validation-config file
     This would probably remove the issue with lots of fuels being labelled as invalid names."""
-
-    command = f"otoole validate datafile {paths_dict['path_to_input_data_file']} {paths_dict['path_to_data_config']}"
+    #otoole validate datafile data.txt config.yaml --validate_config validate.yaml
+    command = f"otoole validate datafile {paths_dict['path_to_input_data_file']} {paths_dict['path_to_data_config']} --validate_config {paths_dict['path_to_validation_config']}"
 
     result = subprocess.run(command,shell=True, capture_output=True, text=True)
 

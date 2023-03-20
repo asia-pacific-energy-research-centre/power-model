@@ -1,7 +1,7 @@
 ###############
 #    Sets     #
 ###############
-#
+#c
 set DAYTYPE := 1 ;
 set FUEL := CO DS EL_Distribution EL_Industry EL_Residential EL_Services EL_Transmission EL_Transport HF NG UR ;
 set MODE_OF_OPERATION := 1 2 ;

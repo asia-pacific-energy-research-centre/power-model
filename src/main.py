@@ -19,7 +19,7 @@ FILE_DATE_ID = time.strftime("%Y-%m-%d-%H%M%S")
 root_dir = '.' # because this file is in src, the root may change if it is run from this file or from command line
 config_dir = 'config'
 #this MUST be one of osmoseys_fast.txt or osemosys.txt. Otherwise we will have to change the code around line 86 of model_solving_functions.py
-osemosys_model_script = 'osemosys_fast.txt'
+osemosys_model_script = 'osemosys.txt'
 extract_osemosys_cloud_results_using_otoole = True#False is the default, but if you want to use otoole to extract the results, set this to True
 testing = True
 ################################################################################
@@ -43,7 +43,6 @@ def main(input_data_sheet_file):
     ################################################################################
     #SET UP LOGGING
     ################################################################################
-    print(paths_dict['log_file_path'])
     if testing:
         logging_level = logging.DEBUG
     else:
@@ -56,7 +55,6 @@ def main(input_data_sheet_file):
         ], encoding='utf-8', level=logging_level, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
     logger = logging.getLogger()
     logger.info(f"LOGGING STARTED: {FILE_DATE_ID}, being saved to {paths_dict['log_file_path']} and outputted to console")
-    logger.debug(f"LOGGING STARTED: {FILE_DATE_ID}, being saved to {paths_dict['log_file_path']} and outputted to console")
     # logging.debug()
     # logging.info()
     # logging.warning()
@@ -77,7 +75,7 @@ def main(input_data_sheet_file):
         model_preparation_functions.prepare_data_for_osemosys(paths_dict,config_dict)
 
         model_preparation_functions.prepare_model_script_for_osemosys(paths_dict, config_dict)
-        model_preparation_functions.validate_input_data(paths_dict)# todo: mnake this this function work by creating the data vaildation yaml file.
+        #model_preparation_functions.validate_input_data(paths_dict)# todo: mnake this this function work. too many errors. possibly otoole needs to develop it more
 
     ################################################################################
     #SOLVE MODEL
@@ -150,7 +148,7 @@ def is_notebook() -> bool:
         return False      # Probably standard Python interpreter
     
 if is_notebook():
-    input_data_sheet_file="data-sheet-power_36TS.xlsx"#set this based on the data sheet you want to run if you are running this from jupyter notebook
+    input_data_sheet_file="data-sheet-power_36TS.xlsx"#"simplicity_data.xlsx"#set this based on the data sheet you want to run if you are running this from jupyter notebook
     #make directory the root of the project
     if os.getcwd().split('\\')[-1] == 'src':
         os.chdir('..')
