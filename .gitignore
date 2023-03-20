@@ -7,12 +7,13 @@
 *.code-workspace
 *.graphml
 archive/
-
+/results
 # temporary
 testing_virtual_machine.docx 
 testing_code/*
 archive/*
 simplicity/
+todolist.md
 #Dont Ignore the following:
 !data-sheet-power-24ts.xlsx
 

@@ -9,22 +9,23 @@ from otoole.write_strategies import WriteDatafile
 import shutil
 import sys
 import copy
-import time
 import subprocess
 import post_processing_functions as post_processing_functions
-
+import logging
+logging.getLogger("otoole").setLevel(logging.WARNING)
+logger = logging.getLogger(__name__)
 #make directory the root of the project
 if os.getcwd().split('\\')[-1] == 'src':
     os.chdir('..')
     print("Changed directory to root of project")
 
 def set_up_config_dict(root_dir, input_data_sheet_file,extract_osemosys_cloud_results_using_otoole,osemosys_model_script):
-    """extract the data we want to run the model on using the first sheet in the input data sheet called START. This defines the economy, scenario and years we want to run the model for."""
+    """extract the data we want to run the model on using the first sheet in the input data sheet called START. This defines the economy, scenario and model_end_year we want to run the model for."""
     df_prefs = pd.read_excel(f'{root_dir}/data/{input_data_sheet_file}', sheet_name='START',usecols="A:B",nrows=5,header=None)
 
     economy = df_prefs.loc[0][1]
     scenario = df_prefs.loc[1][1]
-    years = df_prefs.loc[2][1]
+    model_end_year = df_prefs.loc[2][1]
     data_config_file = df_prefs.loc[3][1]
     solving_method = df_prefs.loc[4][1]
 
@@ -33,25 +34,26 @@ def set_up_config_dict(root_dir, input_data_sheet_file,extract_osemosys_cloud_re
     #names in the excel sheet:
     names_in_excel = (df_prefs.loc[0][0], df_prefs.loc[1][0], df_prefs.loc[2][0], df_prefs.loc[3][0], df_prefs.loc[4][0])
     if not all([name == name_in_excel for name, name_in_excel in zip(names, names_in_excel)]):
-        raise Exception('The names in the START sheet of the input data sheet are not correct. Please check the names are correct and try again.')
-
+        logger.error(f'The names in the START sheet of the input data sheet are not correct. Please check the names are correct and try again. \n The names in the START sheet are: {names_in_excel} \n The names that should be in the START sheet are: {names}')
+        sys.exit()
 
     config_dict = {}
     config_dict['economy'] = economy
-    config_dict['years'] = years
+    config_dict['model_end_year'] = model_end_year
     config_dict['scenario'] = scenario
     config_dict['solving_method'] = solving_method
     config_dict['data_config_file'] = data_config_file
     config_dict['input_data_sheet_file'] = input_data_sheet_file
-
+  
     #print the config_dict details
-    print(f'Running model for economy: {economy}, scenario: {scenario}, for years up to and including: {years}')
+    logger.info(f'Running model for economy: {economy}, scenario: {scenario}, for years up to and including: {model_end_year}')
     
     osemosys_cloud_input = get_osemosys_cloud_stage_from_user(config_dict)
 
     config_dict['osemosys_cloud_input'] = osemosys_cloud_input
     config_dict['extract_osemosys_cloud_results_using_otoole'] = extract_osemosys_cloud_results_using_otoole
     config_dict['osemosys_model_script'] = osemosys_model_script
+
     return config_dict
 
 
@@ -167,18 +169,18 @@ def edit_input_data(data_config_short_names, scenario, economy, model_end_year,s
                         sheet_cols.remove('YEAR')
                         sheet = pd.melt(sheet, id_vars=sheet_cols, var_name='YEAR', value_name='VALUE')
                     else:
-                        print(f'Error: {sheet_name} sheet has no 4 digit year columns or a YEAR column. Either add 4digit year columns or a year column to the sheet. Or change the code.')
+                        logger.error(f'{sheet_name} sheet has no 4 digit year columns or a YEAR column. Either add 4digit year columns or a year column to the sheet. Or change the code.')
                         wb.close()
                         sys.exit()
-                #now filter for years below the model_end_year + 1
+                #now filter for model_end_year below the model_end_year + 1
                 sheet = sheet[sheet['YEAR']<=model_end_year]
             elif col not in sheet.columns:
-                print(f'Error: {sheet_name} sheet is missing the column {col}. Either add it to the sheet or remove it from the config/config.yaml file.')
+                logger.error(f'{sheet_name} sheet is missing the column {col}. Either add it to the sheet or remove it from the config/config.yaml file.')
                 wb.close()
                 sys.exit()
         #check for VALUE col even thogh it is not in the indices list
         if 'VALUE' not in sheet.columns:
-            print(f'Error: {sheet_name} sheet is missing the column VALUE.')
+            logger.error(f'{sheet_name} sheet is missing the column VALUE. Either add it to the sheet or remove it from the config/config.yaml file.')
             wb.close()
             sys.exit()
 
@@ -186,20 +188,20 @@ def edit_input_data(data_config_short_names, scenario, economy, model_end_year,s
         if len(sheet.columns) != len(data_config_short_names[sheet_name]['indices'])+1:
             #find the additional columns
             additional_cols = [col for col in sheet.columns if col not in data_config_short_names[sheet_name]['indices'] and col != 'VALUE']
-            print(f'Error: {sheet_name} sheet has additional columns: \n{additional_cols} \n and these are not in the indices list. Either remove them from the sheet or add them to the indices list in the config/config.yaml file.')
+            logger.error(f'{sheet_name} sheet has additional columns: \n{additional_cols} \n and these are not in the indices list. Either remove them from the sheet or add them to the indices list in the config/config.yaml file.')
             wb.close()
             sys.exit()
     elif data_config_short_names[sheet_name]['type'] == 'set':
         #check it has a VALUE column only
         if len(sheet.columns) != 1 and sheet.columns[0] != 'VALUE':
-            print(f'Error: {sheet_name} sheet should only have the column VALUE.')
+            logger.error(f'{sheet_name} sheet should only have the column VALUE.')
             wb.close()
             sys.exit()
         #if the sheet is called 'YEAR' then the YEAR col is called 'VALUE' and we need to filter it:
         if sheet_name == 'YEAR':
             sheet = sheet[sheet['VALUE']<=model_end_year]
     else:
-        print(f'Error: {sheet_name} sheet has an invalid type. The type should be either param or set.')
+        logger.error(f'{sheet_name} sheet has an invalid type. The type should be either param or set.')
         wb.close()
         sys.exit()
 
@@ -229,7 +231,7 @@ def extract_input_data(paths_dict,config_dict):
 
         #check the sheet exists in the excel file:
         if sheet_name not in wb.sheet_names:
-            print(f'Error: {sheet_name} is not in the excel sheet. Either add it to the sheet or remove it from the config/config.yaml file.')
+            logger.error(f'{sheet_name} is not in the excel sheet. Either add it to the sheet or remove it from the config/config.yaml file.')
             wb.close()
             sys.exit()
 
@@ -244,27 +246,27 @@ def extract_input_data(paths_dict,config_dict):
 
     return input_data
 
-def write_data_to_temp_workbook(paths_dict, config_dict):
+def write_data_to_temp_workbook(paths_dict, input_data):
     #write the data to a temp workbook before converting to the osemosys format
-
+    
     with pd.ExcelWriter(paths_dict['path_to_combined_input_data_workbook']) as writer:
-        for k, v in config_dict['filtered_input_data'].items():
+        for k, v in input_data.items():
             v.to_excel(writer, sheet_name=k, index=False, merge_cells=False)
-    print("Combined file of Excel input data has been written to the tmp folder.\n")
+    logger.info(f"Combined file of Excel input data has been written to the tmp folder.\n")
 
     return
 
-def prepare_data_for_osemosys(paths_dict, data_config):
+def prepare_data_for_osemosys(paths_dict, config_dict):
     #The data needs to be converted from the Excel format to the text file format. We use otoole for this task.
 
-    reader = ReadExcel(user_config=data_config)#TODO is this going to work as expected?
-    writer = WriteDatafile(user_config=data_config)
+    reader = ReadExcel(user_config=config_dict['data_config'])#TODO is this going to work as expected?
+    writer = WriteDatafile(user_config=config_dict['data_config'])
 
     data, default_values = reader.read(paths_dict['path_to_combined_input_data_workbook'])
 
     writer.write(data, paths_dict['path_to_input_data_file'], default_values)
 
-    print(f"Data file in text format has been written and saved in the tmp folder as {paths_dict['path_to_input_data_file']}. This is the file you would use in OsEMOSYS Cloud as data if you are using that.\n")
+    logger.info(f"Data file in text format has been written and saved in the tmp folder as {paths_dict['path_to_input_data_file']}. This is the file you would use in OsEMOSYS Cloud as data if you are using that.\n")
 
     return 
 
@@ -305,8 +307,6 @@ def prepare_model_script_for_osemosys(paths_dict, config_dict,replace_long_var_n
     if replace_long_var_names:
         replace_long_var_names_in_osemosys_script(paths_dict)
 
-    print(f'\n######################## \n Running solve process using {paths_dict["new_osemosys_model_script_path"]} \n########################\n')
-
     return
 
 def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
@@ -322,15 +322,26 @@ def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
         f.write(f'Run Date: {FILE_DATE_ID}\n')
         f.write(f"Run Scenario: {config_dict['scenario']}\n")
         f.write(f"Run Economy: {config_dict['economy']}\n")
-        f.write(f"Run End Year: {config_dict['model_end_year']}\n")
-        f.write(f'Osemosys Model Script path: {osemosys_model_script_path}\n')
+        f.write(f"Run model_end_year: {config_dict['model_end_year']}\n")
+        f.write(f'Original Osemosys Model Script path: {osemosys_model_script_path}\n')
+        f.write(f'New Osemosys Model Script path: {paths_dict["new_osemosys_model_script_path"]}\n')
         f.write(f'Input Data Config File path: {path_to_data_config}\n')
         f.write(f"Solving Method used: {config_dict['solving_method']}\n")
         f.write(f'Input data path: {input_data_path}\n')
+        f.write(f"extract_osemosys_cloud_results_using_otoole: {config_dict['extract_osemosys_cloud_results_using_otoole']}\n")
+
+        f.write(f'Intermediate inputs (some may not be applicable):\n')
+        f.write(f'Combined Input Data workbook path: {paths_dict["path_to_combined_input_data_workbook"]}\n')
+        f.write(f'Input Data File path: {paths_dict["path_to_input_data_file"]}\n')
+        f.write(f'Log file path: {paths_dict["log_file_path"]}\n')
+        f.write(f'cbc intermediate data file path: {paths_dict["cbc_intermediate_data_file_path"]}\n')
+        f.write(f'cbc results data file path: {paths_dict["cbc_results_data_file_path"]}\n')
+
         f.write(f'\nResults:\n')
         f.write(f'Results Workbook: {results_workbook}\n')
         f.write(f'Combined Results Tall Years: {combined_results_tall_years}\n')
-        f.write(f'Combined Results Tall Sheet Names: {combined_results_tall_sheet_names}\n')     
+        f.write(f'Combined Results Tall Sheet Names: {combined_results_tall_sheet_names}\n')    
+
     return
 
 def create_new_directories(tmp_directory, results_directory, FILE_DATE_ID, scenario_folder, config_dict):
@@ -346,9 +357,10 @@ def create_new_directories(tmp_directory, results_directory, FILE_DATE_ID, scena
             new_temp_dir = f"./tmp/{config_dict['economy']}/{scenario_folder}/{FILE_DATE_ID}"
             #make the new temp directory:
             os.makedirs(new_temp_dir)
-            #move all files:
+            #move all files (BUT NOT FOLDERS!):
             for file in os.listdir(tmp_directory):
-                shutil.move(f'{tmp_directory}/{file}', new_temp_dir)
+                if os.path.isfile(f'{tmp_directory}/{file}'):
+                    shutil.move(f'{tmp_directory}/{file}', new_temp_dir)
 
     if not os.path.exists(results_directory):#no need to check if the results dir exists because the data will be saved with FILE_DATE_ID in the name, its just too hard to do that with the tmp directory
         os.makedirs(results_directory)
@@ -380,8 +392,7 @@ def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict):
 
     path_to_data_config = f'{root_dir}/{config_dir}/{data_config_file}'
     if not os.path.exists(path_to_data_config):
-        print(f'WARNING: data config file {path_to_data_config} does not exist')
-
+        logger.warning(f'data config file {path_to_data_config} does not exist')
     path_to_combined_input_data_workbook = f'{tmp_directory}/combined_data_{economy}_{scenario}.xlsx'
 
     input_data_file_path=f"{root_dir}/data/{input_data_sheet_file}"
@@ -395,8 +406,8 @@ def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict):
 
     #check that osemosys_model_script is either 'osemosys.txt' or 'osemosys_fast.txt':
     if config_dict['osemosys_model_script'] not in ['osemosys.txt', 'osemosys_fast.txt']:
-        print(f"ERROR: osemosys_model_script is {config_dict['osemosys_model_script']}. It should be either osemosys.txt or osemosys_fast.txt")
-        raise ValueError
+        logger.warning(f"ERROR: osemosys_model_script is {config_dict['osemosys_model_script']}. It should be either osemosys.txt or osemosys_fast.txt")
+        sys.exit()
     osemosys_model_script_path = f"{root_dir}/{config_dir}/{config_dict['osemosys_model_script']}"
 
     new_osemosys_model_script_path = f'{tmp_directory}/model_{economy}_{scenario}.txt'
@@ -438,14 +449,9 @@ def validate_input_data(paths_dict):
 
     command = f"otoole validate datafile {paths_dict['path_to_input_data_file']} {paths_dict['path_to_data_config']}"
 
-    start = time.time()
     result = subprocess.run(command,shell=True, capture_output=True, text=True)
 
-    print("\n Printing results of validate process \n")
-    print(command+'\n')
-    print(result.stdout+'\n')
-    print(result.stderr+'\n')
-    print('\n Time taken: {} for validate process'.format(time.time()-start))
+    logger.info(f"Printing results of validate process \n{command}\n {result.stdout}\n {result.stderr}\n")
 
     return
 
@@ -457,18 +463,18 @@ def get_osemosys_cloud_stage_from_user(config_dict):
         osemosys_cloud_input=None
         while osemosys_cloud_input == None:
             try:
-                prompt = f"Have you put the zip files from osemosys-cloud.com into the tmp directory for this run? (y/n): "
+                prompt = f"Dear human, have you put the zip files from osemosys-cloud.com into the tmp directory for this run? (y/n): "
                 osemosys_cloud_input = input(prompt).lower()
                 if osemosys_cloud_input == 'y':
-                    print("Great, let's continue")
+                    logger.info("Great, I will load the data in and spit it back out as results for you. beep boop beep.")
                     return osemosys_cloud_input
                 elif osemosys_cloud_input == 'n':
-                    print("Please put the zip files from osemosys-cloud.com into the tmp directory and then run the code again")
+                    logger.info("Please put the zip files from osemosys-cloud.com into the tmp directory and then run the code again. beep boop beep.")
                     return osemosys_cloud_input
                 else:
-                    print("Please enter y or n")
+                    logger.info("Please enter y or n")
                     osemosys_cloud_input = None
             except:
-                print("Please enter y or n or exit with ctrl+c")
+                logger.info("Please enter y or n or exit with ctrl+c")
                 osemosys_cloud_input = None
 
