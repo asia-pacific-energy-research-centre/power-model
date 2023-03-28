@@ -22,6 +22,9 @@ config_dir = 'config'
 osemosys_model_script = 'osemosys.txt'
 extract_osemosys_cloud_results_using_otoole = True#False is the default, but if you want to use otoole to extract the results, set this to True
 testing = True
+keep_current_tmp_files = False
+dont_solve = False
+run_with_wsl = True
 ################################################################################
 
 def main(input_data_sheet_file):
@@ -31,34 +34,21 @@ def main(input_data_sheet_file):
     ################################################################################
 
     #prep functions:
-    config_dict = model_preparation_functions.set_up_config_dict(root_dir, input_data_sheet_file, extract_osemosys_cloud_results_using_otoole, osemosys_model_script)
-    # config_dict['model_end_year'] = 2023#uncomment this to override the model end year in the excel file
+    config_dict = model_preparation_functions.set_up_config_dict(root_dir, input_data_sheet_file, extract_osemosys_cloud_results_using_otoole, osemosys_model_script,run_with_wsl)
+
+    #uncomment these to override the model settings in the excel file
+    # config_dict['model_end_year'] = 2023
     # config_dict['economy'] = '19_THA'
     # config_dict['scenario'] = 'Reference'
     # config_dict['data_config_file'] ="config.yaml"
     # config_dict['solving_method'] = 'coin'#or glpsol or cloud
 
-    paths_dict = model_preparation_functions.set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict)
+    paths_dict = model_preparation_functions.set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files)
 
     ################################################################################
     #SET UP LOGGING
     ################################################################################
-    if testing:
-        logging_level = logging.DEBUG
-    else:
-        logging_level = logging.INFO
-    #set up logging now that we have the paths all set up:
-    logging.basicConfig(
-        handlers=[
-            logging.StreamHandler(sys.stdout),#logging will print things to the console as well as to the log file
-            logging.FileHandler(paths_dict['log_file_path'])
-        ], encoding='utf-8', level=logging_level, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-    logger = logging.getLogger()
-    logger.info(f"LOGGING STARTED: {FILE_DATE_ID}, being saved to {paths_dict['log_file_path']} and outputted to console")
-    # logging.debug()
-    # logging.info()
-    # logging.warning()
-    # logging.error()
+    model_preparation_functions.setup_logging(FILE_DATE_ID,paths_dict)
     
     ################################################################################
     #PREPARE DATA
@@ -66,8 +56,6 @@ def main(input_data_sheet_file):
     config_dict = model_preparation_functions.import_data_config(paths_dict,config_dict)
 
     if config_dict['solving_method'] != 'cloud' or config_dict['osemosys_cloud_input'] == 'n':
-
-
         model_preparation_functions.write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID)
         input_data = model_preparation_functions.extract_input_data(paths_dict, config_dict)
         model_preparation_functions.write_data_to_temp_workbook(paths_dict, input_data)
@@ -81,10 +69,10 @@ def main(input_data_sheet_file):
     #SOLVE MODEL
     ################################################################################
 
-    if config_dict['solving_method'] != 'cloud':
-
+    if config_dict['solving_method'] != 'cloud' and not dont_solve:
+        logging.info(f"\n######################## \n Running solve process using {osemosys_model_script} for {config_dict['solving_method']} {config_dict['economy']} {config_dict['scenario']}")
         model_solving_functions.solve_model(config_dict,paths_dict)
-        logging.info(f"\n######################## \n Running solve process using{osemosys_model_script} for {config_dict['solving_method']} {config_dict['economy']} {config_dict['scenario']}")
+
 
 
     ################################################################################
@@ -94,6 +82,8 @@ def main(input_data_sheet_file):
     if config_dict['osemosys_cloud_input'] =='y' or config_dict['solving_method'] != 'cloud':
         config_dict = post_processing_functions.process_osemosys_cloud_results(paths_dict, config_dict)
 
+        config_dict = post_processing_functions.check_for_missing_and_empty_results(paths_dict, config_dict)
+
         post_processing_functions.remove_apostrophes_from_region_names(paths_dict, config_dict)
 
 
@@ -101,10 +91,10 @@ def main(input_data_sheet_file):
 
         # #drop these keys from the results keys list
         # results_sheets_new = [sheet for sheet in results_sheets if sheet not in sheets_to_ignore]
-
-        config_dict = post_processing_functions.save_results_as_excel(paths_dict, config_dict,sheets_to_ignore_if_error_thrown,quit_if_missing_csv=False)
-
-        post_processing_functions.save_results_as_long_csv(paths_dict,config_dict,sheets_to_ignore_if_error_thrown)
+        
+        config_dict = post_processing_functions.save_results_as_excel(paths_dict, config_dict)
+        
+        post_processing_functions.save_results_as_long_csv(paths_dict,config_dict)
 
         #Visualisation:
         post_processing_functions.create_res_visualisation(paths_dict,config_dict)

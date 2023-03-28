@@ -33,11 +33,6 @@ def solve_model(config_dict,paths_dict):
     if solving_method == 'glpsol':
         command =f"glpsol -d {path_to_input_data_file} -m {model_file_path}"
         result = subprocess.run(command,shell=True, capture_output=True, text=True)
-        logger.info("\n Printing command line input from glpsol \n")
-        logger.info(command+'\n')
-        # logger.info(result.stdout+'\n')
-        # logger.info(result.stderr+'\n')
-        #save stdout and err to file
         logger.info("\n Printing command line output from glpsol \n")
         logger.info(command+'\n')
         logger.info(result.stdout+'\n')
@@ -50,26 +45,20 @@ def solve_model(config_dict,paths_dict):
         command=f"glpsol -d {path_to_input_data_file} -m {model_file_path} --wlp {cbc_intermediate_data_file_path} --check"
         #create a lp file to input into cbc
         result = subprocess.run(command,shell=True, capture_output=True, text=True)
-        logger.info("\n Printing command line input from converting to lp file \n")
-        logger.info(command+'\n')
-        # logger.info(result.stdout+'\n')
-        # logger.info(result.stderr+'\n')
-        #save stdout and err to file
         logger.info("\n Printing command line output from converting to lp file \n")
         logger.info(command+'\n')
         logger.info(result.stdout+'\n')
         logger.info(result.stderr+'\n')
 
         #input into cbc solver:
-        command= f"cbc {cbc_intermediate_data_file_path} solve solu {cbc_results_data_file_path}"
+        
+        if config_dict['run_with_wsl']:
+            command= f"wsl cbc {cbc_intermediate_data_file_path} solve solu {cbc_results_data_file_path}"
+        else:
+            command= f"cbc {cbc_intermediate_data_file_path} solve solu {cbc_results_data_file_path}"
         result = subprocess.run(command,shell=True, capture_output=True, text=True)
         
         logger.info("\n Printing command line input from CBC solver \n")
-        logger.info(command+'\n')
-        # logger.info(result.stdout+'\n')
-        # logger.info(result.stderr+'\n')
-        #save stdout and err to file
-        logger.info("\n Printing command line output from CBC solver \n")
         logger.info(command+'\n')
         logger.info(result.stdout+'\n')
         logger.info(result.stderr+'\n')
@@ -83,16 +72,12 @@ def solve_model(config_dict,paths_dict):
         elif 'osemosys.txt' in old_model_file_path:
             command = f"otoole results cbc csv {cbc_results_data_file_path} {tmp_directory} {path_to_data_config}"
         else:
+            logging.error('The model file path does not contain osemosys.txt or osemosys_fast.txt. Please check the model file path and try again')
             raise ValueError('The model file path does not contain osemosys.txt or osemosys_fast.txt. Please check the model file path and try again')
         
         result = subprocess.run(command,shell=True, capture_output=True, text=True)
 
         logger.info("\n Printing command line input from converting cbc output to csv \n")#results_cbc_{economy}_{scenario}.txt
-        logger.info(command+'\n')
-        # logger.info(result.stdout+'\n')
-        # logger.info(result.stderr+'\n')
-        # logger.info('\n Time taken: {} for converting cbc output to csv \n\n########################\n '.format(time.time()-start))
-        #save stdout and err to log_file
         logger.info("\n Printing command line output from converting cbc output to csv \n")#results_cbc_{economy}_{scenario}.txt
         logger.info(command+'\n')
         logger.info(result.stdout+'\n')

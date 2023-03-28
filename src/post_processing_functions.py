@@ -17,40 +17,59 @@ warnings.filterwarnings("ignore", message="In a future version, the Index constr
 
 def remove_apostrophes_from_region_names(paths_dict, config_dict):
     #remove apostrophes from the region names in the results files if they are in there.
+    tmp_directory = paths_dict['tmp_directory']#todo is ./tmp/19_THA/Reference/StorageLevelDayTypeStart.csv in results_sheets? and what about AnnualTechnologyEmission. it seems like we are getting all these random values added,
+    for sheet in config_dict['results_sheets']:
+        fpath = f'{tmp_directory}/{sheet}.csv'
+        logger.info('removing apostrophes from',fpath)#todo remove
+        _df = pd.read_csv(fpath).reset_index(drop=True)
+        #change the region names to remove apostrophes if they are at the start or end of the string
+        _df['REGION'] = _df['REGION'].str.strip("'")
+        _df.to_csv(fpath,index=False)
 
-    #if remove_all_in_temp_dir is True, then all csv files in the temp directory will be checked for apostrophes, else only the results files will be checked. This is a way of including files that are not in the results_config file
-    data_config = config_dict['data_config']
+    return
 
+def check_for_missing_and_empty_results(paths_dict, config_dict):
+    #check if all the results are there or at least not empty. If they are then its probably just because the user forgot to remove it from the config file, so jsut write a wanring and then remove it from the results_sheets list
+    logging.info('\n\n##################################\nChecking for missing results:')
+    #     tmp_directory = paths_dict['tmp_directory']
+    # sheet= 'StorageLevelDayTypeFinish'
+    # fpath = f'{tmp_directory}/{sheet}.csv'
+    tmp_directory = paths_dict['tmp_directory']
+    #create list of results sheets so we arent iterating over the list we are changing!
+    results = config_dict['results_sheets'].copy()
+    for sheet in results:
+        fpath = f'{tmp_directory}/{sheet}.csv'
+        if not os.path.exists(fpath):
+            logging.warning(f'WARNING: {sheet} does not exist. It will not be in the results. This occured during check_for_missing_results()')
+            config_dict['results_sheets'].remove(sheet)
+            continue
+        else:#chekc if empty
+            df = pd.read_csv(fpath)
+            if df.empty:
+                config_dict['results_sheets'].remove(sheet)
+                logging.warning(f'WARNING: {sheet} is empty. Ignoring it and continuing with the rest of the results. This occured during check_for_missing_results().')
+                continue
+    ######################
+    #if we are doing cloud, we will also check for results that are in the tmp folder but not in the results_config file
+    #get all csv files in the temp directory
     if config_dict['solving_method'] == 'cloud':
-        tmp_directory = paths_dict['tmp_directory']
-
-        #get all csv files in the temp directory
         files = [f for f in os.listdir(tmp_directory) if f.endswith('.csv')]
         for f in files:
-            fpath = f'{tmp_directory}/{f}'
-            _df = pd.read_csv(fpath).reset_index(drop=True)
-            #change the region names to remove apostrophes if they are at the start or end of the string
-            _df['REGION'] = _df['REGION'].str.strip("'")
-            _df.to_csv(fpath,index=False)
-        return
-    else:
-        tmp_directory = paths_dict['tmp_directory']
-        for sheet in config_dict['results_sheets']:
-            if data_config[sheet]['type'] == 'result':#why do we need this step?
-                fpath = f'{tmp_directory}/{sheet}.csv'
-                #chekc if file exists
-                if not os.path.exists(fpath):
-                    logger.warning(f'WARNING: File {fpath} does not exist. It will not be in the results.')
-                    config_dict['results_sheets'].remove(sheet)
-                    continue
-                #print(fpath)
-                _df = pd.read_csv(fpath).reset_index(drop=True)
-                #change the region names to remove apostrophes if they are at the start or end of the string
-                _df['REGION'] = _df['REGION'].str.strip("'")
-                _df.to_csv(fpath,index=False)
-        return
+            #check if it is in the results_sheets list, if not add it
+            if f.split('.')[0] not in config_dict['results_sheets']:
+                config_dict['results_sheets'].append(f.split('.')[0])
+                logging.warning(f'WARNING: {f.split(".")[0]} is in the tmp folder but not in the results_sheets list. This occured during check_for_missing_results().')
+    ######################
+    #and check for resutls that soehow got added to the results_sheets list but are not in the data_config as results #todo remove this if it no longer happens
+    data_config = config_dict['data_config']
+    for sheet in config_dict['results_sheets']:
+        if data_config[sheet]['type'] != 'result':
+            logger.error(f'ERROR: {sheet} is not a result sheet. Please check the code as this shouldnt happen. This occured during remove_apostrophes_from_region_names(). Exiting')#have a hunch this will occur but one day should remove.
+            sys.exit()
+    logging.info('Done checking for missing results\n##################################\n\n')
+    return config_dict
 
-def save_results_as_excel(paths_dict, config_dict,sheets_to_ignore_if_error_thrown, quit_if_missing_csv=True):
+def save_results_as_excel(paths_dict, config_dict):
     tmp_directory = paths_dict['tmp_directory']
 
     # Now we take the CSV files and combine them into an Excel file
@@ -58,28 +77,8 @@ def save_results_as_excel(paths_dict, config_dict,sheets_to_ignore_if_error_thro
     # Note: if you add any new result parameters to osemosys_fast.txt, you need to update the config.yml you are using        
     results_df={}
     for sheet in config_dict['results_sheets']:
-        if sheet in sheets_to_ignore_if_error_thrown:
-            
-            fpath = f'{tmp_directory}/{sheet}.csv'
-            try:
-                df = pd.read_csv(fpath).reset_index(drop=True)
-                results_df[sheet] = df
-            except:
-                logger.warning(f'WARNING: error thrown when trying to read {fpath} Ignoring it and continuing with the rest of the results')
-                config_dict['results_sheets'].remove(sheet)
-                continue
-
         fpath = f'{tmp_directory}/{sheet}.csv'
-        #print(fpath)
-        try:
-            df = pd.read_csv(fpath)
-        except:
-            if quit_if_missing_csv:
-                logger.error(f'ERROR: error thrown when trying to read {fpath} It is probably not available. Exiting')
-                sys.exit()
-            else:
-                logger.warning(f'WARNING: error thrown when trying to read {fpath} Ignoring it and continuing with the rest of the results')
-                continue
+        df = pd.read_csv(fpath)
         df = df.reset_index(drop=True)
         results_df[sheet] = df
 
@@ -130,7 +129,7 @@ def save_results_as_excel(paths_dict, config_dict,sheets_to_ignore_if_error_thro
             for k, v in results_tables.items():
                 #if the name of the sheet is more than 31 characters, check if there is a short name in the data_config file, else use the first 31 characters of the sheet name
                 if len(k) > 31:
-                    if k in config_dict['data_config'].keys():
+                    if k in config_dict['data_config'].keys():#sometimes may nto be in data config, so in results sheets only
                         if 'short_name' in config_dict['data_config'][k].keys():
                             k = config_dict['data_config'][k]['short_name']
                         else:
@@ -143,7 +142,7 @@ def save_results_as_excel(paths_dict, config_dict,sheets_to_ignore_if_error_thro
         sys.exit()
     return config_dict
 
-def save_results_as_long_csv(paths_dict, config_dict,sheets_to_ignore_if_error_thrown):
+def save_results_as_long_csv(paths_dict, config_dict):
     tmp_directory = paths_dict['tmp_directory']
 
     # print('There are probably significant issues with this function because it is also saving the data config files to the long csv')
@@ -157,13 +156,6 @@ def save_results_as_long_csv(paths_dict, config_dict,sheets_to_ignore_if_error_t
         sys.exit()
 
     for sheet in config_dict['results_sheets']:
-        if sheet in sheets_to_ignore_if_error_thrown:
-            file = sheet+'.csv'
-            try:
-                sheet_data = pd.read_csv(tmp_directory+'/'+file)
-            except:
-                logger.warning(f'WARNING: error thrown when trying to read {file} Ignoring it and continuing with the rest of the results')
-                continue
         #load in sheet
         file = sheet+'.csv'
         sheet_data = pd.read_csv(tmp_directory+'/'+file)
@@ -273,23 +265,26 @@ def extract_osmosys_cloud_results_txt_to_csv(paths_dict,config_dict):#,remove_re
     expected_files = [f"{x}.csv" for x in config_dict['results_sheets']]
     for file in expected_files:
         if file not in extracted_files:
-            logger.error(f"Error: Expected to find a file called {file} in the tmp directory but did not find it. It will not be in the results.")
+            warning = f"Warning: Expected to find a file called {file} in the tmp directory but did not find it. It will not be in the results."
             #drop file from config_dict['results_sheets']
             config_dict['results_sheets'].remove(file.split('.')[0])
+        
+            config_dict['missing_results_and_warning_message'].append([file.split('.')[0], warning])
     for file in extracted_files:
         if file not in expected_files:
             logger.warning(f"WARNING: Found a file called {file} in the tmp directory but did not expect it. It will be in the results.")
             #add file to config_dict['results_sheets']
             config_dict['results_sheets'].append(file.split('.')[0])
+            
 
     #remove any csvs which dont have the economy_name in their REGION column
     for file in config_dict['results_sheets']:
         df = pd.read_csv(os.path.join(tmp_directory, f"{file}.csv"))
         if 'REGION' in df.columns and len(df) > 0:
             if df['REGION'].unique()[0] != config_dict['economy']:
-                logger.warning(f"WARNING: Found a file called {file} in the tmp directory but the REGION column does not contain the economy name {config_dict['economy']}. It will not be in the results.")
-                #drop file from config_dict['results_sheets']
                 config_dict['results_sheets'].remove(file.split('.')[0])
+                warning = f"Warning: Found a file called {file} in the tmp directory but the REGION column does not contain the economy name {config_dict['economy']}. It will not be in the results."
+                config_dict['missing_results_and_warning_message'].append([file.split('.')[0], warning])
 
     return config_dict
 
@@ -397,6 +392,8 @@ def aggregate_and_edit_osemosys_cloud_csvs(paths_dict, config_dict):
                     logger.info('The csv for {} does not contain the economy {} in the REGION column. This is likely because the coincbc program did not calculate the values for this sheet. This sheet will not be used.'.format(key, config_dict['economy']))
                     if key in config_dict['results_sheets']:
                         config_dict['results_sheets'].remove(key)
+                        warning = 'The csv for {} does not contain the economy {} in the REGION column. This is likely because the coincbc program did not calculate the values for this sheet. This sheet will not be used.'.format(key, config_dict['economy'])
+                        config_dict['missing_results_and_warning_message'].append([key,warning])
                     continue
                     
             if (key in config_dict['data_config'].keys()) and (key in config_dict['results_sheets']):
@@ -430,6 +427,8 @@ def aggregate_and_edit_osemosys_cloud_csvs(paths_dict, config_dict):
     for key in list_of_missing_csvs+list_of_keys_not_in_config+list_of_keys_not_in_results:
         if key in config_dict['results_sheets']:
             config_dict['results_sheets'].remove(key)
+            warning = 'The csv for {} was not found in the csv_files list, so its data wont be in the results data.'.format(key)
+            config_dict['missing_results_and_warning_message'].append([key,warning])
 
     return config_dict
 
@@ -444,3 +443,10 @@ def process_osemosys_cloud_results(paths_dict, config_dict):
         else:
             config_dict = aggregate_and_edit_osemosys_cloud_csvs(paths_dict,config_dict)
     return config_dict
+
+def print_missing_results_sheets_and_warnings(config_dict):
+    #print the missing results sheets and warnings to a txt file
+    logger.info('\n\n########################################\nThe following sheets were not found in the results:')
+    for sheet,warning in config_dict['missing_results_and_warning_message']:
+        logger.info('Sheet: {}\nWarning: {}\n'.format(sheet,warning))
+    

@@ -19,7 +19,22 @@ if os.getcwd().split('\\')[-1] == 'src':
     os.chdir('..')
     print("Changed directory to root of project")
 
-def set_up_config_dict(root_dir, input_data_sheet_file,extract_osemosys_cloud_results_using_otoole,osemosys_model_script):
+def setup_logging(FILE_DATE_ID,paths_dict,testing=False):
+    if testing:
+        logging_level = logging.DEBUG
+    else:
+        logging_level = logging.INFO
+    #set up logging now that we have the paths all set up:
+    logging.basicConfig(
+        handlers=[
+            logging.StreamHandler(sys.stdout),#logging will print things to the console as well as to the log file
+            logging.FileHandler(paths_dict['log_file_path'])
+        ], encoding='utf-8', level=logging_level, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+    logger = logging.getLogger()
+    logger.info(f"LOGGING STARTED: {FILE_DATE_ID}, being saved to {paths_dict['log_file_path']} and outputted to console")
+
+
+def set_up_config_dict(root_dir, input_data_sheet_file,extract_osemosys_cloud_results_using_otoole,osemosys_model_script,run_with_wsl):
     """extract the data we want to run the model on using the first sheet in the input data sheet called START. This defines the economy, scenario and model_end_year we want to run the model for."""
     df_prefs = pd.read_excel(f'{root_dir}/data/{input_data_sheet_file}', sheet_name='START',usecols="A:B",nrows=5,header=None)
 
@@ -44,7 +59,6 @@ def set_up_config_dict(root_dir, input_data_sheet_file,extract_osemosys_cloud_re
     config_dict['solving_method'] = solving_method
     config_dict['data_config_file'] = data_config_file
     config_dict['input_data_sheet_file'] = input_data_sheet_file
-  
     #print the config_dict details
     logger.info(f'Running model for economy: {economy}, scenario: {scenario}, for years up to and including: {model_end_year}')
     
@@ -53,7 +67,8 @@ def set_up_config_dict(root_dir, input_data_sheet_file,extract_osemosys_cloud_re
     config_dict['osemosys_cloud_input'] = osemosys_cloud_input
     config_dict['extract_osemosys_cloud_results_using_otoole'] = extract_osemosys_cloud_results_using_otoole
     config_dict['osemosys_model_script'] = osemosys_model_script
-
+    config_dict['run_with_wsl'] = run_with_wsl
+    config_dict['missing_results_and_warning_message'] = []#use this to track which results are missing from the osemosys results. this might be a temporary fix as the results arent working properly at the moment
     return config_dict
 
 
@@ -77,6 +92,7 @@ def check_indices_in_data_config(config_dict):
     'YEAR']
 
     if not all([index in possible_indices for index in data_config_indices]):
+        logger.error(f'The indices in the data_config are not all in the list of possible indices. Make sure none of them have a spelling mistake. \n The possible indices are: \n {possible_indices}')
         raise ValueError('The indices in the data_config are not all in the list of possible indices. Make sure none of them have a spelling mistake. \n The possible indices are: \n {}'.format(possible_indices))
 
     if config_dict['solving_method'] == 'cloud':
@@ -113,6 +129,7 @@ def import_data_config(paths_dict,config_dict):
     #first check data_config for anything that isnt in accepted_types
     types = [data_config[key]['type'] for key in data_config.keys()]
     if not all([type in accepted_types for type in types]):
+        logger.error(f'The data config contains a type that is not expected. Accepted types are: {accepted_types}')
         raise ValueError('Data config contains a type that is not expected. Accepted types are: {}'.format(accepted_types))
 
     #we want result keys that are calculated to be in the results_keys list. These are the names of the sheets we will create in the output data file.
@@ -334,8 +351,9 @@ def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
         f.write(f'Combined Input Data workbook path: {paths_dict["path_to_combined_input_data_workbook"]}\n')
         f.write(f'Input Data File path: {paths_dict["path_to_input_data_file"]}\n')
         f.write(f'Log file path: {paths_dict["log_file_path"]}\n')
-        f.write(f'cbc intermediate data file path: {paths_dict["cbc_intermediate_data_file_path"]}\n')
-        f.write(f'cbc results data file path: {paths_dict["cbc_results_data_file_path"]}\n')
+        if config_dict['solving_method'] == 'coin':
+            f.write(f'cbc intermediate data file path: {paths_dict["cbc_intermediate_data_file_path"]}\n')
+            f.write(f'cbc results data file path: {paths_dict["cbc_results_data_file_path"]}\n')
 
         f.write(f'\nResults:\n')
         f.write(f'Results Workbook: {results_workbook}\n')
@@ -344,7 +362,7 @@ def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
 
     return
 
-def create_new_directories(tmp_directory, results_directory, FILE_DATE_ID, scenario_folder, config_dict):
+def create_new_directories(tmp_directory, results_directory, FILE_DATE_ID, scenario_folder, config_dict,keep_current_tmp_files):
     #create the tmp and results directories if they dont exist. ALso check if there are files in the tmp directory and if so, move them to a new folder with the FILE_DATE_ID in the name. 
     #EXCEPT if osemosys_cloud_input is y, then we dont want to do this because the user will be running main.py to extract results form the cloud output, as tehy ahve already done it once to prepare data now they are doing it once to extract results, and we dont want to move the files in the tmp directory in between those two runs
 
@@ -353,7 +371,7 @@ def create_new_directories(tmp_directory, results_directory, FILE_DATE_ID, scena
     else:
         #if theres already file in the tmp directory then we should move those to a new folder so we dont overwrite them:
         #check if there are files:
-        if len(os.listdir(tmp_directory)) > 0 and config_dict['osemosys_cloud_input'] != 'y':
+        if len(os.listdir(tmp_directory)) > 0 and config_dict['osemosys_cloud_input'] != 'y' and not keep_current_tmp_files:
             new_temp_dir = f"./tmp/{config_dict['economy']}/{scenario_folder}/{FILE_DATE_ID}"
             #make the new temp directory:
             os.makedirs(new_temp_dir)
@@ -368,7 +386,7 @@ def create_new_directories(tmp_directory, results_directory, FILE_DATE_ID, scena
     return
 
 
-def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict):
+def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files=False):
     """set up the paths to the various files and folders we will need to run the model. This will create a dictionary for the paths so we dont have to keep passing lots of arguments to functions"""
     solving_method = config_dict['solving_method']
     scenario = config_dict['scenario']
@@ -385,7 +403,10 @@ def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict):
     tmp_directory = f'./tmp/{economy}/{scenario_folder}'
     results_directory = f'./results/{economy}/{scenario_folder}'
 
-    create_new_directories(tmp_directory, results_directory, FILE_DATE_ID, scenario_folder, config_dict)
+    #create path to save copy of outputs to txt file in case of error:
+    log_file_path = f'{tmp_directory}/process_log_{economy}_{scenario}_{FILE_DATE_ID}.txt'
+
+    create_new_directories(tmp_directory, results_directory, FILE_DATE_ID, scenario_folder, config_dict,keep_current_tmp_files)
 
     #create model run specifications txt file using the input variables as the details and the FILE_DATE_ID as the name:
     model_run_specifications_file = f'{tmp_directory}/specs_{FILE_DATE_ID}.txt'
@@ -401,8 +422,7 @@ def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict):
 
     path_to_input_data_file = f'{tmp_directory}/datafile_from_python_{economy}_{scenario}.txt'
      
-    #create path to save copy of outputs to txt file in case of error:
-    log_file_path = f'{tmp_directory}/process_log_{economy}_{scenario}.txt'
+    
 
     #check that osemosys_model_script is either 'osemosys.txt' or 'osemosys_fast.txt':
     if config_dict['osemosys_model_script'] not in ['osemosys.txt', 'osemosys_fast.txt']:

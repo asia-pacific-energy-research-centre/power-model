@@ -1,8 +1,10 @@
 #https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file
-
+name: power-model
 channels:
+  - anaconda
   - conda-forge
-  - defaults
+  - defaults 
+  - pip
 dependencies:
   - anyio=3.6.2=pyhd8ed1ab_0
   - argon2-cffi=21.3.0=pyhd8ed1ab_0

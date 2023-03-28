@@ -24,6 +24,27 @@ Please note that on APERC computers the coin cbc sovler doesnt currently work. T
 APPARENTLY: This is a windows error and is not related to the coin cbc solver. To fix this you need to install the latest version of visual studio. This can be done by going to the following link: https://visualstudio.microsoft.com/downloads/ and downloading the latest version of visual studio. Once this is installed you should be able to run the coin cbc solver.
 BUT i havent managed to work out how to do this yet. So for now, just use the glpsol solver or OSemOSYS cloud.
 
+Using wsl on aperc computers:
+to make coin cbc work we have started using wsl which is a linux subsystem on windows. To install wsl follow the instructions here: https://docs.microsoft.com/en-us/windows/wsl/install-win10
+Once you have installed wsl you can install the coin cbc solver by using:
+sudo apt-get install coinor-cbc
+
+Now you should be able to run the power model with run_with_wsl set to True in the main.py file. The model will run the coin cbc solver within wsl to get around the ucrtbased.dll error. Everything else should work the same as before.
+<!-- 
+
+
+However you will first need to move your conda installation to wsl. To do this follow the instructions here: https://docs.conda.io/projects/conda/en/latest/user-guide/install/migrate.html
+-give wsl access to anaconda by running (depdning on if you have miniconda or anaconda installed):
+    sudo ln -s /mnt/c/ProgramData/Anaconda3/ /usr/local/anaconda3
+or for miniconda:
+    sudo ln -s /mnt/c/ProgramData/Miniconda3/ /usr/local/miniconda3
+-Then create a path variable within wsl by running:
+    echo 'export PATH="/usr/local/anaconda3/bin:$PATH"' >> ~/.bashrc
+or for miniconda:
+    echo 'export PATH="/usr/local/miniconda3/bin:$PATH"' >> ~/.bashrc
+Once you have done this you can install the coin cbc solver by running: -->
+<!-- C/ProgramData/Miniconda3
+C:\ProgramData\Miniconda3 -->
 ## 2. To run the model 
 Make sure you did Step 1 (only need to do it once).
 
