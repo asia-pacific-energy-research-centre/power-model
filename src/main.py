@@ -4,6 +4,7 @@
 # You can run this file from the command line or using jupyter interactive notebook. If using that you can change the input variables after the if is_notebook(): statement
 
 # the following python packages are imported:
+
 #%%
 import time
 import os
@@ -12,19 +13,23 @@ import sys
 import model_preparation_functions
 import model_solving_functions
 import post_processing_functions
+import plotting_functions
 import logging
+import pickle as pickle
 ################################################################################
 #LESS IMPORTANT VARIABLES TO SET (their default values are fine):
 FILE_DATE_ID = time.strftime("%Y-%m-%d-%H%M%S")
 root_dir = '.' # because this file is in src, the root may change if it is run from this file or from command line
 config_dir = 'config'
 #this MUST be one of osmoseys_fast.txt or osemosys.txt. Otherwise we will have to change the code around line 86 of model_solving_functions.py
-osemosys_model_script = 'osemosys.txt'
+#note that i cannot get osemosys.txt to work with coin as it produces no output.
+osemosys_model_script = 'osemosys_fast.txt'
 extract_osemosys_cloud_results_using_otoole = True#False is the default, but if you want to use otoole to extract the results, set this to True
-testing = True
 keep_current_tmp_files = False
 dont_solve = False
-run_with_wsl = True
+run_with_wsl = False
+plotting = True
+replace_long_var_names = True
 ################################################################################
 
 def main(input_data_sheet_file):
@@ -60,9 +65,11 @@ def main(input_data_sheet_file):
         input_data = model_preparation_functions.extract_input_data(paths_dict, config_dict)
         model_preparation_functions.write_data_to_temp_workbook(paths_dict, input_data)
 
-        model_preparation_functions.prepare_data_for_osemosys(paths_dict,config_dict)
+        config_dict = model_preparation_functions.prepare_model_script_for_osemosys(paths_dict, config_dict,replace_long_var_names=replace_long_var_names)
 
-        model_preparation_functions.prepare_model_script_for_osemosys(paths_dict, config_dict)
+        model_preparation_functions.write_data_config_to_new_file(paths_dict,config_dict)
+
+        model_preparation_functions.prepare_data_for_osemosys(paths_dict,config_dict)
         #model_preparation_functions.validate_input_data(paths_dict)# todo: mnake this this function work. too many errors. possibly otoole needs to develop it more
 
     ################################################################################
@@ -84,39 +91,30 @@ def main(input_data_sheet_file):
 
         config_dict = post_processing_functions.check_for_missing_and_empty_results(paths_dict, config_dict)
 
-        post_processing_functions.remove_apostrophes_from_region_names(paths_dict, config_dict)
+        ##########################
+        #extract and save results
+        ##########################
 
+        config_dict,tall_results_dfs,wide_results_dfs = post_processing_functions.extract_results_from_csvs(paths_dict, config_dict)
 
-        sheets_to_ignore_if_error_thrown=[]#['TotalDiscountedCost','CapitalInvestment','DiscountedCapitalInvestment','NumberOfNewTechnologyUnits','SalvageValueStorage','Trade']#This provides an option for dropping these values because we know they are causing problems if we set their values for calculated: True. By default we will not drop any of these values, but if we want to we can add them to this list.
-
-        # #drop these keys from the results keys list
-        # results_sheets_new = [sheet for sheet in results_sheets if sheet not in sheets_to_ignore]
+        post_processing_functions.save_results_as_excel(paths_dict, config_dict,wide_results_dfs)
         
-        config_dict = post_processing_functions.save_results_as_excel(paths_dict, config_dict)
-        
-        post_processing_functions.save_results_as_long_csv(paths_dict,config_dict)
+        post_processing_functions.save_results_as_long_csvs(paths_dict,config_dict,tall_results_dfs)
 
+        post_processing_functions.save_results_as_pickle(paths_dict,tall_results_dfs)
+        ##########################
         #Visualisation:
+        ##########################
         post_processing_functions.create_res_visualisation(paths_dict,config_dict)
-
-        if testing:
-            #FOR TESTING:
-            #copy results and tmp folder contents to a new folder in the results folder which will be used to comapre the results of the model run with the previous run. We will uyse the file date id to name the folder.
-            #create foldewr
-            import shutil
-            os.mkdir('./results/'+ f"{FILE_DATE_ID}")
-            #copy all files (not folders) from the tmp directory to the new folder
-            for file in os.listdir(paths_dict['tmp_directory']):
-                if os.path.isfile(os.path.join(paths_dict['tmp_directory'], file)):
-                    shutil.copy(os.path.join(paths_dict['tmp_directory'], file), os.path.join('./results/'+ f"{FILE_DATE_ID}", file))
-            #copy results_workbook, combined_results_tall_years, combined_results_tall_sheet_names to the new folder
-            shutil.copy(paths_dict['results_workbook'], './results/'+ f"{FILE_DATE_ID}")
-            shutil.copy(paths_dict['combined_results_tall_years'], './results/'+ f"{FILE_DATE_ID}")
-            shutil.copy(paths_dict['combined_results_tall_sheet_names'], './results/'+ f"{FILE_DATE_ID}")
-
         
+        post_processing_functions.save_results_visualisations_and_inputs_to_folder(paths_dict,save_plotting=False,save_results_and_inputs=True)
 
-        #copy results folder
+        post_processing_functions.TEST_output(paths_dict,config_dict)
+
+        if plotting:
+            plotting_functions.plotting_handler(tall_results_dfs=tall_results_dfs,paths_dict=paths_dict,load_from_pickle=True, pickle_paths=None)
+
+        post_processing_functions.save_results_visualisations_and_inputs_to_folder(paths_dict,save_plotting=True, save_results_and_inputs=False)
 
 #%%
 
@@ -138,7 +136,7 @@ def is_notebook() -> bool:
         return False      # Probably standard Python interpreter
     
 if is_notebook():
-    input_data_sheet_file="data-sheet-power_36TS.xlsx"#"simplicity_data.xlsx"#set this based on the data sheet you want to run if you are running this from jupyter notebook
+    input_data_sheet_file="data-sheet-power_36TS.xlsx"#"simplicity_data.xlsx"#"data-sheet-power_36TS.xlsx"##set this based on the data sheet you want to run if you are running this from jupyter notebook
     #make directory the root of the project
     if os.getcwd().split('\\')[-1] == 'src':
         os.chdir('..')

@@ -8,6 +8,7 @@
 *.graphml
 archive/
 /results
+*.html
 # temporary
 testing_virtual_machine.docx 
 testing_code/*

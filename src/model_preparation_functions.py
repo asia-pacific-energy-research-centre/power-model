@@ -69,6 +69,7 @@ def set_up_config_dict(root_dir, input_data_sheet_file,extract_osemosys_cloud_re
     config_dict['osemosys_model_script'] = osemosys_model_script
     config_dict['run_with_wsl'] = run_with_wsl
     config_dict['missing_results_and_warning_message'] = []#use this to track which results are missing from the osemosys results. this might be a temporary fix as the results arent working properly at the moment
+
     return config_dict
 
 
@@ -132,33 +133,25 @@ def import_data_config(paths_dict,config_dict):
         logger.error(f'The data config contains a type that is not expected. Accepted types are: {accepted_types}')
         raise ValueError('Data config contains a type that is not expected. Accepted types are: {}'.format(accepted_types))
 
-    #we want result keys that are calculated to be in the results_keys list. These are the names of the sheets we will create in the output data file.
-    results_sheets = [key for key in data_config.keys() if data_config[key]['type'] == 'result' and data_config[key]['calculated'] == True]
-
-    #repalce any keys with their short_name if they have one
-    short_name_keys = [key for key in data_config.keys() if 'short_name' in data_config[key].keys()]
-    for key in short_name_keys:
-        data_config[data_config[key]['short_name']] = copy.deepcopy(data_config[key])
-        del data_config[key]
-
-    #reload data config in case it has been changed accidentally
-    data_config = yaml.safe_load(open(paths_dict['path_to_data_config']))
-    #and load one with shorrt names as keys
-    data_config_short_names = yaml.safe_load(open(paths_dict['path_to_data_config']))
-    #update the data_config with the short_name keys
-    for key in short_name_keys:
-        short_name = data_config_short_names[key]['short_name']
-        data_config_short_names[short_name] = copy.deepcopy(data_config_short_names[key])
-        del data_config_short_names[key]
-
-    
     config_dict['data_config'] = data_config
-    config_dict['data_config_short_names'] = data_config_short_names
-    config_dict['results_sheets'] = results_sheets
     
     check_indices_in_data_config(config_dict)
     
     return config_dict
+
+def create_data_config_with_short_names_as_keys(config_dict):
+    #create an exact copy of the data config but with any short names as keys so we dont need to extract them from the data config each time
+
+    #first make a copy of the data_config to edit
+    data_config_short_names = copy.deepcopy(config_dict['data_config'])
+    original_keys = list(data_config_short_names.keys())
+    #repalce any keys with their short_name if they have one
+    for key in original_keys:
+        if 'short_name' in data_config_short_names[key].keys():
+            short_name = data_config_short_names[key]['short_name']
+            data_config_short_names[short_name] = copy.deepcopy(data_config_short_names[key])
+            del data_config_short_names[key]
+    return data_config_short_names
 
 def edit_input_data(data_config_short_names, scenario, economy, model_end_year,sheet,sheet_name,wb):
     """This function is passed sheets from the input data file and edits them based on the data_config_short_names. It then returns the edited sheet."""
@@ -233,7 +226,8 @@ def extract_input_data(paths_dict,config_dict):
     scenario = config_dict['scenario']
     economy = config_dict['economy']
     model_end_year = config_dict['model_end_year']
-    data_config_short_names = config_dict['data_config_short_names']
+    data_config_short_names = create_data_config_with_short_names_as_keys(config_dict)
+
 
     #using the data extracted from the data_config.yaml file, extract that data from the excel sheet and save it to a dictionary:
     input_data = dict()
@@ -287,21 +281,35 @@ def prepare_data_for_osemosys(paths_dict, config_dict):
 
     return 
 
-def replace_long_var_names_in_osemosys_script(paths_dict):
+def replace_long_var_names_in_osemosys_script(paths_dict, config_dict):
     """We need to repalce some long variable names in the osemosys script so that they dont cause an error when using the cbc solver. 
     Honestly I dont get this because it seems like the osemosys cloud server is also having this problem and noone there is doing anything about it? Maybe i am a genius?"""
     #load in new_osemosys_model_script_path
     with open(paths_dict['new_osemosys_model_script_path'], 'r') as t:
         model_text = t.read()
     #update the following variable names:
-    long_var_names = ['SC1_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint', 'SC1_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint', 'SC2_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint', 'SC2_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint', 'SC3_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint', 'SC3_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint', 'SC4_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint', 'SC4_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint']
+    long_var_names = ['SC1_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint', 'SC1_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint', 'SC2_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint', 'SC2_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint', 'SC3_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint', 'SC3_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint', 'SC4_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint', 'SC4_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint',
+    #begin non_osemosys_fast var names. But note that until we can get non osemosys_fast.txt to work with coin then there is no need for these, except to decrease the logs on a process that doesnt work.
+    'EBa1_RateOfFuelProduction1','EBa2_RateOfFuelProduction2','Acc1_FuelProductionByTechnology','Acc2_FuelUseByTechnology',
+    #these ones are likely to be variables within the data config. we should be careful changing these
+    'RateOfProductionByTechnologyByMode','RateOfProductionByTechnology','ProductionByTechnology','AnnualTechnologyEmissionByMode','AnnualTechnologyEmissionPenaltyByEmission']#im not saaure why productionbytechnologyannual is not ehre?
+    long_name_to_shortened_name = dict()
     #now replace them with the first 20 characters
     for var_name in long_var_names:
-        model_text = model_text.replace(var_name, var_name[:20])
+        shortened_name = var_name[:20]
+        long_name_to_shortened_name[var_name] = shortened_name
+        model_text = model_text.replace(var_name, shortened_name)
+    #check the data config for the long var names and replace them with the shortened names
+    data_config_copy = copy.deepcopy(config_dict['data_config'])
+    for key in data_config_copy.keys():
+        if key in long_var_names:
+            config_dict['data_config'][long_name_to_shortened_name[key]] = copy.deepcopy(config_dict['data_config'][key])
+            del config_dict['data_config'][key]
+
     #write the new model script to the tmp directory
     with open(paths_dict['new_osemosys_model_script_path'], 'w') as f:
         f.write('%s\n'% model_text)
-    return
+    return config_dict
 
 def prepare_model_script_for_osemosys(paths_dict, config_dict,replace_long_var_names=True):
     #either modfiy the model script if it is being used locally so the resultsPath is in tmp_directory, or if it is being used in the cloud, then just move the model script to the tmp_directory for ease of access
@@ -322,18 +330,19 @@ def prepare_model_script_for_osemosys(paths_dict, config_dict,replace_long_var_n
         shutil.copy(paths_dict['osemosys_model_script_path'], paths_dict['new_osemosys_model_script_path'])
 
     if replace_long_var_names:
-        replace_long_var_names_in_osemosys_script(paths_dict)
+        config_dict = replace_long_var_names_in_osemosys_script(paths_dict, config_dict)
 
-    return
+    return config_dict
 
 def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
     #write the model run specs to a file so we can keep track of what we have run and when
     path_to_data_config = paths_dict['path_to_data_config']
+    path_to_new_data_config = paths_dict['path_to_new_data_config']
     results_workbook = paths_dict['results_workbook']
     combined_results_tall_years = paths_dict['combined_results_tall_years']
     combined_results_tall_sheet_names = paths_dict['combined_results_tall_sheet_names']
     input_data_path = paths_dict['input_data_file_path']
-    osemosys_model_script_path = paths_dict['new_osemosys_model_script_path']
+    osemosys_model_script_path = paths_dict['osemosys_model_script_path']
     with open(paths_dict['model_run_specifications_file'], 'w') as f:
         f.write(f'Inputs:\n')
         f.write(f'Run Date: {FILE_DATE_ID}\n')
@@ -342,7 +351,8 @@ def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
         f.write(f"Run model_end_year: {config_dict['model_end_year']}\n")
         f.write(f'Original Osemosys Model Script path: {osemosys_model_script_path}\n')
         f.write(f'New Osemosys Model Script path: {paths_dict["new_osemosys_model_script_path"]}\n')
-        f.write(f'Input Data Config File path: {path_to_data_config}\n')
+        f.write(f'Original Data Config File path: {path_to_data_config}\n')
+        f.write(f'Input Data Config File path: {path_to_new_data_config}\n')
         f.write(f"Solving Method used: {config_dict['solving_method']}\n")
         f.write(f'Input data path: {input_data_path}\n')
         f.write(f"extract_osemosys_cloud_results_using_otoole: {config_dict['extract_osemosys_cloud_results_using_otoole']}\n")
@@ -362,10 +372,11 @@ def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
 
     return
 
-def create_new_directories(tmp_directory, results_directory, FILE_DATE_ID, scenario_folder, config_dict,keep_current_tmp_files):
+def create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, scenario_folder, config_dict,keep_current_tmp_files):
     #create the tmp and results directories if they dont exist. ALso check if there are files in the tmp directory and if so, move them to a new folder with the FILE_DATE_ID in the name. 
     #EXCEPT if osemosys_cloud_input is y, then we dont want to do this because the user will be running main.py to extract results form the cloud output, as tehy ahve already done it once to prepare data now they are doing it once to extract results, and we dont want to move the files in the tmp directory in between those two runs
 
+    #TMP
     if not os.path.exists(tmp_directory):
         os.makedirs(tmp_directory)
     else:
@@ -380,9 +391,22 @@ def create_new_directories(tmp_directory, results_directory, FILE_DATE_ID, scena
                 if os.path.isfile(f'{tmp_directory}/{file}'):
                     shutil.move(f'{tmp_directory}/{file}', new_temp_dir)
 
+    #RESULTS
     if not os.path.exists(results_directory):#no need to check if the results dir exists because the data will be saved with FILE_DATE_ID in the name, its just too hard to do that with the tmp directory
         os.makedirs(results_directory)
 
+    #VISUALISATION
+    if not os.path.exists(visualisation_directory):
+        os.makedirs(visualisation_directory)
+    else:
+        if len(os.listdir(visualisation_directory)) > 0:
+            new_visualisation_dir = f"./visualisation/{config_dict['economy']}/{scenario_folder}/{FILE_DATE_ID}"
+            #make the new temp directory:
+            os.makedirs(new_visualisation_dir)
+            #move all files (BUT NOT FOLDERS!):
+            for file in os.listdir(visualisation_directory):
+                if os.path.isfile(f'{visualisation_directory}/{file}'):
+                    shutil.move(f'{visualisation_directory}/{file}', new_visualisation_dir)
     return
 
 
@@ -402,11 +426,12 @@ def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict,keep_current
     
     tmp_directory = f'./tmp/{economy}/{scenario_folder}'
     results_directory = f'./results/{economy}/{scenario_folder}'
+    visualisation_directory = f'./visualisations/{economy}/{scenario_folder}'
 
     #create path to save copy of outputs to txt file in case of error:
     log_file_path = f'{tmp_directory}/process_log_{economy}_{scenario}_{FILE_DATE_ID}.txt'
 
-    create_new_directories(tmp_directory, results_directory, FILE_DATE_ID, scenario_folder, config_dict,keep_current_tmp_files)
+    create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, scenario_folder, config_dict,keep_current_tmp_files)
 
     #create model run specifications txt file using the input variables as the details and the FILE_DATE_ID as the name:
     model_run_specifications_file = f'{tmp_directory}/specs_{FILE_DATE_ID}.txt'
@@ -414,6 +439,8 @@ def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict,keep_current
     path_to_data_config = f'{root_dir}/{config_dir}/{data_config_file}'
     if not os.path.exists(path_to_data_config):
         logger.warning(f'data config file {path_to_data_config} does not exist')
+    
+    path_to_new_data_config = f'{tmp_directory}/{economy}_{scenario}_{data_config_file}'
     path_to_combined_input_data_workbook = f'{tmp_directory}/combined_data_{economy}_{scenario}.xlsx'
 
     input_data_file_path=f"{root_dir}/data/{input_data_sheet_file}"
@@ -445,10 +472,12 @@ def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict,keep_current
     paths_dict = {}
     paths_dict['tmp_directory'] = tmp_directory
     paths_dict['results_directory'] = results_directory
+    paths_dict['visualisation_directory'] = visualisation_directory
     paths_dict['path_to_data_config'] = path_to_data_config
     paths_dict['path_to_combined_input_data_workbook'] = path_to_combined_input_data_workbook
     paths_dict['input_data_file_path'] = input_data_file_path
     paths_dict['path_to_input_data_file'] = path_to_input_data_file
+    paths_dict['path_to_new_data_config']  = path_to_new_data_config
     paths_dict['log_file_path'] = log_file_path
     paths_dict['cbc_intermediate_data_file_path'] = cbc_intermediate_data_file_path
     paths_dict['cbc_results_data_file_path'] = cbc_results_data_file_path
@@ -459,7 +488,11 @@ def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict,keep_current
     paths_dict['combined_results_tall_sheet_names'] = combined_results_tall_sheet_names
     paths_dict['model_run_specifications_file'] = model_run_specifications_file
     paths_dict['path_to_validation_config'] = f'{root_dir}/{config_dir}/validate.yaml'
+    paths_dict['tall_results_dfs_pickle'] = f'{tmp_directory}/tall_results_dfs_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
+    paths_dict['paths_dict_pickle'] = f'{tmp_directory}/paths_dict_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
     
+    aggregated_results_and_inputs_folder_name = f"{FILE_DATE_ID}_{config_dict['economy']}_{config_dict['scenario']}_{config_dict['solving_method']}"
+    paths_dict['aggregated_results_and_inputs_folder_name'] = aggregated_results_and_inputs_folder_name
     return paths_dict
 
 def validate_input_data(paths_dict):
@@ -468,7 +501,7 @@ def validate_input_data(paths_dict):
         Path to a user-defined validation-config file
     This would probably remove the issue with lots of fuels being labelled as invalid names."""
     #otoole validate datafile data.txt config.yaml --validate_config validate.yaml
-    command = f"otoole validate datafile {paths_dict['path_to_input_data_file']} {paths_dict['path_to_data_config']} --validate_config {paths_dict['path_to_validation_config']}"
+    command = f"otoole validate datafile {paths_dict['path_to_input_data_file']} {paths_dict['path_to_new_data_config']} --validate_config {paths_dict['path_to_validation_config']}"
 
     result = subprocess.run(command,shell=True, capture_output=True, text=True)
 
@@ -499,3 +532,11 @@ def get_osemosys_cloud_stage_from_user(config_dict):
                 logger.info("Please enter y or n or exit with ctrl+c")
                 osemosys_cloud_input = None
 
+def write_data_config_to_new_file(paths_dict,config_dict):
+    """write a new data config file to the tmp folder. This may include changes to the original data config file, such as shortened names. the data config will have the same strucutre as the original config/*data_config*.yml, but with different values"""
+    new_data_config = config_dict['data_config']
+    path_to_new_data_config = paths_dict['path_to_new_data_config']
+    with open(path_to_new_data_config, 'w') as outfile:
+        yaml.dump(new_data_config, outfile, default_flow_style=False)
+    return
+    

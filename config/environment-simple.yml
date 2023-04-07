@@ -6,5 +6,6 @@ dependencies:
 # - xlrd 
  - glpk
  - pyyaml
+ - plotly
  pip:
    - otoole
