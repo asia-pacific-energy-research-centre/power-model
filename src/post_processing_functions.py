@@ -490,6 +490,9 @@ def save_results_visualisations_and_inputs_to_folder(paths_dict, save_plotting,s
         for file in os.listdir(paths_dict['tmp_directory']):
             if os.path.isfile(os.path.join(paths_dict['tmp_directory'], file)):
                 shutil.copy(os.path.join(paths_dict['tmp_directory'], file), os.path.join(tmp_folder, file))
+            #extract last part of the path to the path_to_input_csvs_folder
+            elif file == os.path.basename(paths_dict['path_to_input_csvs_folder']):
+                shutil.copytree(os.path.join(paths_dict['tmp_directory'], file), os.path.join(tmp_folder, file))
         #copy results_workbook, combined_results_tall_years, combined_results_tall_sheet_names to the new folder
         shutil.copy(paths_dict['results_workbook'],results_folder)
         shutil.copy(paths_dict['combined_results_tall_years'], results_folder)

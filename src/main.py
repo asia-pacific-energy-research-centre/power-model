@@ -23,13 +23,14 @@ root_dir = '.' # because this file is in src, the root may change if it is run f
 config_dir = 'config'
 #this MUST be one of osmoseys_fast.txt or osemosys.txt. Otherwise we will have to change the code around line 86 of model_solving_functions.py
 #note that i cannot get osemosys.txt to work with coin as it produces no output.
-osemosys_model_script = 'osemosys_fast.txt'
+osemosys_model_script = 'osemosys.txt'
 extract_osemosys_cloud_results_using_otoole = True#False is the default, but if you want to use otoole to extract the results, set this to True
 keep_current_tmp_files = False
 dont_solve = False
 run_with_wsl = False
 plotting = True
 replace_long_var_names = True
+write_to_workbook=True
 ################################################################################
 
 def main(input_data_sheet_file):
@@ -42,7 +43,7 @@ def main(input_data_sheet_file):
     config_dict = model_preparation_functions.set_up_config_dict(root_dir, input_data_sheet_file, extract_osemosys_cloud_results_using_otoole, osemosys_model_script,run_with_wsl)
 
     #uncomment these to override the model settings in the excel file
-    # config_dict['model_end_year'] = 2023
+    config_dict['model_end_year'] = 2023
     # config_dict['economy'] = '19_THA'
     # config_dict['scenario'] = 'Reference'
     # config_dict['data_config_file'] ="config.yaml"
@@ -63,13 +64,16 @@ def main(input_data_sheet_file):
     if config_dict['solving_method'] != 'cloud' or config_dict['osemosys_cloud_input'] == 'n':
         model_preparation_functions.write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID)
         input_data = model_preparation_functions.extract_input_data(paths_dict, config_dict)
-        model_preparation_functions.write_data_to_temp_workbook(paths_dict, input_data)
-
         config_dict = model_preparation_functions.prepare_model_script_for_osemosys(paths_dict, config_dict,replace_long_var_names=replace_long_var_names)
-
         model_preparation_functions.write_data_config_to_new_file(paths_dict,config_dict)
 
-        model_preparation_functions.prepare_data_for_osemosys(paths_dict,config_dict)
+        if write_to_workbook:
+            model_preparation_functions.write_data_to_temp_workbook(paths_dict, input_data)
+            model_preparation_functions.prepare_data_for_osemosys(paths_dict,config_dict)
+        else:
+            model_preparation_functions.write_input_data_as_csvs_to_data_folder(paths_dict, input_data)
+            model_preparation_functions.convert_csvs_to_datafile(paths_dict)
+            
         #model_preparation_functions.validate_input_data(paths_dict)# todo: mnake this this function work. too many errors. possibly otoole needs to develop it more
 
     ################################################################################
@@ -79,8 +83,6 @@ def main(input_data_sheet_file):
     if config_dict['solving_method'] != 'cloud' and not dont_solve:
         logging.info(f"\n######################## \n Running solve process using {osemosys_model_script} for {config_dict['solving_method']} {config_dict['economy']} {config_dict['scenario']}")
         model_solving_functions.solve_model(config_dict,paths_dict)
-
-
 
     ################################################################################
     #Post processing

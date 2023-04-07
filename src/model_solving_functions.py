@@ -1,6 +1,7 @@
 
 #%%
 
+from mip import Model,CBC,OptimizationStatus
 import os
 import subprocess
 import logging
@@ -29,6 +30,9 @@ def solve_model(config_dict,paths_dict):
     cbc_results_data_file_path = paths_dict['cbc_results_data_file_path']
     solving_method = config_dict['solving_method']
 
+    if solving_method not in ['glpsol','coin_mlp','coin']:
+        raise ValueError('The solving method is not recognised. Please change it within main.py and try again')
+    
     #previous solving method:
     if solving_method == 'glpsol':
         command =f"glpsol -d {path_to_input_data_file} -m {model_file_path}"
@@ -63,6 +67,63 @@ def solve_model(config_dict,paths_dict):
         logger.info(result.stdout+'\n')
         logger.info(result.stderr+'\n')
         #save time taken to log_file
+
+        #convert to csv
+        #check if old_model_file_path contains osemosys_fast.txt, if so we need to include the input data file.txt in the call, with --input_datafile.
+        if 'osemosys_fast.txt' in old_model_file_path:
+            #we have to include the input data file.txt in the call, with --input_datafile. 
+            command = f"otoole results --input_datafile {path_to_input_data_file} cbc csv {cbc_results_data_file_path} {tmp_directory} {path_to_new_data_config}"
+        elif 'osemosys.txt' in old_model_file_path:
+            command = f"otoole results cbc csv {cbc_results_data_file_path} {tmp_directory} {path_to_new_data_config}"
+        else:
+            logging.error('The model file path does not contain osemosys.txt or osemosys_fast.txt. Please check the model file path and try again')
+            raise ValueError('The model file path does not contain osemosys.txt or osemosys_fast.txt. Please check the model file path and try again')
+        
+        result = subprocess.run(command,shell=True, capture_output=True, text=True)
+
+        logger.info("\n Printing command line input from converting cbc output to csv \n")#results_cbc_{economy}_{scenario}.txt
+        logger.info("\n Printing command line output from converting cbc output to csv \n")#results_cbc_{economy}_{scenario}.txt
+        logger.info(command+'\n')
+        logger.info(result.stdout+'\n')
+        logger.info(result.stderr+'\n')
+        #save time taken to log_file
+
+
+    if solving_method == 'coin_mlp':
+        #new solving method (much faster - uses mlp to integrate with cbc):
+        #start new timer to time the solving process
+        command=f"glpsol -d {path_to_input_data_file} -m {model_file_path} --wlp {cbc_intermediate_data_file_path} --check"
+        #create a lp file to input into cbc
+        result = subprocess.run(command,shell=True, capture_output=True, text=True)
+        logger.info("\n Printing command line output from converting to lp file \n")
+        logger.info(command+'\n')
+        logger.info(result.stdout+'\n')
+        logger.info(result.stderr+'\n')
+
+        ##################################################
+        #input into cbc solver using mip:
+        logger.info("\n\n Printing output from CBC solver using mip \n\n")
+        m = Model(solver_name=CBC)
+        m.read(cbc_intermediate_data_file_path)
+        m.max_gap = 0.05
+        status = m.optimize(max_seconds=1200)#20min?
+        if status == OptimizationStatus.OPTIMAL:
+            logger.info('optimal solution cost {} found'.format(m.objective_value))
+        elif status == OptimizationStatus.FEASIBLE:
+            logger.info('sol.cost {} found, best possible: {}'.format(m.objective_value, m.objective_bound))
+        elif status == OptimizationStatus.NO_SOLUTION_FOUND:
+            logger.info('no feasible solution found, lower bound is: {}'.format(m.objective_bound))
+        if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE:
+            logger.info('solution:')
+            for v in m.vars:
+                if abs(v.x) > 1e-6: # only printing non-zeros
+                    print('{} : {}'.format(v.name, v.x))
+            #save solution to file
+            m.write(cbc_results_data_file_path)
+        else:
+            logger.info('no solution found')
+        logger.info("\n\n Finished printing output from CBC solver using mip \n\n")
+        ##################################################
 
         #convert to csv
         #check if old_model_file_path contains osemosys_fast.txt, if so we need to include the input data file.txt in the call, with --input_datafile.

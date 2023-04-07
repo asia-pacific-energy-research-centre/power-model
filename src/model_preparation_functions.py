@@ -267,17 +267,48 @@ def write_data_to_temp_workbook(paths_dict, input_data):
 
     return
 
+def write_input_data_as_csvs_to_data_folder(paths_dict, input_data):
+    #aim is to create folder so the data can be accessed in convert_csvs_to_datafile()
+    for k, v in input_data.items():
+        # v.to_excel(writer, sheet_name=k, index=False, merge_cells=False)
+        v.to_csv(paths_dict['path_to_input_csvs_folder']+'/' + k + '.csv', index=False)
+    logger.info(f"Combined file of Excel input data has been written as csvs to {paths_dict['path_to_input_csvs_folder']}.\n")
+    return
+
+def convert_csvs_to_datafile(paths_dict):
+    #convert the csvs in paths_dict['path_to_input_csvs_folder'] to a datafile. This is an alternative to prepare_data_for_osemosys()
+    command = f"otoole convert csv datafile {paths_dict['path_to_input_csvs_folder']} {paths_dict['path_to_input_data_file']} {paths_dict['path_to_new_data_config']}"
+
+    result = subprocess.run(command,shell=True, capture_output=True, text=True)
+    logger.info(f"Running the following command to convert the csvs to a datafile:\n{command}")
+    logger.info(command+'\n')
+    logger.info(result.stdout+'\n')
+    logger.info(result.stderr+'\n')
+
+    logger.info(f"Data file in text format has been written and saved in the tmp folder as {paths_dict['path_to_input_data_file']}.\n")
+    return
+
 def prepare_data_for_osemosys(paths_dict, config_dict):
     #The data needs to be converted from the Excel format to the text file format. We use otoole for this task.
 
-    reader = ReadExcel(user_config=config_dict['data_config'])#TODO is this going to work as expected?
-    writer = WriteDatafile(user_config=config_dict['data_config'])
+    command = f"otoole convert excel datafile {paths_dict['path_to_combined_input_data_workbook']} {paths_dict['path_to_input_data_file']} {paths_dict['path_to_new_data_config']}"
 
-    data, default_values = reader.read(paths_dict['path_to_combined_input_data_workbook'])
+    result = subprocess.run(command,shell=True, capture_output=True, text=True)
+    logger.info(f"Running the following command to convert the workbook to a datafile:\n{command}")
+    logger.info(command+'\n')
+    logger.info(result.stdout+'\n')
+    logger.info(result.stderr+'\n')
 
-    writer.write(data, paths_dict['path_to_input_data_file'], default_values)
 
-    logger.info(f"Data file in text format has been written and saved in the tmp folder as {paths_dict['path_to_input_data_file']}. This is the file you would use in OsEMOSYS Cloud as data if you are using that.\n")
+
+    # reader = ReadExcel(user_config=config_dict['data_config'])#TODO is this going to work as expected?
+    # writer = WriteDatafile(user_config=config_dict['data_config'])
+
+    # data, default_values = reader.read(paths_dict['path_to_combined_input_data_workbook'])
+
+    # writer.write(data, paths_dict['path_to_input_data_file'], default_values)
+
+    logger.info(f"Data file in text format has been written and saved in the tmp folder as {paths_dict['path_to_input_data_file']}.\n")
 
     return 
 
@@ -290,9 +321,9 @@ def replace_long_var_names_in_osemosys_script(paths_dict, config_dict):
     #update the following variable names:
     long_var_names = ['SC1_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint', 'SC1_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint', 'SC2_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint', 'SC2_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint', 'SC3_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint', 'SC3_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint', 'SC4_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint', 'SC4_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint',
     #begin non_osemosys_fast var names. But note that until we can get non osemosys_fast.txt to work with coin then there is no need for these, except to decrease the logs on a process that doesnt work.
-    'EBa1_RateOfFuelProduction1','EBa2_RateOfFuelProduction2','Acc1_FuelProductionByTechnology','Acc2_FuelUseByTechnology',
+    'EBa1_RateOfFuelProduction1','EBa2_RateOfFuelProduction2','Acc1_FuelProductionByTechnology','Acc2_FuelUseByTechnology']#,
     #these ones are likely to be variables within the data config. we should be careful changing these
-    'RateOfProductionByTechnologyByMode','RateOfProductionByTechnology','ProductionByTechnology','AnnualTechnologyEmissionByMode','AnnualTechnologyEmissionPenaltyByEmission']#im not saaure why productionbytechnologyannual is not ehre?
+    #'RateOfProductionByTechnologyByMode','RateOfProductionByTechnology','ProductionByTechnology','AnnualTechnologyEmissionByMode','AnnualTechnologyEmissionPenaltyByEmission']#im not saaure why productionbytechnologyannual is not ehre? #NOTE THAT THIS WONT WORK WITH RATE OF PRODUCTION BY TECHNOLOGY BECAUSE THAT WILL BE REPEATED
     long_name_to_shortened_name = dict()
     #now replace them with the first 20 characters
     for var_name in long_var_names:
@@ -372,7 +403,7 @@ def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
 
     return
 
-def create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, scenario_folder, config_dict,keep_current_tmp_files):
+def create_new_directories(tmp_directory, results_directory,visualisation_directory,path_to_input_csvs_folder, FILE_DATE_ID, scenario_folder, config_dict,keep_current_tmp_files):
     #create the tmp and results directories if they dont exist. ALso check if there are files in the tmp directory and if so, move them to a new folder with the FILE_DATE_ID in the name. 
     #EXCEPT if osemosys_cloud_input is y, then we dont want to do this because the user will be running main.py to extract results form the cloud output, as tehy ahve already done it once to prepare data now they are doing it once to extract results, and we dont want to move the files in the tmp directory in between those two runs
 
@@ -407,6 +438,18 @@ def create_new_directories(tmp_directory, results_directory,visualisation_direct
             for file in os.listdir(visualisation_directory):
                 if os.path.isfile(f'{visualisation_directory}/{file}'):
                     shutil.move(f'{visualisation_directory}/{file}', new_visualisation_dir)
+            
+    if not os.path.exists(path_to_input_csvs_folder):
+        os.makedirs(path_to_input_csvs_folder)
+    else:
+        if len(os.listdir(path_to_input_csvs_folder)) > 0:
+            new_input_csvs_dir = f"./input_csvs/{FILE_DATE_ID}/"
+            #make the new temp directory:
+            os.makedirs(new_input_csvs_dir)
+            #move all files (BUT NOT FOLDERS!):
+            for file in os.listdir(path_to_input_csvs_folder):
+                if os.path.isfile(f'{path_to_input_csvs_folder}/{file}'):
+                    shutil.move(f'{path_to_input_csvs_folder}/{file}', new_input_csvs_dir)
     return
 
 
@@ -427,11 +470,12 @@ def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict,keep_current
     tmp_directory = f'./tmp/{economy}/{scenario_folder}'
     results_directory = f'./results/{economy}/{scenario_folder}'
     visualisation_directory = f'./visualisations/{economy}/{scenario_folder}'
+    path_to_input_csvs_folder = f'{tmp_directory}/input_csvs'
 
     #create path to save copy of outputs to txt file in case of error:
     log_file_path = f'{tmp_directory}/process_log_{economy}_{scenario}_{FILE_DATE_ID}.txt'
 
-    create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, scenario_folder, config_dict,keep_current_tmp_files)
+    create_new_directories(tmp_directory, results_directory,visualisation_directory,path_to_input_csvs_folder, FILE_DATE_ID, scenario_folder, config_dict,keep_current_tmp_files)
 
     #create model run specifications txt file using the input variables as the details and the FILE_DATE_ID as the name:
     model_run_specifications_file = f'{tmp_directory}/specs_{FILE_DATE_ID}.txt'
@@ -477,6 +521,8 @@ def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict,keep_current
     paths_dict['path_to_combined_input_data_workbook'] = path_to_combined_input_data_workbook
     paths_dict['input_data_file_path'] = input_data_file_path
     paths_dict['path_to_input_data_file'] = path_to_input_data_file
+    paths_dict['path_to_input_csvs_folder'] = path_to_input_csvs_folder
+
     paths_dict['path_to_new_data_config']  = path_to_new_data_config
     paths_dict['log_file_path'] = log_file_path
     paths_dict['cbc_intermediate_data_file_path'] = cbc_intermediate_data_file_path
