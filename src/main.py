@@ -28,6 +28,7 @@ dont_solve = False
 plotting = True
 replace_long_var_names = True
 write_to_workbook = True
+save_results_vis_and_inputs = True
 ################################################################################
 
 def main(input_data_sheet_file):
@@ -106,14 +107,16 @@ def main(input_data_sheet_file):
         ##########################
         post_processing_functions.create_res_visualisation(paths_dict,config_dict)
         
-        post_processing_functions.save_results_visualisations_and_inputs_to_folder(paths_dict,save_plotting=False,save_results_and_inputs=True)
+        if save_results_vis_and_inputs:
+            post_processing_functions.save_results_visualisations_and_inputs_to_folder(paths_dict,save_plotting=False,save_results_and_inputs=True)
 
         post_processing_functions.TEST_output(paths_dict,config_dict)
 
         if plotting:
             plotting_functions.plotting_handler(tall_results_dfs=tall_results_dfs,paths_dict=paths_dict,load_from_pickle=True, pickle_paths=None)
 
-        post_processing_functions.save_results_visualisations_and_inputs_to_folder(paths_dict,save_plotting=True, save_results_and_inputs=False)
+        if save_results_vis_and_inputs:
+            post_processing_functions.save_results_visualisations_and_inputs_to_folder(paths_dict,save_plotting=True, save_results_and_inputs=False)
 
 #%%
 
