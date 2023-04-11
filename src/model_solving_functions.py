@@ -30,7 +30,7 @@ def solve_model(config_dict,paths_dict):
     cbc_results_data_file_path = paths_dict['cbc_results_data_file_path']
     solving_method = config_dict['solving_method']
 
-    if solving_method not in ['glpsol','coin_mlp','coin']:
+    if solving_method not in ['glpsol','coin_mip','coin']:
         raise ValueError('The solving method is not recognised. Please change it within main.py and try again')
     
     #previous solving method:
@@ -76,8 +76,8 @@ def solve_model(config_dict,paths_dict):
         elif 'osemosys.txt' in old_model_file_path:
             command = f"otoole results cbc csv {cbc_results_data_file_path} {tmp_directory} {path_to_new_data_config}"
         else:
-            logging.error('The model file path does not contain osemosys.txt or osemosys_fast.txt. Please check the model file path and try again')
-            raise ValueError('The model file path does not contain osemosys.txt or osemosys_fast.txt. Please check the model file path and try again')
+            logging.warning('WARNING: The model file path does not contain osemosys.txt or osemosys_fast.txt. IF something is not as you expect in the results, please check the model file path and try again')
+            #raise ValueError('The model file path does not contain osemosys.txt or osemosys_fast.txt. Please check the model file path and try again')
         
         result = subprocess.run(command,shell=True, capture_output=True, text=True)
 
@@ -89,10 +89,10 @@ def solve_model(config_dict,paths_dict):
         #save time taken to log_file
 
 
-    if solving_method == 'coin_mlp':
+    if solving_method == 'coin_mip':
         #new solving method (much faster - uses mlp to integrate with cbc):
         #start new timer to time the solving process
-        command=f"glpsol -d {path_to_input_data_file} -m {model_file_path} --wlp {cbc_intermediate_data_file_path} --check"
+        command=f"glpsol -d {path_to_input_data_file} -m {model_file_path} --wlp {cbc_intermediate_data_file_path} --check" 
         #create a lp file to input into cbc
         result = subprocess.run(command,shell=True, capture_output=True, text=True)
         logger.info("\n Printing command line output from converting to lp file \n")
@@ -127,14 +127,14 @@ def solve_model(config_dict,paths_dict):
 
         #convert to csv
         #check if old_model_file_path contains osemosys_fast.txt, if so we need to include the input data file.txt in the call, with --input_datafile.
-        if 'osemosys_fast.txt' in old_model_file_path:
+        if 'fast' in old_model_file_path:
             #we have to include the input data file.txt in the call, with --input_datafile. 
             command = f"otoole results --input_datafile {path_to_input_data_file} cbc csv {cbc_results_data_file_path} {tmp_directory} {path_to_new_data_config}"
-        elif 'osemosys.txt' in old_model_file_path:
+        else:# 'osemosys.txt' in old_model_file_path:
             command = f"otoole results cbc csv {cbc_results_data_file_path} {tmp_directory} {path_to_new_data_config}"
-        else:
-            logging.error('The model file path does not contain osemosys.txt or osemosys_fast.txt. Please check the model file path and try again')
-            raise ValueError('The model file path does not contain osemosys.txt or osemosys_fast.txt. Please check the model file path and try again')
+        # else:
+        # logging.warning('WARNING: The model file path does not contain osemosys.txt or osemosys_fast.txt. IF something is not as you expect in the results, please check the model file path and try again')
+        # #raise ValueError('The model file path does not contain osemosys.txt or osemosys_fast.txt. Please check the model file path and try again')
         
         result = subprocess.run(command,shell=True, capture_output=True, text=True)
 

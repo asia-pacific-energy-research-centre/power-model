@@ -14,7 +14,54 @@ logger = logging.getLogger(__name__)
 if os.getcwd().split('\\')[-1] == 'src':
     os.chdir('..')
     print("Changed directory to root of project")
-    
+
+technology_mapping = {
+    'POW_Coal_PP':'Coal',
+    'POW_Gas_PP':'Gas',
+    'POW_Gas_CCS_PP':'Gas',
+    'POW_Oil_PP':'Oil',
+    'POW_Hydro_PP':'Hydro',
+    'POW_Wind_PP':'Wind',
+    'POW_SolarPV_PP':'Solar',
+    'POW_Other_PP':'Other',
+    'POW_TBATT':'Storage',
+    'POW_IMPORT_ELEC_PP':'Imports',
+    'POW_Geothermal_PP':'Geothermal',
+    'POW_Solid_Biomass_PP':'Biomass',
+}
+emissions_mapping = {
+    '1_x_coal_thermal_CO2':'Coal',
+    '1_5_lignite_CO2':'Coal',
+    '2_coal_products_CO2':'Coal',
+    '7_7_gas_diesel_oil_CO2':'Oil',
+    '7_8_fuel_oil_CO2':'Oil',
+    '8_1_natural_gas_CO2':'Gas',
+    '8_1_natural_gas_CCS_CO2':'Gas',
+    '15_solid_biomass_CO2':'Biomass',
+    '16_others_CO2':'Other'
+}
+# #TEMP see model_preparation_functions.edit_input_data() for more info
+# #change keys in emissions mappings so that if they start with a number they have a letter 'a' in front
+# emissions_mapping = {('a'+key if key[0].isdigit() else key):value for key,value in emissions_mapping.items()}
+# #TEMP
+technology_color_dict = {
+    'Coal': '#000000',
+    'Gas': '#FF0000',
+    'Oil' : '#FFA500',
+    'Hydro': '#0000FF',
+    'Wind': '#00FFFF',
+    'Solar': '#FFFF00',
+    'Other': '#808080',
+    'Geothermal': '#FF00FF',
+    'Biomass': '#008000',
+    #set storagecharge and storagedischarge to the same bright color (pink!)
+    'Storage_charge': '#FFC0CB',
+    'Storage_discharge': '#FFC0CB',
+    'Imports': '#00FF00',
+    'Demand': '#000000'
+}
+
+
 def plotting_handler(tall_results_dfs=None,paths_dict=None, load_from_pickle=True,pickle_paths=None):
     """Handler for plotting functions, pickle path is a list of two paths, the first is the path to the pickle of tall_results_dfs, the second is the path to the pickle of paths_dict. You will need to set them manually."""
     if load_from_pickle:
@@ -44,6 +91,12 @@ def extract_storage_charge_and_discharge(tall_results_dfs):
     storage_charge = storage_charge[storage_charge['TECHNOLOGY'] == 'POW_TBATT']
     storage_discharge = storage_discharge[storage_discharge['TECHNOLOGY'] == 'POW_TBATT']
 
+    #if they are empty raise a warning
+    if storage_charge.empty:
+        warnings.warn('Storage charge is empty')
+    if storage_discharge.empty:
+        warnings.warn('Storage discharge is empty')
+        
     #rename TECHNOLOGY according to if its charge or discharge
     storage_charge['TECHNOLOGY'] = 'Storage_charge'
     storage_discharge['TECHNOLOGY'] = 'Storage_discharge'
@@ -57,8 +110,11 @@ def extract_generation_data(tall_results_dfs):
         generation = tall_results_dfs['ProductionByTechnology']
     except KeyError:
         generation = tall_results_dfs['ProductionByTechnolo']
+    
+    generation = drop_categories_not_in_mapping(generation, technology_mapping)
     #map TECHNOLOGY to readable names:
     generation['TECHNOLOGY'] = generation['TECHNOLOGY'].apply(extract_readable_name_from_powerplant_technology)
+
     #drop storage as it is handled separately
     generation = generation[generation['TECHNOLOGY'] != 'POW_TBATT']
     storage_charge,storage_discharge = extract_storage_charge_and_discharge(tall_results_dfs)
@@ -83,26 +139,27 @@ def plot_generation_annual(tall_results_dfs, paths_dict):
     demand['TECHNOLOGY'] = 'Demand'
     
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the YEAR
-    fig = px.area(generation, x="YEAR", y="VALUE", color='TECHNOLOGY',title='Generation GWh')
-    #and add line for demand
-    fig.add_scatter(x=demand['YEAR'], y=demand['VALUE'], mode='lines', name='Demand')
-    #set colors using create_color_dict(technology_or_fuel)
-    fig.update_traces(marker_color=create_color_dict('technology'))
+    fig = px.area(generation, x="YEAR", y="VALUE", color='TECHNOLOGY',title='Generation GWh',color_discrete_map=create_color_dict(generation['TECHNOLOGY']))
+    #and add line with points for demand
+    fig.add_scatter(x=demand['YEAR'], y=demand['VALUE'], mode='lines+markers', name='Demand', line=dict(color=technology_color_dict['Demand']), marker=dict(color=technology_color_dict['Demand']))
+    #
     #save as html
-    fig.write_html(paths_dict['visualisation_directory']+'/annual_generation.html')
+    fig.write_html(paths_dict['visualisation_directory']+'/annual_generation.html', auto_open=False)
 
 def plot_emissions_annual(tall_results_dfs, paths_dict):
     """Plot emissions by year by technology"""
     #load emissions
     emissions = tall_results_dfs['AnnualTechnologyEmission']
-    #map TECHNOLOGY to readable names:
-    emissions['FUEL'] = emissions['TECHNOLOGY'].apply(extract_readable_name_from_emissions_technology)
+    
+    #drop technologies not in technology_mapping
+    emissions = drop_categories_not_in_mapping(emissions, emissions_mapping, column='EMISSION')
+    #map EMISSION to readable names:
+    emissions['FUEL'] = emissions['EMISSION'].apply(extract_readable_name_from_emissions_technology)
+
     # sum emissions by technology and year
     emissions = emissions.groupby(['FUEL','YEAR']).sum().reset_index()
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the time
-    fig = px.area(emissions, x="YEAR", y="VALUE", color='FUEL', title='Emissions MtCO2')
-    #set colors using create_color_dict(technology_or_fuel)
-    fig.update_traces(marker_color=create_color_dict('technology'))
+    fig = px.area(emissions, x="YEAR", y="VALUE", color='FUEL', title='Emissions MtCO2',color_discrete_map=create_color_dict(emissions['FUEL']))
     #save as html
     fig.write_html(paths_dict['visualisation_directory']+'/annual_emissions.html')
 
@@ -110,14 +167,16 @@ def plot_capacity_annual(tall_results_dfs, paths_dict):
     """Plot capacity by technology"""
     #load capacity
     capacity = tall_results_dfs['TotalCapacityAnnual']#'CapacityByTechnology']#couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
+
+    #drop technologies not in technology_mapping
+    capacity = drop_categories_not_in_mapping(capacity, technology_mapping)
     #map TECHNOLOGY to readable names:
     capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(extract_readable_name_from_powerplant_technology)
+    
     #sum capacity by technology and year
     capacity = capacity.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the time
-    fig = px.area(capacity, x="YEAR", y="VALUE", color='TECHNOLOGY', title='Capacity GW')
-    #set colors using create_color_dict(technology_or_fuel)
-    fig.update_traces(marker_color=create_color_dict('technology'))
+    fig = px.area(capacity, x="YEAR", y="VALUE", color='TECHNOLOGY', title='Capacity GW',color_discrete_map=create_color_dict(capacity['TECHNOLOGY']))
     #save as html
     fig.write_html(paths_dict['visualisation_directory']+'/annual_capacity.html')
 
@@ -126,7 +185,11 @@ def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
     generation = extract_generation_data(tall_results_dfs)
 
     #extract capcity data
-    capacity = tall_results_dfs['TotalCapacityAnnual']#'CapacityByTechnology']#couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
+    capacity = tall_results_dfs['TotalCapacityAnnual']#'CapacityByTechnology']
+    
+    
+    capacity = drop_categories_not_in_mapping(capacity, technology_mapping)
+    #couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
     capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(extract_readable_name_from_powerplant_technology)
 
     #sum generation and capacity by technology and year
@@ -140,9 +203,7 @@ def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
     generation_capacity['VALUE'] = generation_capacity['VALUE_x']/generation_capacity['VALUE_y']/8.76
 
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the time
-    fig = px.area(generation_capacity, x="YEAR", y="VALUE", color='TECHNOLOGY', title='Capacity Factor (0-1)')
-    #set colors using create_color_dict(technology_or_fuel)
-    fig.update_traces(marker_color=create_color_dict('technology'))
+    fig = px.area(generation_capacity, x="YEAR", y="VALUE", color='TECHNOLOGY', title='Capacity Factor (0-1)',color_discrete_map=create_color_dict(generation_capacity['TECHNOLOGY']))
     #save as html
     fig.write_html(paths_dict['visualisation_directory']+'/annual_capacity_factor.html')
 
@@ -170,8 +231,13 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     generation['VALUE'] = generation['VALUE']/generation['TOTAL_HOURS'] * 1000
 
     #get total capacity by technology and year
-    capacity = tall_results_dfs['TotalCapacityAnnual']#'CapacityByTechnology']#couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
+    capacity = tall_results_dfs['TotalCapacityAnnual']#'CapacityByTechnology']
+    
+    
+    capacity = drop_categories_not_in_mapping(capacity, technology_mapping)
+    #couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
     capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(extract_readable_name_from_powerplant_technology)
+
     capacity = capacity.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
     #make a TIMESLICE col and call it 'CAPACITY'
     capacity['TIMESLICE'] = 'CAPACITY'
@@ -188,11 +254,12 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     min_year = generation['YEAR'].min()
 
     #make sure Timeslice = capacity is at the bottom
-    
+
+    #create a dictionary with the technology as key and the color as value using create_color_dict(technology_or_fuel_column) to get the colors
+    color_dict = create_color_dict(generation['TECHNOLOGY'])
     for year in range(min_year,max_year+1,10):
-        fig = px.bar(generation[(generation['YEAR'] == year) & (generation['TECHNOLOGY'] != 'Demand')], x="TIMESLICE", y="VALUE", color='TECHNOLOGY', title='Average generation by timeslice for year '+str(year))
-        fig.add_scatter(x=generation[(generation['YEAR'] == year) & (generation['TECHNOLOGY'] == 'Demand')]['TIMESLICE'], y=generation[(generation['YEAR'] == year) & (generation['TECHNOLOGY'] == 'Demand')]['VALUE'], mode='lines', name='Demand')
-        fig.update_traces(marker_color=create_color_dict('technology'))
+        fig = px.bar(generation[(generation['YEAR'] == year) & (generation['TECHNOLOGY'] != 'Demand')], x="TIMESLICE", y="VALUE", color='TECHNOLOGY', title='Average generation by timeslice for year '+str(year),color_discrete_map=color_dict)
+        fig.add_scatter(x=generation[(generation['YEAR'] == year) & (generation['TECHNOLOGY'] == 'Demand')]['TIMESLICE'], y=generation[(generation['YEAR'] == year) & (generation['TECHNOLOGY'] == 'Demand')]['VALUE'], mode='lines+markers', name='Demand', line=dict(color=color_dict['Demand']), marker=dict(color=color_dict['Demand']))
         #save as html
         fig.write_html(paths_dict['visualisation_directory']+'/generation_by_timeslice_'+str(year)+'.html', auto_open=False)
 
@@ -217,61 +284,39 @@ def plot_8th_graphs(paths_dict):
 
 def plot_8th_generation_by_tech(data_8th,paths_dict):
     generation = data_8th['generation_by_tech']
+    #drop total TECHNOLOGY
+    generation = generation[generation['TECHNOLOGY'] != 'Total']
     #make the data into tall format
     generation = generation.melt(id_vars='TECHNOLOGY', var_name='YEAR', value_name='VALUE')
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the time
-    fig = px.area(generation, x="YEAR", y="VALUE", color='TECHNOLOGY', title='Generation GWh')
-    #set colors using create_color_dict(technology_or_fuel)
-    fig.update_traces(marker_color=create_color_dict('technology'))#todo does this work?
+    fig = px.area(generation, x="YEAR", y="VALUE", color='TECHNOLOGY', title='Generation GWh', color_discrete_map=create_color_dict(generation['TECHNOLOGY']))
     #save as html
     fig.write_html(paths_dict['visualisation_directory']+'/8th_generation_by_tech.html', auto_open=False)
 
 
 
 #########################UTILITY FUNCTIONS#######################
-
+def drop_categories_not_in_mapping(df, mapping, column='TECHNOLOGY'):
+    #drop technologies not in technology_mapping
+    df = df[df[column].isin(mapping.keys())]
+    #if empty raise a warning
+    if df.empty:
+        warnings.warn(f'Filtering data in {column} caused the dataframe to become empty')
+    return df
 
 def extract_readable_name_from_powerplant_technology(technology):
     """Use the set of TECHNOLOGIES we expect in the power model and map them to readable names"""
-    technology_mapping = {
-        'POW_Coal_PP':'Coal',
-        'POW_Gas_PP':'Gas',
-        'POW_Gas_CCS_PP':'Gas',
-        'POW_Oil_PP':'Oil',
-        'POW_Hydro_PP':'Hydro',
-        'POW_Wind_PP':'Wind',
-        'POW_SolarPV_PP':'Solar',
-        'POW_Other_PP':'Other',
-        'POW_TBATT':'Storage',
-        'POW_IMPORT_ELEC_PP':'Imports',
-        'POW_Geothermal_PP':'Geothermal',
-        'POW_Solid_Biomass_PP':'Biomass',
-
-        # 'POW_10_hydro':'Hydro',#todo are these right to ahve ere
-        # 'POW_11_geothermal':'Geothermal',
-    }
     if technology not in technology_mapping.keys():
         logging.warning(f"Technology {technology} is not in the expected set of technologies during extract_readable_name_from_powerplant_technology()")
-        # raise ValueError("Technology is not in the expected set of technologies")
+        raise ValueError("Technology is not in the expected set of technologies")
         return technology
     return technology_mapping[technology]
     
 def extract_readable_name_from_emissions_technology(technology):
     """Use the set of fuels we expect in the power model, which have emission factors and map them to readable names"""
-    emissions_mapping = {
-        '1_x_coal_thermal_CO2':'Coal',
-        '1_5_lignite_CO2':'Coal',
-        '2_coal_products_CO2':'Coal',
-        '7_7_gas_diesel_oil_CO2':'Oil',
-        '7_8_fuel_oil_CO2':'Oil',
-        '8_1_natural_gas_CO2':'Gas',
-        '8_1_natural_gas_CCS_CO2':'Gas',
-        '15_solid_biomass_CO2':'Biomass',
-        '16_others_CO2':'Other'
-    }
     if technology not in emissions_mapping.keys():
         logging.warning(f"Technology {technology} is not in the expected set of technologies during extract_readable_name_from_emissions_technology()")
-        # raise ValueError("Technology is not in the expected set of technologies")
+        raise ValueError("Technology is not in the expected set of technologies")
         return technology
     return emissions_mapping[technology]
 
@@ -323,33 +368,18 @@ def create_timeslice_details():
     
     return timeslice_dict
 
-#create graphing color dict for Technologies and fuels:
-def create_color_dict(technology_or_fuel):
+def create_color_dict(technology_or_fuel_column):
     """Using the set of technologies, create a dictionary of colors for each. The colors for similar fuels and technologies should be similar. The color should also portray the vibe of the technology or fuel, for example coal should be dark and nuclear should be bright. Hydro should be blue, solar should be yellow, wind should be light blue? etc."""
-    technology_color_dict = {
-        'Coal': '#000000',
-        'Gas': '#FF0000',
-        'Oil' : '#FFA500',
-        'Hydro': '#0000FF',
-        'Wind': '#00FFFF',
-        'Solar': '#FFFF00',
-        'Other': '#808080',
-        'Geothermal': '#FF00FF',
-        'Biomass': '#008000',
-        #set storagecharge and storagedischarge to the same bright color (pink!)
-        'Storage_charge': '#FFC0CB',
-        'Storage_discharge': '#FFC0CB',
-        'Imports': '#00FF00',
-        'Demand': '#000000'
-    }
-    try:
-        color = technology_color_dict[technology_or_fuel]
-    except:
-        logging.warning(f"Technology {technology_or_fuel} is not in the expected set of technologies during create_color_dict()")
-        # raise ValueError("Technology is not in the expected set of technologies")
-        #supply random color
-        return '#%06X' % random.randint(0, 0xFFFFFF)
-    return color
+    for technology_or_fuel in technology_or_fuel_column.unique():
+        try:
+            color = technology_color_dict[technology_or_fuel]
+        except:
+            logging.warning(f"Technology {technology_or_fuel} is not in the expected set of technologies during create_color_dict()")
+            #raise ValueError("Technology is not in the expected set of technologies")
+            #supply random color
+            color = '#%06X' % random.randint(0, 0xFFFFFF)
+        technology_color_dict[technology_or_fuel] = color
+    return technology_color_dict
 
 
 # #div by 3.6 to get GWh

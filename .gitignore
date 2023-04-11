@@ -9,14 +9,14 @@
 archive/
 /results
 *.html
+launch.json
 # temporary
-testing_virtual_machine.docx 
-testing_code/*
 archive/*
 simplicity/
-todolist.md
+
 #Dont Ignore the following:
-!data-sheet-power-24ts.xlsx
+!data-sheet-power_36TS.xlsx
+!long_variable_names_to_short_variable_names.xlsx
 
 #################DEFAULT#################
 

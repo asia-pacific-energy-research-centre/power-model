@@ -22,15 +22,12 @@ FILE_DATE_ID = time.strftime("%Y-%m-%d-%H%M%S")
 root_dir = '.' # because this file is in src, the root may change if it is run from this file or from command line
 config_dir = 'config'
 #this MUST be one of osmoseys_fast.txt or osemosys.txt. Otherwise we will have to change the code around line 86 of model_solving_functions.py
-#note that i cannot get osemosys.txt to work with coin as it produces no output.
-osemosys_model_script = 'osemosys.txt'
-extract_osemosys_cloud_results_using_otoole = True#False is the default, but if you want to use otoole to extract the results, set this to True
+osemosys_model_script = 'osemosys.txt'#'OSeMOSYS_simplicity.txt'#'osemosys_si.txt'
 keep_current_tmp_files = False
 dont_solve = False
-run_with_wsl = False
 plotting = True
 replace_long_var_names = True
-write_to_workbook=True
+write_to_workbook = True
 ################################################################################
 
 def main(input_data_sheet_file):
@@ -40,16 +37,16 @@ def main(input_data_sheet_file):
     ################################################################################
 
     #prep functions:
-    config_dict = model_preparation_functions.set_up_config_dict(root_dir, input_data_sheet_file, extract_osemosys_cloud_results_using_otoole, osemosys_model_script,run_with_wsl)
+    config_dict = model_preparation_functions.set_up_config_dict(root_dir, input_data_sheet_file, osemosys_model_script)
 
     #uncomment these to override the model settings in the excel file
-    config_dict['model_end_year'] = 2023
+    # config_dict['model_end_year'] = 2023
     # config_dict['economy'] = '19_THA'
     # config_dict['scenario'] = 'Reference'
     # config_dict['data_config_file'] ="config.yaml"
     # config_dict['solving_method'] = 'coin'#or glpsol or cloud
 
-    paths_dict = model_preparation_functions.set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files)
+    paths_dict = model_preparation_functions.set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files,write_to_workbook=write_to_workbook)
 
     ################################################################################
     #SET UP LOGGING
@@ -69,7 +66,7 @@ def main(input_data_sheet_file):
 
         if write_to_workbook:
             model_preparation_functions.write_data_to_temp_workbook(paths_dict, input_data)
-            model_preparation_functions.prepare_data_for_osemosys(paths_dict,config_dict)
+            model_preparation_functions.convert_workbook_to_datafile(paths_dict,config_dict)
         else:
             model_preparation_functions.write_input_data_as_csvs_to_data_folder(paths_dict, input_data)
             model_preparation_functions.convert_csvs_to_datafile(paths_dict)

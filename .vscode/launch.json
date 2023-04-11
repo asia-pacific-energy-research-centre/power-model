@@ -13,7 +13,7 @@
             "cwd": "${fileDirname}/..",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["data-sheet-power_36TS.xlsx"]
+            "args": ["data-sheet-power_36TS.xlsx"] //"simplicity_data-test.xlsx"] // 
         }
     ]
 }
