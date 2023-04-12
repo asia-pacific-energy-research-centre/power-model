@@ -26,9 +26,9 @@ Make sure you did Step 1 (only need to do it once).
 3. Run the model by typing in `python ./src/main.py <input_data_sheet_file>"
     a. where <input_data_sheet_file> is the name of the input data sheet file in ./data (e.g., data.xlsx)
     b. For example, `python ./src/main.py data.xlsx` is the command to run the model with the data in data.xlsx
-    c. You can also add `> output.txt 2>&1` to save the output to a text file. For example, `python ./src/main.py data.xlsx > output.txt 2>&1`
+    c. You can also add `> output.txt 2>&1` to save the complete output to a text file. For example, `python ./src/main.py data.xlsx > output.txt 2>&1`. This will print a lot of stuff, so the file could become quite large. If you want to just see the most important outputs, the `tmp/ECONOMY/SCENARIO/process_log_ECONOMY_SCENARIO_FILEDATEID.txt` is useful.
 
-4. The model will run. You can take a look at the output logs in the `tmp/ECONOMY/SCENARIO/process_log_ECONOMY_SCENARIO_FILEDATEID.txt` file. There will be results in the `results/ECONOMY/SCENARIO` folder and visualisations in the `visualisations/ECONOMY_SCENARIO` folder.
+4. The model will run. You can take a look at the input and intermediate data in the `tmp/ECONOMY/SCENARIO/` folder. There will be results in the `results/ECONOMY/SCENARIO` folder and visualisations in the `visualisations/ECONOMY_SCENARIO` folder.
 
 ## 3. Debugging model runs
 When the script runs, the following temporary files are saved in `./tmp/ECONOMY NAME/SCENARIO`:

@@ -10,6 +10,7 @@ archive/
 /results
 *.html
 launch.json
+*.ipynb
 # temporary
 archive/*
 simplicity/
