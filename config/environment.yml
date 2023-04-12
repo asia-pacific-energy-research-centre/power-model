@@ -13,6 +13,6 @@ dependencies:
  - pyyaml
  - plotly
  - pip
- pip:
+ - pip:
    - otoole
    - mip

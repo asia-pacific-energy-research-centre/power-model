@@ -9,6 +9,7 @@ import warnings
 import logging
 import shutil
 import pickle as pickle
+import model_preparation_functions
 logger = logging.getLogger(__name__)
 #make directory the root of the project
 if os.getcwd().split('\\')[-1] == 'src':
@@ -98,9 +99,9 @@ def extract_results_from_csvs(paths_dict, config_dict):
             sys.exit()
         #CHECKINGOVER
 
-        #change the region names to remove apostrophes if they are at the start or end of the string
-        if 'REGION' in df.columns:
-            df['REGION'] = df['REGION'].str.strip("'")
+        # #change the region names to remove apostrophes if they are at the start or end of the string
+        # if 'REGION' in df.columns:
+        #     df['REGION'] = df['REGION'].str.strip("'")
 
         df_wide = df.copy()
 
@@ -110,7 +111,7 @@ def extract_results_from_csvs(paths_dict, config_dict):
             indices = [ele for ele in cols if ele not in unwanted_indices]
 
             #make df wide for easy viewing
-            df_wide = pd.pivot_table(df_wide,index=indices,columns='YEAR',values='VALUE')
+            df_wide = pd.pivot_table(df_wide,index=indices,columns='YEAR',values='VALUE').reset_index()
 
             df_wide = df_wide.fillna(0)#check for na's in all cols. replace them with 0's
             df_wide = df_wide.loc[(df_wide != 0).any(axis=1)] # remove rows where all values are zero
@@ -126,7 +127,7 @@ def extract_results_from_csvs(paths_dict, config_dict):
                         
             #create tall version of df. This is useful for plotting. We do this after making it wide so any rows that are all 0 are removed
             df = df_wide.copy()
-            df = pd.melt(df.reset_index(),id_vars=indices,var_name='YEAR',value_name='VALUE')
+            df = pd.melt(df,id_vars=indices,var_name='YEAR',value_name='VALUE')
             df = df.sort_values(by=indices)
 
         tall_results_dfs[sheet] = df
@@ -134,7 +135,27 @@ def extract_results_from_csvs(paths_dict, config_dict):
 
     config_dict = get_sheet_names_for_file_names(config_dict, wide_results_dfs)
     logging.info('\n\n##################################\nDone extracting results from CSVs\n##################################\n\n')
+
+    #edit results values:
+    tall_results_dfs = convert_results_variables_back_to_long_names(tall_results_dfs)
+    wide_results_dfs = convert_results_variables_back_to_long_names(wide_results_dfs)
     return config_dict,tall_results_dfs,wide_results_dfs
+
+
+def convert_results_variables_back_to_long_names(results_dfs):
+    long_variable_names_to_short_variable_names = model_preparation_functions.import_long_variable_names_to_short_variable_names()
+    #reverse the long_variable_names_to_short_variable_names dicts inside the dict
+    short_variable_names_to_long_variable_names = {}
+    for sheet in long_variable_names_to_short_variable_names.keys():
+        short_variable_names_to_long_variable_names[sheet] = {v: k for k, v in long_variable_names_to_short_variable_names[sheet].items()}
+    for sheet in results_dfs.keys():
+        for col in results_dfs[sheet].columns:
+            if col in short_variable_names_to_long_variable_names.keys():
+                #use the long_variable_names_to_short_variable_names dict to change the values in the sheet
+                #first check if the string has apostrophes at the start and end. If so, remove them, these occur because the string has a number at the start
+                results_dfs[sheet][col] = results_dfs[sheet][col].str.strip("'")
+                results_dfs[sheet][col] = results_dfs[sheet][col].apply(lambda x: short_variable_names_to_long_variable_names[col][x] if x in short_variable_names_to_long_variable_names[col].keys() else model_preparation_functions.raise_error_if_var_name_not_in_dict(x))
+    return results_dfs
 
 def get_sheet_names_for_file_names(config_dict, results_dfs):
     file_names_to_sheet_names = {}
@@ -490,8 +511,8 @@ def save_results_visualisations_and_inputs_to_folder(paths_dict, save_plotting,s
         for file in os.listdir(paths_dict['tmp_directory']):
             if os.path.isfile(os.path.join(paths_dict['tmp_directory'], file)):
                 shutil.copy(os.path.join(paths_dict['tmp_directory'], file), os.path.join(tmp_folder, file))
-            #extract last part of the path to the path_to_input_csvs_folder
-            elif file == os.path.basename(paths_dict['path_to_input_csvs_folder']):
+            #extract last part of the path to the path_to_input_csvs
+            elif file == os.path.basename(paths_dict['path_to_input_csvs']):
                 shutil.copytree(os.path.join(paths_dict['tmp_directory'], file), os.path.join(tmp_folder, file))
         #copy results_workbook, combined_results_tall_years, combined_results_tall_sheet_names to the new folder
         shutil.copy(paths_dict['results_workbook'],results_folder)
