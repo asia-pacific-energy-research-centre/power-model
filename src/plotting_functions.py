@@ -22,7 +22,8 @@ if os.getcwd().split('\\')[-1] == 'src':
 
 #load in technology, emissions and colors mappings from excel file, using the sheet name as the key
 mapping = pd.read_excel('config/plotting_config_and_timeslices.xlsx', sheet_name=None)
-technology_mapping = mapping['TECHNOLOGY'].set_index('long_name').to_dict()['plotting_name']
+powerplant_mapping = mapping['POWERPLANT'].set_index('long_name').to_dict()['plotting_name']
+fuel_mapping = mapping['FUEL'].set_index('long_name').to_dict()['plotting_name']
 emissions_mapping = mapping['EMISSION'].set_index('long_name').to_dict()['plotting_name']
 technology_color_dict = mapping['plotting_name_to_color'].set_index('plotting_name').to_dict()['color']
 timeslice_dict = OrderedDict(mapping['timeslices'].set_index('timeslice').to_dict(orient='index'))
@@ -87,9 +88,9 @@ def extract_ProductionByTechnology(tall_results_dfs):
     """Extract generation (and other) data from ProductionByTechnology sheet. But also extract storage charge and discharge and handle it separately then append them generation. Also convert to GWh. Note that the final data will not have been summed up by technology, timeslice or year yet."""
     generation = tall_results_dfs['ProductionByTechnology']
     
-    generation = drop_categories_not_in_mapping(generation, technology_mapping)
+    generation = drop_categories_not_in_mapping(generation, powerplant_mapping)
     #map TECHNOLOGY to readable names:
-    generation['TECHNOLOGY'] = generation['TECHNOLOGY'].apply(extract_readable_name_from_powerplant_technology)
+    generation['TECHNOLOGY'] = generation['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping))
 
     #drop storage as it is handled separately
     generation = generation[generation['TECHNOLOGY'] != 'POW_TBATT']
@@ -138,10 +139,10 @@ def plot_emissions_annual(tall_results_dfs, paths_dict):
     #load emissions
     emissions = tall_results_dfs['AnnualTechnologyEmission']
     
-    #drop technologies not in technology_mapping
+    #drop technologies not in powerplant_mapping
     emissions = drop_categories_not_in_mapping(emissions, emissions_mapping, column='EMISSION')
     #map EMISSION to readable names:
-    emissions['FUEL'] = emissions['EMISSION'].apply(extract_readable_name_from_emissions_technology)
+    emissions['FUEL'] = emissions['EMISSION'].apply(lambda x: extract_readable_name_from_mapping(x, emissions_mapping))
 
     # sum emissions by technology and year
     emissions = emissions.groupby(['FUEL','YEAR']).sum().reset_index()
@@ -161,11 +162,10 @@ def plot_capacity_annual(tall_results_dfs, paths_dict):
     #load capacity
     capacity = tall_results_dfs['TotalCapacityAnnual']#'CapacityByTechnology']#couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
 
-    #drop technologies not in technology_mapping
-    capacity = drop_categories_not_in_mapping(capacity, technology_mapping)
+    #drop technologies not in powerplant_mapping
+    capacity = drop_categories_not_in_mapping(capacity, powerplant_mapping)
     #map TECHNOLOGY to readable names:
-    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(extract_readable_name_from_powerplant_technology)
-
+    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping))
     # #convert imports to GW
     # capacity.loc[capacity['TECHNOLOGY'] == 'Imports', 'VALUE'] = capacity.loc[capacity['TECHNOLOGY'] == 'Imports', 'VALUE']/3.6
     
@@ -193,9 +193,9 @@ def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
     capacity = tall_results_dfs['TotalCapacityAnnual']#'CapacityByTechnology']
     
     
-    capacity = drop_categories_not_in_mapping(capacity, technology_mapping)
+    capacity = drop_categories_not_in_mapping(capacity, powerplant_mapping)
     #couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
-    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(extract_readable_name_from_powerplant_technology)
+    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping))
 
     #sum generation and capacity by technology and year
     capacity = capacity.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
@@ -244,9 +244,9 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     capacity = tall_results_dfs['TotalCapacityAnnual']#'CapacityByTechnology']
     
     
-    capacity = drop_categories_not_in_mapping(capacity, technology_mapping)
+    capacity = drop_categories_not_in_mapping(capacity, powerplant_mapping)
     #couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
-    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(extract_readable_name_from_powerplant_technology)
+    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping))
 
     capacity = capacity.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
 
@@ -269,16 +269,11 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     max_year = generation['YEAR'].max()
     min_year = generation['YEAR'].min()
 
-    #make sure Timeslice = capacity is at the bottom
-
     #create a dictionary with the technology as key and the color as value using create_color_dict(technology_or_fuel_column) to get the colors
     color_dict = create_color_dict(generation['TECHNOLOGY'])
     #sort the df by TIMESLICE to have the same order as the the keys in timeslice_dict
     order = list(timeslice_dict.keys()) + ['CAPACITY']
     order_nocapacity = list(timeslice_dict.keys())
-    # generation['TIMESLICE'] = pd.Categorical(generation['TIMESLICE'], categories=order, ordered=True)
-    # generation = generation.sort_values(by=['TIMESLICE'])
-    
     subplot_years = [year for year in range(min_year,max_year+1,10)]
     for year in range(min_year,max_year+1,10):
         title = 'Average generation by timeslice for year '+str(year) + ' (GW)'
@@ -413,28 +408,28 @@ def create_dashboard(figs, paths_dict,subplot_titles):
 
 #########################UTILITY FUNCTIONS#######################
 def drop_categories_not_in_mapping(df, mapping, column='TECHNOLOGY'):
-    #drop technologies not in technology_mapping
+    #drop technologies not in powerplant_mapping
     df = df[df[column].isin(mapping.keys())]
     #if empty raise a warning
     if df.empty:
         warnings.warn(f'Filtering data in {column} caused the dataframe to become empty')
     return df
 
-def extract_readable_name_from_powerplant_technology(technology):
-    """Use the set of TECHNOLOGIES we expect in the power model and map them to readable names"""
-    if technology not in technology_mapping.keys():
-        logging.warning(f"Technology {technology} is not in the expected set of technologies during extract_readable_name_from_powerplant_technology()")
-        raise ValueError("Technology is not in the expected set of technologies")
-        return technology
-    return technology_mapping[technology]
+def extract_readable_name_from_mapping(long_name,mapping):
+    """Use the mappings of what categories we expect in the power model and map them to readable names"""
+    if long_name not in mapping.keys():
+        logging.warning(f"Category {long_name} is not in the expected set of long_names in the mapping. This occured during extract_readable_name_from_mapping()")
+        raise ValueError("long_name is not in the expected set of long_names")
+        return long_name
+    return mapping[technology]
     
-def extract_readable_name_from_emissions_technology(technology):
-    """Use the set of fuels we expect in the power model, which have emission factors and map them to readable names"""
-    if technology not in emissions_mapping.keys():
-        logging.warning(f"Technology {technology} is not in the expected set of technologies during extract_readable_name_from_emissions_technology()")
-        raise ValueError("Technology is not in the expected set of technologies")
-        return technology
-    return emissions_mapping[technology]
+# def extract_readable_name_from_emissions_technology(technology):
+#     """Use the set of fuels we expect in the power model, which have emission factors and map them to readable names"""
+#     if technology not in emissions_mapping.keys():
+#         logging.warning(f"Technology {technology} is not in the expected set of technologies during extract_readable_name_from_emissions_technology()")
+#         raise ValueError("Technology is not in the expected set of technologies")
+#         return technology
+#     return emissions_mapping[technology]
 
 def create_color_dict(technology_or_fuel_column):
     """Using the set of technologies, create a dictionary of colors for each. The colors for similar fuels and technologies should be similar. The color should also portray the vibe of the technology or fuel, for example coal should be dark and nuclear should be bright. Hydro should be blue, solar should be yellow, wind should be light blue? etc."""
