@@ -26,6 +26,8 @@ technology_mapping = mapping['TECHNOLOGY'].set_index('long_name').to_dict()['plo
 emissions_mapping = mapping['EMISSION'].set_index('long_name').to_dict()['plotting_name']
 technology_color_dict = mapping['plotting_name_to_color'].set_index('plotting_name').to_dict()['color']
 timeslice_dict = OrderedDict(mapping['timeslices'].set_index('timeslice').to_dict(orient='index'))
+# #make ordered dict
+# timeslice_dict = timeslice_dict
 
 def plotting_handler(tall_results_dfs=None,paths_dict=None, load_from_pickle=True,pickle_paths=None):
     """Handler for plotting functions, pickle path is a list of two paths, the first is the path to the pickle of tall_results_dfs, the second is the path to the pickle of paths_dict. You will need to set them manually."""
@@ -123,7 +125,7 @@ def plot_generation_annual(tall_results_dfs, paths_dict):
     #order by value
     generation = generation.sort_values(by=['YEAR','VALUE'],ascending=False)
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the YEAR
-    title = 'Generation by technology GWh'
+    title = 'Generation by technology'
     fig = px.area(generation, x="YEAR", y="VALUE", color='TECHNOLOGY',title=title,color_discrete_map=create_color_dict(generation['TECHNOLOGY']))
     #and add line with points for demand
     fig.add_scatter(x=demand['YEAR'], y=demand['VALUE'], mode='lines+markers', name='Demand', line=dict(color=technology_color_dict['Demand']), marker=dict(color=technology_color_dict['Demand']))
@@ -166,8 +168,8 @@ def plot_capacity_annual(tall_results_dfs, paths_dict):
     #map TECHNOLOGY to readable names:
     capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(extract_readable_name_from_powerplant_technology)
 
-    # #convert imports to GW
-    # capacity.loc[capacity['TECHNOLOGY'] == 'Imports', 'VALUE'] = capacity.loc[capacity['TECHNOLOGY'] == 'Imports', 'VALUE']/3.6
+    #convert imports to GW
+    capacity.loc[capacity['TECHNOLOGY'] == 'Imports', 'VALUE'] = capacity.loc[capacity['TECHNOLOGY'] == 'Imports', 'VALUE']/3.6
     
     #remove transmission from technology
     capacity = capacity.loc[capacity['TECHNOLOGY'] != 'Transmission']
@@ -211,7 +213,7 @@ def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
     generation_capacity = generation_capacity.sort_values(by=['YEAR','VALUE'], ascending=False)
 
     #plot a historgram chart with color and facets determined by the TECHNOLOGY column. The chart will have the time on x axis and the value on y. Make faint lines between the bars so it is clear which year it is
-    title = 'Capacity Factor (%)'
+    title = 'Capacity Factor'
     fig = px.histogram(generation_capacity, x="YEAR", y='VALUE',color='TECHNOLOGY', facet_col='TECHNOLOGY', title=title,facet_col_wrap=7,color_discrete_map=create_color_dict(generation_capacity['TECHNOLOGY']))
     #save as html
     fig.write_html(paths_dict['visualisation_directory']+'/annual_capacity_factor.html', auto_open=False)
@@ -250,8 +252,8 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
 
     capacity = capacity.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
 
-    # #convert Imports in TECHNOLOGY col to GWh by /3.6
-    # capacity.loc[capacity['TECHNOLOGY'] == 'Imports','VALUE'] = capacity.loc[capacity['TECHNOLOGY'] == 'Imports','VALUE']/3.6
+    #convert Imports in TECHNOLOGY col to GWh by /3.6
+    capacity.loc[capacity['TECHNOLOGY'] == 'Imports','VALUE'] = capacity.loc[capacity['TECHNOLOGY'] == 'Imports','VALUE']/3.6
 
     #make a TIMESLICE col and call it 'CAPACITY'
     capacity['TIMESLICE'] = 'CAPACITY'
@@ -281,7 +283,7 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     
     subplot_years = [year for year in range(min_year,max_year+1,10)]
     for year in range(min_year,max_year+1,10):
-        title = 'Average generation by timeslice for year '+str(year) + ' (GW)'
+        title = 'Average generation by timeslice for year '+str(year)
         df =  generation.copy()
         df = df[(df['YEAR'] == year) & (df['TECHNOLOGY'] != 'Demand')]
 
@@ -301,7 +303,7 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     figs_list = []
     title_list = []
     for year in range(min_year,max_year+1,10):
-        title = 'Average generation by timeslice for year '+str(year) + ' (GW)'
+        title = 'Average generation by timeslice for year '+str(year)
         df =  generation.copy()
         df = df[(df['YEAR'] == year) & (df['TECHNOLOGY'] != 'Demand')]
 
@@ -351,7 +353,7 @@ def plot_8th_generation_by_tech(data_8th,paths_dict):
     generation['YEAR'] = generation['YEAR'].astype(int)
     
     generation = generation.sort_values(by=['VALUE'], ascending=False)
-    title = 'Generation GWh in 8th edition power model reference scenario'
+    title = 'Generation GWh in 8th edition power model ?? scenario'
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the time
     fig = px.area(generation, x="YEAR", y="VALUE", color='TECHNOLOGY', title=title, color_discrete_map=create_color_dict(generation['TECHNOLOGY']))
 
@@ -459,9 +461,9 @@ def double_check_timeslice_details(timeslice_dict):
     assert sum([x['hours'] for x in timeslice_dict.values()]) == 8760
     
 
-# ##########################################################################################
-# #load the data
-# pickle_paths = ['./results/2023-04-12-113500_19_THA_Reference_coin_mip/tmp/tall_results_dfs_19_THA_Reference_2023-04-12-113500.pickle','./results/2023-04-12-113500_19_THA_Reference_coin_mip/tmp/paths_dict_19_THA_Reference_2023-04-12-113500.pickle']
-# plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
+##########################################################################################
+#load the data
+pickle_paths = ['./results/2023-04-12-113500_19_THA_Reference_coin_mip/tmp/tall_results_dfs_19_THA_Reference_2023-04-12-113500.pickle','./results/2023-04-12-113500_19_THA_Reference_coin_mip/tmp/paths_dict_19_THA_Reference_2023-04-12-113500.pickle']
+plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
 
 

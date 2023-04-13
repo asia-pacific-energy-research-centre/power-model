@@ -493,7 +493,7 @@ def create_new_directories(tmp_directory, results_directory,visualisation_direct
     return
 
 
-def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files=False,write_to_workbook=False):
+def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files=False,write_to_workbook=False):
     """set up the paths to the various files and folders we will need to run the model. This will create a dictionary for the paths so we dont have to keep passing lots of arguments to functions"""
     solving_method = config_dict['solving_method']
     scenario = config_dict['scenario']
@@ -523,7 +523,7 @@ def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict,keep_current
     #create model run specifications txt file using the input variables as the details and the FILE_DATE_ID as the name:
     model_run_specifications_file = f'{tmp_directory}/specs_{FILE_DATE_ID}.txt'
 
-    path_to_data_config = f'{root_dir}/{config_dir}/{data_config_file}'
+    path_to_data_config = f'{root_dir}/config/{data_config_file}'
     if not os.path.exists(path_to_data_config):
         logger.warning(f'data config file {path_to_data_config} does not exist')
     
@@ -542,7 +542,7 @@ def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict,keep_current
     if config_dict['osemosys_model_script'] not in ['osemosys.txt', 'osemosys_fast.txt']:
         logger.warning(f"WARNING: osemosys_model_script is {config_dict['osemosys_model_script']}. It should be either osemosys.txt or osemosys_fast.txt")
         #sys.exit()
-    osemosys_model_script_path = f"{root_dir}/{config_dir}/{config_dict['osemosys_model_script']}"
+    osemosys_model_script_path = f"{root_dir}/config/{config_dict['osemosys_model_script']}"
 
     new_osemosys_model_script_path = f'{tmp_directory}/model_{economy}_{scenario}.txt'
     #TODO implement something like https://stackoverflow.com/questions/24849998/how-to-catch-exception-output-from-python-subprocess-check-output
@@ -576,7 +576,7 @@ def set_up_paths_dict(root_dir, config_dir,FILE_DATE_ID,config_dict,keep_current
     paths_dict['combined_results_tall_years'] = combined_results_tall_years
     paths_dict['combined_results_tall_sheet_names'] = combined_results_tall_sheet_names
     paths_dict['model_run_specifications_file'] = model_run_specifications_file
-    paths_dict['path_to_validation_config'] = f'{root_dir}/{config_dir}/validate.yaml'
+    paths_dict['path_to_validation_config'] = f'{root_dir}/config/validate.yaml'
     paths_dict['tall_results_dfs_pickle'] = f'{tmp_directory}/tall_results_dfs_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
     paths_dict['paths_dict_pickle'] = f'{tmp_directory}/paths_dict_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
     
