@@ -21,7 +21,6 @@ import pickle as pickle
 FILE_DATE_ID = time.strftime("%Y-%m-%d-%H%M%S")
 root_dir = '.' # because this file is in src, the root may change if it is run from this file or from command line
 #this MUST be one of osmoseys_fast.txt or osemosys.txt. Otherwise we will have to change the code around line 86 of model_solving_functions.py
-osemosys_model_script = 'osemosys.txt'#'OSeMOSYS_simplicity.txt'#'osemosys_si.txt'
 keep_current_tmp_files = False
 dont_solve = False
 plotting = True
@@ -36,7 +35,7 @@ def main(input_data_sheet_file):
     ################################################################################
 
     #prep functions:
-    config_dict = model_preparation_functions.set_up_config_dict(root_dir, input_data_sheet_file, osemosys_model_script)
+    config_dict = model_preparation_functions.set_up_config_dict(root_dir, input_data_sheet_file)
 
     #uncomment these to override the model settings in the excel file
     # config_dict['model_end_year'] = 2023
@@ -77,7 +76,7 @@ def main(input_data_sheet_file):
     ################################################################################
 
     if config_dict['solving_method'] != 'cloud' and not dont_solve:
-        logging.info(f"\n######################## \n Running solve process using {osemosys_model_script} for {config_dict['solving_method']} {config_dict['economy']} {config_dict['scenario']}")
+        logging.info(f"\n######################## \n Running solve process using {config_dict['osemosys_model_script']} for {config_dict['solving_method']} {config_dict['economy']} {config_dict['scenario']}")
         model_solving_functions.solve_model(config_dict,paths_dict)
 
     ################################################################################

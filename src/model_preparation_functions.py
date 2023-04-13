@@ -34,20 +34,21 @@ def setup_logging(FILE_DATE_ID,paths_dict,testing=False):
     logger.info(f"LOGGING STARTED: {FILE_DATE_ID}, being saved to {paths_dict['log_file_path']} and outputted to console")
 
 
-def set_up_config_dict(root_dir, input_data_sheet_file,osemosys_model_script,run_with_wsl=False, extract_osemosys_cloud_results_using_otoole=False):
+def set_up_config_dict(root_dir, input_data_sheet_file,run_with_wsl=False, extract_osemosys_cloud_results_using_otoole=False):
     """extract the data we want to run the model on using the first sheet in the input data sheet called START. This defines the economy, scenario and model_end_year we want to run the model for."""
-    df_prefs = pd.read_excel(f'{root_dir}/data/{input_data_sheet_file}', sheet_name='START',usecols="A:B",nrows=5,header=None)
+    df_prefs = pd.read_excel(f'{root_dir}/data/{input_data_sheet_file}', sheet_name='START',usecols="A:B",nrows=6,header=None)
 
     economy = df_prefs.loc[0][1]
     scenario = df_prefs.loc[1][1]
     model_end_year = df_prefs.loc[2][1]
     data_config_file = df_prefs.loc[3][1]
     solving_method = df_prefs.loc[4][1]
+    osemosys_model_script = df_prefs.loc[5][1]
 
     #corect names:
-    names = ('Economy', 'Scenario', 'Years', 'Config file', 'Solver')
+    names = ('Economy', 'Scenario', 'Years', 'Config file', 'Solver', 'Model file')
     #names in the excel sheet:
-    names_in_excel = (df_prefs.loc[0][0], df_prefs.loc[1][0], df_prefs.loc[2][0], df_prefs.loc[3][0], df_prefs.loc[4][0])
+    names_in_excel = (df_prefs.loc[0][0], df_prefs.loc[1][0], df_prefs.loc[2][0], df_prefs.loc[3][0], df_prefs.loc[4][0], df_prefs.loc[5][0])
     if not all([name == name_in_excel for name, name_in_excel in zip(names, names_in_excel)]):
         logger.error(f'The names in the START sheet of the input data sheet are not correct. Please check the names are correct and try again. \n The names in the START sheet are: {names_in_excel} \n The names that should be in the START sheet are: {names}')
         sys.exit()
