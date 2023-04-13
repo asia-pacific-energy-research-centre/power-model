@@ -44,6 +44,10 @@ def set_up_config_dict(root_dir, input_data_sheet_file,run_with_wsl=False, extra
     data_config_file = df_prefs.loc[3][1]
     solving_method = df_prefs.loc[4][1]
     osemosys_model_script = df_prefs.loc[5][1]
+    
+    #check if osemosys_model_script contains .txt
+    if not osemosys_model_script.endswith('.txt'):
+        osemosys_model_script = osemosys_model_script + '.txt'
 
     #corect names:
     names = ('Economy', 'Scenario', 'Years', 'Config file', 'Solver', 'Model file')

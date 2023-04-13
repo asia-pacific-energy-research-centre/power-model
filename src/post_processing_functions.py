@@ -518,6 +518,8 @@ def save_results_visualisations_and_inputs_to_folder(paths_dict, save_plotting,s
         shutil.copy(paths_dict['results_workbook'],results_folder)
         shutil.copy(paths_dict['combined_results_tall_years'], results_folder)
         shutil.copy(paths_dict['combined_results_tall_sheet_names'], results_folder)
+        #and save the datafile paths_dict['input_data_file_path'] to the new folder
+        shutil.copy(paths_dict['input_data_file_path'], tmp_folder)
 
     if save_plotting:
         logging.info(f'Saving visualisations to {base_folder}')
