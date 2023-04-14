@@ -51,9 +51,9 @@ def plotting_handler(tall_results_dfs=None,paths_dict=None, load_from_pickle=Tru
     fig_8th_graph_generation, fig_8th_graph_generation_title = plot_8th_graphs(paths_dict)
 
     #put all figs in a list
-    figs = [fig_generation, fig_emissions, fig_capacity,  fig_8th_graph_generation]#+ figs_list_average_generation_by_timeslice #found timeselices to be too complicated to plot in dashboard so left them out
+    figs = [fig_8th_graph_generation,fig_generation, fig_emissions, fig_capacity]#+ figs_list_average_generation_by_timeslice #found timeselices to be too complicated to plot in dashboard so left them out
     # fig_capacity_factor,#we wont plot capacity factor in dashboard
-    subplot_titles = [fig_generation_title, fig_emissions_title, fig_capacity_title, fig_8th_graph_generation_title] #+ figs_list_average_generation_by_timeslice_title
+    subplot_titles = [fig_8th_graph_generation_title,fig_generation_title, fig_emissions_title, fig_capacity_title] #+ figs_list_average_generation_by_timeslice_title
 
     put_all_graphs_in_one_html(figs, paths_dict)
     create_dashboard(figs, paths_dict,subplot_titles)

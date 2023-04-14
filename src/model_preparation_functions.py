@@ -36,14 +36,15 @@ def setup_logging(FILE_DATE_ID,paths_dict,testing=False):
 
 def set_up_config_dict(root_dir, input_data_sheet_file,run_with_wsl=False, extract_osemosys_cloud_results_using_otoole=False):
     """extract the data we want to run the model on using the first sheet in the input data sheet called START. This defines the economy, scenario and model_end_year we want to run the model for."""
-    df_prefs = pd.read_excel(f'{root_dir}/data/{input_data_sheet_file}', sheet_name='START',usecols="A:B",nrows=6,header=None)
+    df_prefs = pd.read_excel(f'{root_dir}/data/{input_data_sheet_file}', sheet_name='START',usecols="A:B",nrows=7,header=None)
 
     economy = df_prefs.loc[0][1]
     scenario = df_prefs.loc[1][1]
     model_end_year = df_prefs.loc[2][1]
-    data_config_file = df_prefs.loc[3][1]
-    solving_method = df_prefs.loc[4][1]
-    osemosys_model_script = df_prefs.loc[5][1]
+    model_start_year = df_prefs.loc[3][1]
+    data_config_file = df_prefs.loc[4][1]
+    solving_method = df_prefs.loc[5][1]
+    osemosys_model_script = df_prefs.loc[6][1]
     
     #check if osemosys_model_script contains .txt
     if not osemosys_model_script.endswith('.txt'):
@@ -52,7 +53,7 @@ def set_up_config_dict(root_dir, input_data_sheet_file,run_with_wsl=False, extra
     #corect names:
     names = ('Economy', 'Scenario', 'Years', 'Config file', 'Solver', 'Model file')
     #names in the excel sheet:
-    names_in_excel = (df_prefs.loc[0][0], df_prefs.loc[1][0], df_prefs.loc[2][0], df_prefs.loc[3][0], df_prefs.loc[4][0], df_prefs.loc[5][0])
+    names_in_excel = (df_prefs.loc[0][0], df_prefs.loc[1][0], df_prefs.loc[2][0], df_prefs.loc[3][0], df_prefs.loc[4][0], df_prefs.loc[5][0], df_prefs.loc[6][0])
     if not all([name == name_in_excel for name, name_in_excel in zip(names, names_in_excel)]):
         logger.error(f'The names in the START sheet of the input data sheet are not correct. Please check the names are correct and try again. \n The names in the START sheet are: {names_in_excel} \n The names that should be in the START sheet are: {names}')
         sys.exit()
@@ -60,12 +61,13 @@ def set_up_config_dict(root_dir, input_data_sheet_file,run_with_wsl=False, extra
     config_dict = {}
     config_dict['economy'] = economy
     config_dict['model_end_year'] = model_end_year
+    config_dict['model_start_year'] = model_start_year
     config_dict['scenario'] = scenario
     config_dict['solving_method'] = solving_method
     config_dict['data_config_file'] = data_config_file
     config_dict['input_data_sheet_file'] = input_data_sheet_file
     #print the config_dict details
-    logger.info(f'Running model for economy: {economy}, scenario: {scenario}, for years up to and including: {model_end_year}')
+    logger.info(f'Running model for economy: {economy}, scenario: {scenario}, for years between and including {model_start_year} and {model_end_year}')
     
     osemosys_cloud_input = get_osemosys_cloud_stage_from_user(config_dict)
 
@@ -164,7 +166,7 @@ def raise_error_if_var_name_not_in_dict(x):
     wb.close()
     sys.exit()
 
-def edit_input_data(data_config_short_names, scenario, economy, model_end_year,sheet,sheet_name,wb,long_variable_names_to_short_variable_names):#123 is config short anmes still going tp have dtuypes and stuff?
+def edit_input_data(data_config_short_names, scenario, economy, model_end_year,model_start_year,sheet,sheet_name,wb,long_variable_names_to_short_variable_names):#123 is config short anmes still going tp have dtuypes and stuff?
     """This function is passed sheets from the input data file and edits them based on the data_config_short_names. It then returns the edited sheet."""
     #filter on and drop specifc columns:
     if 'SCENARIO' in sheet.columns:
@@ -193,8 +195,10 @@ def edit_input_data(data_config_short_names, scenario, economy, model_end_year,s
                         logger.error(f'{sheet_name} sheet has no 4 digit year columns or a YEAR column. Either add 4digit year columns or a year column to the sheet. Or change the code.')
                         wb.close()
                         sys.exit()
-                #now filter for model_end_year below the model_end_year + 1
+                #now filter for model_end_year below the model_end_year 
                 sheet = sheet[sheet['YEAR']<=model_end_year]
+                #now filter for model_start_year 
+                sheet = sheet[sheet['YEAR']>=model_start_year]
             elif col not in sheet.columns:
                 logger.error(f'{sheet_name} sheet is missing the column {col}. Either add it to the sheet or remove it from the config/config.yaml file.')
                 wb.close()
@@ -230,6 +234,7 @@ def edit_input_data(data_config_short_names, scenario, economy, model_end_year,s
         #if the sheet is called 'YEAR' then the YEAR col is called 'VALUE' and we need to filter it:
         if sheet_name == 'YEAR':
             sheet = sheet[sheet['VALUE']<=model_end_year]
+            sheet = sheet[sheet['VALUE']>=model_start_year]
         # #if the dtype is str, we need to make sure that the first character is not a digit
         # if data_config_short_names[sheet_name]['dtype'] == 'str':
         #     sheet['VALUE'] = sheet['VALUE'].apply(lambda x: 'a'+str(x) if str(x)[0].isdigit() else x)123
@@ -270,6 +275,7 @@ def extract_input_data(paths_dict,config_dict):
     scenario = config_dict['scenario']
     economy = config_dict['economy']
     model_end_year = config_dict['model_end_year']
+    model_start_year = config_dict['model_start_year']
     data_config_short_names = create_data_config_with_short_names_as_keys(config_dict)
     long_variable_names_to_short_variable_names = import_long_variable_names_to_short_variable_names()
 
@@ -294,7 +300,7 @@ def extract_input_data(paths_dict,config_dict):
         #get the sheet using the sheet_name
         sheet = wb.parse(sheet_name)
 
-        sheet = edit_input_data(data_config_short_names, scenario, economy, model_end_year,sheet,sheet_name,wb,long_variable_names_to_short_variable_names)
+        sheet = edit_input_data(data_config_short_names, scenario, economy, model_end_year,model_start_year,sheet,sheet_name,wb,long_variable_names_to_short_variable_names)
         
         input_data[sheet_name] = sheet
     #close excel workbook:
@@ -424,6 +430,7 @@ def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
         f.write(f'Run Date: {FILE_DATE_ID}\n')
         f.write(f"Run Scenario: {config_dict['scenario']}\n")
         f.write(f"Run Economy: {config_dict['economy']}\n")
+        f.write(f"Run model_start_year: {config_dict['model_start_year']}\n")
         f.write(f"Run model_end_year: {config_dict['model_end_year']}\n")
         f.write(f'Original Osemosys Model Script path: {osemosys_model_script_path}\n')
         f.write(f'New Osemosys Model Script path: {paths_dict["new_osemosys_model_script_path"]}\n')

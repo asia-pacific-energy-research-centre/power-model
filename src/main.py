@@ -39,6 +39,7 @@ def main(input_data_sheet_file):
 
     #uncomment these to override the model settings in the excel file
     # config_dict['model_end_year'] = 2023
+    # config_dict['model_start_year'] = 2019
     # config_dict['economy'] = '19_THA'
     # config_dict['scenario'] = 'Reference'
     # config_dict['data_config_file'] ="config.yaml"
