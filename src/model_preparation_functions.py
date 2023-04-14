@@ -40,8 +40,8 @@ def set_up_config_dict(root_dir, input_data_sheet_file,run_with_wsl=False, extra
 
     economy = df_prefs.loc[0][1]
     scenario = df_prefs.loc[1][1]
-    model_end_year = df_prefs.loc[2][1]
-    model_start_year = df_prefs.loc[3][1]
+    model_start_year = df_prefs.loc[2][1]
+    model_end_year = df_prefs.loc[3][1]
     data_config_file = df_prefs.loc[4][1]
     solving_method = df_prefs.loc[5][1]
     osemosys_model_script = df_prefs.loc[6][1]

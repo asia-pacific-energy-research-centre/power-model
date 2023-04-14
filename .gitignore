@@ -17,7 +17,7 @@ archive/*
 simplicity/
 
 #Dont Ignore the following:
-!data-sheet-power_36TS.xlsx
+!data-sheet-power.xlsx
 !long_variable_names_to_short_variable_names.xlsx
 !8th_output.xlsx
 !data_config_all_calculated.yaml
