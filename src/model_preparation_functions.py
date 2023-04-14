@@ -51,7 +51,7 @@ def set_up_config_dict(root_dir, input_data_sheet_file,run_with_wsl=False, extra
         osemosys_model_script = osemosys_model_script + '.txt'
 
     #corect names:
-    names = ('Economy', 'Scenario', 'Years', 'Config file', 'Solver', 'Model file')
+    names = ('Economy', 'Scenario', 'model_start_year','model_end_year',  'Config file', 'Solver', 'Model file')
     #names in the excel sheet:
     names_in_excel = (df_prefs.loc[0][0], df_prefs.loc[1][0], df_prefs.loc[2][0], df_prefs.loc[3][0], df_prefs.loc[4][0], df_prefs.loc[5][0], df_prefs.loc[6][0])
     if not all([name == name_in_excel for name, name_in_excel in zip(names, names_in_excel)]):

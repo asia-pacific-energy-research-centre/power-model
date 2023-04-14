@@ -421,7 +421,7 @@ def extract_readable_name_from_mapping(long_name,mapping):
         logging.warning(f"Category {long_name} is not in the expected set of long_names in the mapping. This occured during extract_readable_name_from_mapping()")
         raise ValueError("long_name is not in the expected set of long_names")
         return long_name
-    return mapping[technology]
+    return mapping[long_name]
     
 # def extract_readable_name_from_emissions_technology(technology):
 #     """Use the set of fuels we expect in the power model, which have emission factors and map them to readable names"""
