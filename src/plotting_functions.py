@@ -28,7 +28,7 @@ emissions_mapping = mapping['EMISSION'].set_index('long_name').to_dict()['plotti
 technology_color_dict = mapping['plotting_name_to_color'].set_index('plotting_name').to_dict()['color']
 timeslice_dict = OrderedDict(mapping['timeslices'].set_index('timeslice').to_dict(orient='index'))
 
-def plotting_handler(tall_results_dfs=None,paths_dict=None, load_from_pickle=True,pickle_paths=None):
+def plotting_handler(tall_results_dfs=None,paths_dict=None, config_dict=None,load_from_pickle=True,pickle_paths=None):
     """Handler for plotting functions, pickle path is a list of two paths, the first is the path to the pickle of tall_results_dfs, the second is the path to the pickle of paths_dict. You will need to set them manually."""
     if load_from_pickle:
         if pickle_paths is None:
@@ -37,6 +37,7 @@ def plotting_handler(tall_results_dfs=None,paths_dict=None, load_from_pickle=Tru
             #load from pickle
             tall_results_dfs = pd.read_pickle(pickle_paths[0])
             paths_dict = pd.read_pickle(pickle_paths[1])
+            config_dict = pd.read_pickle(pickle_paths[2])
 
     fig_generation, fig_generation_title = plot_generation_annual(tall_results_dfs, paths_dict)
 
@@ -48,7 +49,7 @@ def plotting_handler(tall_results_dfs=None,paths_dict=None, load_from_pickle=Tru
 
     figs_list_average_generation_by_timeslice,figs_list_average_generation_by_timeslice_title = plot_average_generation_by_timeslice(tall_results_dfs, paths_dict)
     
-    fig_8th_graph_generation, fig_8th_graph_generation_title = plot_8th_graphs(paths_dict)
+    fig_8th_graph_generation, fig_8th_graph_generation_title = plot_8th_graphs(paths_dict,config_dict)
 
     #put all figs in a list
     figs = [fig_8th_graph_generation,fig_generation, fig_emissions, fig_capacity]#+ figs_list_average_generation_by_timeslice #found timeselices to be too complicated to plot in dashboard so left them out
@@ -202,10 +203,10 @@ def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
     generation = generation.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
 
     #join both dataframes on technology and year
-    generation_capacity = generation.merge(capacity, on=['TECHNOLOGY','YEAR'])
+    generation_capacity = generation.merge(capacity, on=['TECHNOLOGY','YEAR'], suffixes=('_gen_gwh','_cap_gw'))
 
-    #calculate capacity factor as generation/capacity/8.76
-    generation_capacity['VALUE'] = generation_capacity['VALUE_x']/generation_capacity['VALUE_y']/8.76
+    #calculate capacity factor as generation/capacity/8760 > since gen is in GWh and cap in GW, divide by 8760 hours to get 1 (or less than 1)
+    generation_capacity['VALUE'] = (generation_capacity['VALUE_gen_gwh']/generation_capacity['VALUE_cap_gw'])/87.60#im not sure why but it seems 87.6 is the best number to put here?
 
     #order the technologies by capacity
     generation_capacity = generation_capacity.sort_values(by=['YEAR','VALUE'], ascending=False)
@@ -239,6 +240,7 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     generation['TOTAL_HOURS'] = generation['TIMESLICE'].apply(lambda x: timeslice_dict[x]['hours'])
     #calculate average generation by dividing by total hours times 1000
     generation['VALUE'] = generation['VALUE']/generation['TOTAL_HOURS'] * 1000
+    generation = generation[generation['TECHNOLOGY'] != 'Transmission']
 
     #get total capacity by technology and year
     capacity = tall_results_dfs['TotalCapacityAnnual']#'CapacityByTechnology']
@@ -249,10 +251,8 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping))
 
     capacity = capacity.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
-
-    # #convert Imports in TECHNOLOGY col to GWh by /3.6
-    # capacity.loc[capacity['TECHNOLOGY'] == 'Imports','VALUE'] = capacity.loc[capacity['TECHNOLOGY'] == 'Imports','VALUE']/3.6
-
+    
+    capacity = capacity[capacity['TECHNOLOGY'] != 'Transmission']
     #make a TIMESLICE col and call it 'CAPACITY'
     capacity['TIMESLICE'] = 'CAPACITY'
 
@@ -284,8 +284,8 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
 
         demand = generation.copy()
         demand = demand[(demand['TECHNOLOGY'] == 'Demand') & (demand['YEAR'] == year)]
-
-        fig.add_scatter(x=demand['TIMESLICE'], y=demand['VALUE'], mode='lines+markers', name='Demand', line=dict(color=color_dict['Demand']), marker=dict(color=color_dict['Demand']))
+        #one day it would be nice to learn to use plotly graph objects so we have more control over the layout and therforecan enforce order for this scatter and thefroe include lines. But for now we will just use add_scatter with markers only #sort demand timeslice col according to order_nocapacity # demand['TIMESLICE'] = pd.Categorical(demand['TIMESLICE'], categories=order_nocapacity, ordered=True)
+        fig.add_scatter(x=demand['TIMESLICE'], y=demand['VALUE'], mode='markers', name='Demand', line=dict(color=color_dict['Demand']), marker=dict(color=color_dict['Demand']))#todo how to set orderof scatter.123
 
         #save as html
         fig.write_html(paths_dict['visualisation_directory']+'/generation_by_timeslice_'+str(year)+'.html')
@@ -305,7 +305,7 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
         demand = generation.copy()
         demand = demand[(demand['TECHNOLOGY'] == 'Demand') & (demand['YEAR'] == year)]
 
-        fig.add_scatter(x=demand['TIMESLICE'], y=demand['VALUE'], mode='lines+markers', name='Demand', line=dict(color=color_dict['Demand']), marker=dict(color=color_dict['Demand']))
+        fig.add_scatter(x=demand['TIMESLICE'], y=demand['VALUE'], mode='markers', name='Demand', line=dict(color=color_dict['Demand']), marker=dict(color=color_dict['Demand']))
 
         figs_list.append(fig)
         title_list.append(title)
@@ -315,7 +315,7 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     return figs_list,title_list
 
 
-def plot_8th_graphs(paths_dict):
+def plot_8th_graphs(paths_dict, config_dict):
     #load in data from data/8th_output.xlsx
     data_8th = {}
     with pd.ExcelFile('data/8th_output.xlsx') as xls:
@@ -323,6 +323,14 @@ def plot_8th_graphs(paths_dict):
             data_8th[sheet] = pd.read_excel(xls,sheet_name=sheet)
     
     expected_sheet_names = ['generation_by_tech']#,'Demand','emissions']
+
+    #extract data based on the config file
+    #NOTEHTAT THIS WILL USE THE SAME SETTINGS AS THE 9TH OUTPUT FOR ECONOMY AND SCENARIO. it might be useful later to have a different config file for the 8th output
+    for sheet in expected_sheet_names:
+        data_8th[sheet] = data_8th[sheet][data_8th[sheet]['REGION'] == config_dict['economy']]
+        data_8th[sheet] = data_8th[sheet][data_8th[sheet]['SCENARIO'] == config_dict['scenario']]
+        #now drop the columns we dont need
+        data_8th[sheet] = data_8th[sheet].drop(columns=['REGION','SCENARIO'])
 
     #first print any differences betwen expected and actual
     if set(expected_sheet_names) != set(data_8th.keys()):
@@ -365,6 +373,8 @@ def put_all_graphs_in_one_html(figs, paths_dict):
         dashboard.write("</body></html>" + "\n")
 
 def create_dashboard(figs, paths_dict,subplot_titles):
+    #create name of folder where you can find the dashboard
+    base_folder = os.path.join('results', paths_dict['aggregated_results_and_inputs_folder_name'])
     #Note that we use the legend from the avg gen by timeslice graph because it contains all the categories used in the other graphs. If we showed the legend for other graphs we would get double ups 
     #find the length of figs and create a value for rows and cols that are as close to a square as possible
     rows = int(np.ceil(np.sqrt(len(figs))))
@@ -402,7 +412,8 @@ def create_dashboard(figs, paths_dict,subplot_titles):
         fig.update_traces(offset=0 ,selector = dict(type='bar'))#for some reasonteh legends for the bar charts are beoing wierd and all being the same color
         #showlegend=False
 
-
+    #create title which is the folder where you can find the dashboard (base_folder)
+    fig.update_layout(title_text=f"Dashboard for {base_folder}")
     #save as html
     fig.write_html(paths_dict['visualisation_directory']+'/dashboard.html', auto_open=True)
 
@@ -456,7 +467,7 @@ def double_check_timeslice_details(timeslice_dict):
 
 # ##########################################################################################
 # #load the data
-# pickle_paths = ['./results/2023-04-12-113500_19_THA_Reference_coin_mip/tmp/tall_results_dfs_19_THA_Reference_2023-04-12-113500.pickle','./results/2023-04-12-113500_19_THA_Reference_coin_mip/tmp/paths_dict_19_THA_Reference_2023-04-12-113500.pickle']
+# pickle_paths = ['./results/2023-04-12-113500_19_THA_Reference_coin_mip/tmp/tall_results_dfs_19_THA_Reference_2023-04-12-113500.pickle','./results/2023-04-12-113500_19_THA_Reference_coin_mip/tmp/paths_dict_19_THA_Reference_2023-04-12-113500.pickle', './results/2023-04-12-113500_19_THA_Reference_coin_mip/tmp_config_dict_19_THA_Reference_2023-04-12-113500.pickle']
 # plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
 
 

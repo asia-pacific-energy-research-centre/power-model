@@ -18,7 +18,7 @@ import logging
 import pickle as pickle
 ################################################################################
 #LESS IMPORTANT VARIABLES TO SET (their default values are fine):
-FILE_DATE_ID = time.strftime("%Y-%m-%d-%H%M%S")
+FILE_DATE_ID = time.strftime("%m-%d-%H%M")
 root_dir = '.' # because this file is in src, the root may change if it is run from this file or from command line
 #this MUST be one of osmoseys_fast.txt or osemosys.txt. Otherwise we will have to change the code around line 86 of model_solving_functions.py
 keep_current_tmp_files = False
@@ -38,7 +38,7 @@ def main(input_data_sheet_file):
     config_dict = model_preparation_functions.set_up_config_dict(root_dir, input_data_sheet_file)
 
     #uncomment these to override the model settings in the excel file
-    # config_dict['model_end_year'] = 2023
+    config_dict['model_end_year'] = 2023
     # config_dict['model_start_year'] = 2019
     # config_dict['economy'] = '19_THA'
     # config_dict['scenario'] = 'Reference'
@@ -99,7 +99,7 @@ def main(input_data_sheet_file):
         
         post_processing_functions.save_results_as_long_csvs(paths_dict,config_dict,tall_results_dfs)
 
-        post_processing_functions.save_results_as_pickle(paths_dict,tall_results_dfs)
+        post_processing_functions.save_results_as_pickle(paths_dict,tall_results_dfs,config_dict)
         ##########################
         #Visualisation:
         ##########################
@@ -111,7 +111,7 @@ def main(input_data_sheet_file):
         post_processing_functions.TEST_output(paths_dict,config_dict)
 
         if plotting:
-            plotting_functions.plotting_handler(tall_results_dfs=tall_results_dfs,paths_dict=paths_dict,load_from_pickle=True, pickle_paths=None)
+            plotting_functions.plotting_handler(tall_results_dfs=tall_results_dfs,paths_dict=paths_dict,config_dict=config_dict,load_from_pickle=True, pickle_paths=None)
 
         if save_results_vis_and_inputs:
             post_processing_functions.save_results_visualisations_and_inputs_to_folder(paths_dict,save_plotting=True, save_results_and_inputs=False)

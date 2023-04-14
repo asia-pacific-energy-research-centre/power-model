@@ -559,9 +559,12 @@ def TEST_output(paths_dict,config_dict):
     
     return
 
-def save_results_as_pickle(paths_dict,tall_results_dfs):
+def save_results_as_pickle(paths_dict,tall_results_dfs, config_dict):
     with open(paths_dict['tall_results_dfs_pickle'], 'wb') as f:
         pickle.dump(tall_results_dfs, f)
     #save paths_dict as a pickle
     with open(paths_dict['paths_dict_pickle'], 'wb') as f:
         pickle.dump(paths_dict, f)
+    #save config_dict as a pickle
+    with open(paths_dict['config_dict_pickle'], 'wb') as f:
+        pickle.dump(config_dict, f)

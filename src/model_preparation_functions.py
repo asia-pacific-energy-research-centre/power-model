@@ -451,7 +451,12 @@ def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
         f.write(f'\nResults:\n')
         f.write(f'Results Workbook: {results_workbook}\n')
         f.write(f'Combined Results Tall Years: {combined_results_tall_years}\n')
-        f.write(f'Combined Results Tall Sheet Names: {combined_results_tall_sheet_names}\n')    
+        f.write(f'Combined Results Tall Sheet Names: {combined_results_tall_sheet_names}\n')  
+
+        f.write(f'\nOther:\n')
+        f.write(f'Config Dict: {paths_dict["config_dict_pickle"]}\n')
+        f.write(f'Paths Dict: {paths_dict["paths_dict_pickle"]}\n') 
+        f.write(f'Tall results df pickle: {paths_dict["tall_results_dfs_pickle"]}\n') 
 
     return
 
@@ -591,6 +596,7 @@ def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files=F
     paths_dict['path_to_validation_config'] = f'{root_dir}/config/validate.yaml'
     paths_dict['tall_results_dfs_pickle'] = f'{tmp_directory}/tall_results_dfs_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
     paths_dict['paths_dict_pickle'] = f'{tmp_directory}/paths_dict_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
+    paths_dict['config_dict_pickle'] = f'{tmp_directory}/config_dict_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
     
     aggregated_results_and_inputs_folder_name = f"{FILE_DATE_ID}_{config_dict['economy']}_{config_dict['scenario']}_{config_dict['solving_method']}"
     paths_dict['aggregated_results_and_inputs_folder_name'] = aggregated_results_and_inputs_folder_name
