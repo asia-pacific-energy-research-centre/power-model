@@ -63,13 +63,20 @@ def plotting_handler(tall_results_dfs=None,paths_dict=None, config_dict=None,loa
 def extract_storage_charge_and_discharge(tall_results_dfs):
     """Extract storage charge and discharge from ProductionByTechnology sheet. Note that the final data will not have been summed up by technology, timeslice or year yet."""
     try:
-        storage_discharge = tall_results_dfs['ProductionByTechnology']
+        storage_discharge = tall_results_dfs['ProductionByTechnology'].copy()
     except KeyError:
-        storage_discharge = tall_results_dfs['ProductionByTechnolo']
-    storage_charge = tall_results_dfs['UseByTechnology']
-    #filter for POW_TBATT in TECHNOLOGY
-    storage_charge = storage_charge[storage_charge['TECHNOLOGY'] == 'POW_TBATT']
-    storage_discharge = storage_discharge[storage_discharge['TECHNOLOGY'] == 'POW_TBATT']
+        storage_discharge = tall_results_dfs['ProductionByTechnolo'].copy()
+    storage_charge = tall_results_dfs['UseByTechnology'].copy()
+
+    #MAP TECHNOLOGY TO READABLE NAMES
+    storage_charge['TECHNOLOGY'] = storage_charge['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_storage_charge_and_discharge', ignore_missing_mappings=True))
+    storage_discharge['TECHNOLOGY'] = storage_discharge['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_storage_charge_and_discharge', ignore_missing_mappings=True))
+    #filter for only storage
+    storage_charge = storage_charge[storage_charge['TECHNOLOGY'] == 'Storage']
+    storage_discharge = storage_discharge[storage_discharge['TECHNOLOGY'] == 'Storage']
+    # #filter for POW_TBATT and POW_TDAM in TECHNOLOGY #LATER ON WE COULD JUST EXTRACT STORAGE FROM THE MAPPED TECHNOLOGIES, BUT FOR NOW, STICK WITH SIMPLE
+    # storage_charge = storage_charge[storage_charge['TECHNOLOGY'].isin(['POW_TBATT','POW_TDAM'])]
+    # storage_discharge = storage_discharge[storage_discharge['TECHNOLOGY'].isin(['POW_TBATT','POW_TDAM'])]
 
     #if they are empty raise a warning
     if storage_charge.empty:
@@ -85,16 +92,16 @@ def extract_storage_charge_and_discharge(tall_results_dfs):
     storage_charge['VALUE'] = -storage_charge['VALUE']
     return storage_charge,storage_discharge
     
-def extract_ProductionByTechnology(tall_results_dfs):
+def extract_and_map_ProductionByTechnology(tall_results_dfs):
     """Extract generation (and other) data from ProductionByTechnology sheet. But also extract storage charge and discharge and handle it separately then append them generation. Also convert to GWh. Note that the final data will not have been summed up by technology, timeslice or year yet."""
-    generation = tall_results_dfs['ProductionByTechnology']
+    generation = tall_results_dfs['ProductionByTechnology'].copy()
     
     generation = drop_categories_not_in_mapping(generation, powerplant_mapping)
     #map TECHNOLOGY to readable names:
-    generation['TECHNOLOGY'] = generation['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping))
+    generation['TECHNOLOGY'] = generation['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_and_map_ProductionByTechnology'))
 
     #drop storage as it is handled separately
-    generation = generation[generation['TECHNOLOGY'] != 'POW_TBATT']
+    generation = generation[generation['TECHNOLOGY'] != 'Storage']
     storage_charge,storage_discharge = extract_storage_charge_and_discharge(tall_results_dfs)
     #append storage charge and discharge to generation
     generation = pd.concat([generation,storage_charge,storage_discharge])
@@ -104,7 +111,7 @@ def extract_ProductionByTechnology(tall_results_dfs):
 
 def plot_generation_annual(tall_results_dfs, paths_dict):
     """Using data from ProductionByTechnology sheet , plot generation by technology. Also plot total demand as a line on the same graph"""
-    generation = extract_ProductionByTechnology(tall_results_dfs)
+    generation = extract_and_map_ProductionByTechnology(tall_results_dfs)
     #sum generation by technology and year
     generation = generation.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
 
@@ -114,7 +121,7 @@ def plot_generation_annual(tall_results_dfs, paths_dict):
     generation = generation[generation['TECHNOLOGY'] != 'Transmission']
     generation = generation[generation['TECHNOLOGY'] != 'Storage']
 
-    demand = tall_results_dfs['Demand']
+    demand = tall_results_dfs['Demand'].copy()
     #sum demand by year
     demand = demand.groupby(['YEAR']).sum().reset_index()
     #convert to GWh by /3.6
@@ -138,12 +145,12 @@ def plot_generation_annual(tall_results_dfs, paths_dict):
 def plot_emissions_annual(tall_results_dfs, paths_dict):
     """Plot emissions by year by technology"""
     #load emissions
-    emissions = tall_results_dfs['AnnualTechnologyEmission']
+    emissions = tall_results_dfs['AnnualTechnologyEmission'].copy()
     
     #drop technologies not in powerplant_mapping
     emissions = drop_categories_not_in_mapping(emissions, emissions_mapping, column='EMISSION')
     #map EMISSION to readable names:
-    emissions['FUEL'] = emissions['EMISSION'].apply(lambda x: extract_readable_name_from_mapping(x, emissions_mapping))
+    emissions['FUEL'] = emissions['EMISSION'].apply(lambda x: extract_readable_name_from_mapping(x, emissions_mapping,'plot_emissions_annual'))
 
     # sum emissions by technology and year
     emissions = emissions.groupby(['FUEL','YEAR']).sum().reset_index()
@@ -161,14 +168,12 @@ def plot_emissions_annual(tall_results_dfs, paths_dict):
 def plot_capacity_annual(tall_results_dfs, paths_dict):
     """Plot capacity by technology"""
     #load capacity
-    capacity = tall_results_dfs['TotalCapacityAnnual']#'CapacityByTechnology']#couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
+    capacity = tall_results_dfs['TotalCapacityAnnual'].copy()#'CapacityByTechnology']#couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
 
     #drop technologies not in powerplant_mapping
     capacity = drop_categories_not_in_mapping(capacity, powerplant_mapping)
     #map TECHNOLOGY to readable names:
-    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping))
-    # #convert imports to GW
-    # capacity.loc[capacity['TECHNOLOGY'] == 'Imports', 'VALUE'] = capacity.loc[capacity['TECHNOLOGY'] == 'Imports', 'VALUE']/3.6
+    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'plot_capacity_annual'))
     
     #remove transmission from technology
     capacity = capacity.loc[capacity['TECHNOLOGY'] != 'Transmission']
@@ -188,15 +193,14 @@ def plot_capacity_annual(tall_results_dfs, paths_dict):
 
 def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
     
-    generation = extract_ProductionByTechnology(tall_results_dfs)
+    generation = extract_and_map_ProductionByTechnology(tall_results_dfs)
 
     #extract capcity data
-    capacity = tall_results_dfs['TotalCapacityAnnual']#'CapacityByTechnology']
-    
+    capacity = tall_results_dfs['TotalCapacityAnnual'].copy()#'CapacityByTechnology']
     
     capacity = drop_categories_not_in_mapping(capacity, powerplant_mapping)
     #couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
-    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping))
+    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'plot_capacity_factor_annual'))
 
     #sum generation and capacity by technology and year
     capacity = capacity.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
@@ -204,27 +208,30 @@ def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
 
     #join both dataframes on technology and year
     generation_capacity = generation.merge(capacity, on=['TECHNOLOGY','YEAR'], suffixes=('_gen_gwh','_cap_gw'))
+    
+    #drop transmission from technology for both gen and capacity
+    generation_capacity = generation_capacity.loc[generation_capacity['TECHNOLOGY'] != 'Transmission']
 
-    #calculate capacity factor as generation/capacity/8760 > since gen is in GWh and cap in GW, divide by 8760 hours to get 1 (or less than 1)
-    generation_capacity['VALUE'] = (generation_capacity['VALUE_gen_gwh']/generation_capacity['VALUE_cap_gw'])/87.60#im not sure why but it seems 87.6 is the best number to put here?
+    #calculate capacity factor as generation/capacity/8760/1000 > since gen is in GWh and cap in GW, divide by 8760 hours to get 1 (or less than 1)
+    generation_capacity['VALUE'] = (generation_capacity['VALUE_gen_gwh']/generation_capacity['VALUE_cap_gw'])/8.760
 
     #order the technologies by capacity
     generation_capacity = generation_capacity.sort_values(by=['YEAR','VALUE'], ascending=False)
 
     #plot a historgram chart with color and facets determined by the TECHNOLOGY column. The chart will have the time on x axis and the value on y. Make faint lines between the bars so it is clear which year it is
     title = 'Capacity Factor (%)'
-    fig = px.histogram(generation_capacity, x="YEAR", y='VALUE',color='TECHNOLOGY', facet_col='TECHNOLOGY', title=title,facet_col_wrap=7,color_discrete_map=create_color_dict(generation_capacity['TECHNOLOGY']))
+    fig = px.bar(generation_capacity, x="YEAR", y='VALUE',color='TECHNOLOGY', facet_col='TECHNOLOGY', title=title,facet_col_wrap=7,color_discrete_map=create_color_dict(generation_capacity['TECHNOLOGY']))
     #save as html
     fig.write_html(paths_dict['visualisation_directory']+'/annual_capacity_factor.html', auto_open=False)
     return fig,title
 
 def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     """Calculate average generation by timeslice for each technology and year. Also calculate average generation by technology and year for power plants, to Storage, from Storage and  demand"""
-    generation = extract_ProductionByTechnology(tall_results_dfs)
+    generation = extract_and_map_ProductionByTechnology(tall_results_dfs)
     #sum generation by technology, timeslice and year
     generation = generation.groupby(['TECHNOLOGY','YEAR','TIMESLICE']).sum().reset_index()
 
-    demand = tall_results_dfs['Demand']
+    demand = tall_results_dfs['Demand'].copy()
     #sum demand by year, timeslice
     demand = demand.groupby(['YEAR','TIMESLICE']).sum().reset_index()#todo havent checked that demand by timeselice ends up alright
     #convert to GWh by /3.6
@@ -243,12 +250,12 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     generation = generation[generation['TECHNOLOGY'] != 'Transmission']
 
     #get total capacity by technology and year
-    capacity = tall_results_dfs['TotalCapacityAnnual']#'CapacityByTechnology']
+    capacity = tall_results_dfs['TotalCapacityAnnual'].copy()#'CapacityByTechnology']
     
     
     capacity = drop_categories_not_in_mapping(capacity, powerplant_mapping)
     #couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
-    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping))
+    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'plot_average_generation_by_timeslice'))
 
     capacity = capacity.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
     
@@ -261,8 +268,8 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     capacity = capacity.sort_values(by=['TIMESLICE','TECHNOLOGY'])
     #add capacity to the bottom of generation
     generation = pd.concat([generation,capacity])
-    #set Storage to 0 in generation (normally would drop but it helps with the dashboard)
-    generation.loc[generation['TECHNOLOGY'] == 'Storage','VALUE'] = 0
+    #drop storage from technology as we have storage charge and discharge
+    generation = generation.loc[generation['TECHNOLOGY'] != 'Storage']
 
     #create a bar chart for a single year with the time slices on the x axis and the average generation on the y axis. We can plot the bar chart for every 10th year.
     #also filter out demand as we will plot that using scatter on the same graph
@@ -426,12 +433,16 @@ def drop_categories_not_in_mapping(df, mapping, column='TECHNOLOGY'):
         warnings.warn(f'Filtering data in {column} caused the dataframe to become empty')
     return df
 
-def extract_readable_name_from_mapping(long_name,mapping):
+def extract_readable_name_from_mapping(long_name,mapping, function_name, ignore_missing_mappings=False):
     """Use the mappings of what categories we expect in the power model and map them to readable names"""
     if long_name not in mapping.keys():
-        logging.warning(f"Category {long_name} is not in the expected set of long_names in the mapping. This occured during extract_readable_name_from_mapping()")
-        raise ValueError("long_name is not in the expected set of long_names")
-        return long_name
+        if ignore_missing_mappings:
+            logging.warning(f"Category {long_name} is not in the expected set of long_names in the mapping. This occured during extract_readable_name_from_mapping(), for the function {function_name}")
+            return long_name
+        else:
+            logging.error(f"Category {long_name} is not in the expected set of long_names in the mapping. This occured during extract_readable_name_from_mapping(), for the function {function_name}")
+            raise ValueError(f"Category {long_name} is not in the expected set of long_names in the mapping. This occured during extract_readable_name_from_mapping(), for the function {function_name}")
+            return long_name
     return mapping[long_name]
     
 # def extract_readable_name_from_emissions_technology(technology):
