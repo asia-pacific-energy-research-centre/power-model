@@ -13,7 +13,7 @@
             "cwd": "${fileDirname}/..",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["data-sheet-power.xlsx"] //"simplicity_data-test.xlsx"] // 
+            "args": ["data-sheet-power_CBC.xlsx"] //"simplicity_data-test.xlsx"] // 
         }
     ]
 }

@@ -19,6 +19,8 @@ if os.getcwd().split('\\')[-1] == 'src':
     os.chdir('..')
     print("Changed directory to root of project")
 
+#ignore warning for The default value of numeric_only in DataFrameGroupBy.sum is deprecated. In a future version, numeric_only will default to False. Either specify numeric_only or select only columns which should be valid for the function.
+warnings.filterwarnings("ignore", message="The default value of numeric_only in DataFrameGroupBy.sum is deprecated. In a future version, numeric_only will default to False. Either specify numeric_only or select only columns which should be valid for the function.")
 
 #load in technology, emissions and colors mappings from excel file, using the sheet name as the key
 mapping = pd.read_excel('config/plotting_config_and_timeslices.xlsx', sheet_name=None)
@@ -69,8 +71,8 @@ def extract_storage_charge_and_discharge(tall_results_dfs):
     storage_charge = tall_results_dfs['UseByTechnology'].copy()
 
     #MAP TECHNOLOGY TO READABLE NAMES
-    storage_charge['TECHNOLOGY'] = storage_charge['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_storage_charge_and_discharge', ignore_missing_mappings=True))
-    storage_discharge['TECHNOLOGY'] = storage_discharge['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_storage_charge_and_discharge', ignore_missing_mappings=True))
+    storage_charge['TECHNOLOGY'] = storage_charge['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_storage_charge_and_discharge', ignore_missing_mappings=True, print_warning_messages=False))
+    storage_discharge['TECHNOLOGY'] = storage_discharge['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_storage_charge_and_discharge', ignore_missing_mappings=True, print_warning_messages=False))
     #filter for only storage
     storage_charge = storage_charge[storage_charge['TECHNOLOGY'] == 'Storage']
     storage_discharge = storage_discharge[storage_discharge['TECHNOLOGY'] == 'Storage']
@@ -287,7 +289,7 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
         df =  generation.copy()
         df = df[(df['YEAR'] == year) & (df['TECHNOLOGY'] != 'Demand')]
 
-        fig = px.bar(df, x="TIMESLICE", y="VALUE", color='TECHNOLOGY', title=title,color_discrete_map=color_dict, barmode='stack', category_orders={"TIMESLICE": order})
+        fig = px.bar(df, x="TIMESLICE", y="VALUE", color='TECHNOLOGY', title=title,color_discrete_map=color_dict, barmode='relative', category_orders={"TIMESLICE": order})
 
         demand = generation.copy()
         demand = demand[(demand['TECHNOLOGY'] == 'Demand') & (demand['YEAR'] == year)]
@@ -307,7 +309,7 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
         df =  generation.copy()
         df = df[(df['YEAR'] == year) & (df['TECHNOLOGY'] != 'Demand')]
 
-        fig = px.bar(df, x="TIMESLICE", y="VALUE", color='TECHNOLOGY', title=title,color_discrete_map=color_dict, barmode='stack', category_orders={"TIMESLICE": order_nocapacity})
+        fig = px.bar(df, x="TIMESLICE", y="VALUE", color='TECHNOLOGY', title=title,color_discrete_map=color_dict,  barmode='relative', category_orders={"TIMESLICE": order_nocapacity})
 
         demand = generation.copy()
         demand = demand[(demand['TECHNOLOGY'] == 'Demand') & (demand['YEAR'] == year)]
@@ -433,11 +435,12 @@ def drop_categories_not_in_mapping(df, mapping, column='TECHNOLOGY'):
         warnings.warn(f'Filtering data in {column} caused the dataframe to become empty')
     return df
 
-def extract_readable_name_from_mapping(long_name,mapping, function_name, ignore_missing_mappings=False):
+def extract_readable_name_from_mapping(long_name,mapping, function_name, ignore_missing_mappings=False, print_warning_messages=True):
     """Use the mappings of what categories we expect in the power model and map them to readable names"""
     if long_name not in mapping.keys():
         if ignore_missing_mappings:
-            logging.warning(f"Category {long_name} is not in the expected set of long_names in the mapping. This occured during extract_readable_name_from_mapping(), for the function {function_name}")
+            if print_warning_messages:
+                logging.warning(f"Category {long_name} is not in the expected set of long_names in the mapping. This occured during extract_readable_name_from_mapping(), for the function {function_name}")
             return long_name
         else:
             logging.error(f"Category {long_name} is not in the expected set of long_names in the mapping. This occured during extract_readable_name_from_mapping(), for the function {function_name}")
