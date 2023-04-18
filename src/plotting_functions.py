@@ -8,6 +8,7 @@ import zipfile
 import sys
 import warnings
 import logging
+import shutil
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -41,6 +42,10 @@ def plotting_handler(tall_results_dfs=None,paths_dict=None, config_dict=None,loa
             paths_dict = pd.read_pickle(pickle_paths[1])
             config_dict = pd.read_pickle(pickle_paths[2])
 
+    #save mapping in 'config/plotting_config_and_timeslices.xlsx' to the paths_dict['visualisation_directory']
+    shutil.copy('config/plotting_config_and_timeslices.xlsx', paths_dict['visualisation_directory'])
+
+    #begin plotting:
     fig_generation, fig_generation_title = plot_generation_annual(tall_results_dfs, paths_dict)
 
     fig_emissions, fig_emissions_title = plot_emissions_annual(tall_results_dfs, paths_dict)

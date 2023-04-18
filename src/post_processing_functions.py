@@ -60,12 +60,6 @@ def check_for_missing_and_empty_results(paths_dict, config_dict):
                 config_dict['data_config'][new_file] = {'type': 'result', 'calculated': True}
                 logging.warning(f'WARNING: {new_file} is in the tmp folder but not in the results_sheets list. This occured during stage 3 of check_for_missing_results().')
     ######################
-    # #and check for resutls that soehow got added to the results_sheets list but are not in the data_config as results #todo remove this if it no longer happens
-    # data_config = config_dict['data_config']
-    # for sheet in results:
-    #     if data_config[sheet]['type'] != 'result':
-    #         logger.error(f'ERROR: {sheet} is not a result sheet. Please check the code as this shouldnt happen. This occured during remove_apostrophes_from_region_names(). Exiting')#have a hunch this will occur but one day should remove.
-    #         sys.exit()
     logging.info('Done checking for missing results\n##################################\n\n')
     return config_dict
 
@@ -137,13 +131,13 @@ def extract_results_from_csvs(paths_dict, config_dict):
     logging.info('\n\n##################################\nDone extracting results from CSVs\n##################################\n\n')
 
     #edit results values:
-    tall_results_dfs = convert_results_variables_back_to_long_names(tall_results_dfs)
-    wide_results_dfs = convert_results_variables_back_to_long_names(wide_results_dfs)
+    tall_results_dfs = convert_results_variables_back_to_long_names(tall_results_dfs,paths_dict)
+    wide_results_dfs = convert_results_variables_back_to_long_names(wide_results_dfs,paths_dict)
     return config_dict,tall_results_dfs,wide_results_dfs
 
 
-def convert_results_variables_back_to_long_names(results_dfs):
-    long_variable_names_to_short_variable_names = model_preparation_functions.import_long_variable_names_to_short_variable_names()
+def convert_results_variables_back_to_long_names(results_dfs,paths_dict):
+    long_variable_names_to_short_variable_names = model_preparation_functions.import_long_variable_names_to_short_variable_names(paths_dict)
     #reverse the long_variable_names_to_short_variable_names dicts inside the dict
     short_variable_names_to_long_variable_names = {}
     for sheet in long_variable_names_to_short_variable_names.keys():
@@ -242,6 +236,7 @@ def save_results_as_long_csvs(paths_dict, config_dict,tall_results_dfs):
 def create_res_visualisation(paths_dict,config_dict):
 
     results_directory = paths_dict['results_directory']
+    path_to_input_data_file_long_var_names = paths_dict['path_to_input_data_file_long_var_names']
     path_to_input_data_file = paths_dict['path_to_input_data_file']
     path_to_new_data_config = paths_dict['path_to_new_data_config']
     economy = config_dict['economy']
@@ -251,10 +246,13 @@ def create_res_visualisation(paths_dict,config_dict):
 
     #For some reason we cannot make the terminal command work in python, so we have to run it in the terminal. The following command will print the command to run in the terminal:
 
-    path_to_visualisation = f'{paths_dict["visualisation_directory"]}/energy_system_visualisation_{scenario}_{economy}.png' 
-
+    path_to_visualisation_long_var_names = f'{paths_dict["visualisation_directory"]}/energy_system_visualisation_{scenario}_{economy}.png' 
+    path_to_visualisation = f'{paths_dict["visualisation_directory"]}/energy_system_visualisation_{scenario}_{economy}_short_var_names.png'
+    
+    command_long_var_names = f'otoole viz res datafile {path_to_input_data_file_long_var_names} {path_to_visualisation_long_var_names} {path_to_new_data_config}'
     command = f'otoole viz res datafile {path_to_input_data_file} {path_to_visualisation} {path_to_new_data_config}'
-    logger.info(f'\n\n#################\nPlease run the following command in the terminal to create the visualisation. It will be saved in the visualisation directory {paths_dict["visualisation_directory"]}:\n\n{command}\n#################n\n')
+
+    logger.info(f'\n\n#################\nPlease run one of the following commands in the terminal to create the visualisation (depending on if you want long or short var names). It will be saved in the visualisation directory {paths_dict["visualisation_directory"]}:\n\n{command}\n\nor\n\n{command_long_var_names}\n\n#################\n\n')
     
     return
 
@@ -509,9 +507,6 @@ def save_results_visualisations_and_inputs_to_folder(paths_dict, save_plotting,s
         for file in os.listdir(paths_dict['tmp_directory']):
             if os.path.isfile(os.path.join(paths_dict['tmp_directory'], file)):
                 shutil.copy(os.path.join(paths_dict['tmp_directory'], file), os.path.join(tmp_folder, file))
-            #extract last part of the path to the path_to_input_csvs
-            elif file == os.path.basename(paths_dict['path_to_input_csvs']):
-                shutil.copytree(os.path.join(paths_dict['tmp_directory'], file), os.path.join(tmp_folder, file))
         #copy results_workbook, combined_results_tall_years, combined_results_tall_sheet_names to the new folder
         shutil.copy(paths_dict['results_workbook'],results_folder)
         shutil.copy(paths_dict['combined_results_tall_years'], results_folder)

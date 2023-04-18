@@ -166,7 +166,7 @@ def raise_error_if_var_name_not_in_dict(x):
     wb.close()
     sys.exit()
 
-def edit_input_data(data_config_short_names, scenario, economy, model_end_year,model_start_year,sheet,sheet_name,wb,long_variable_names_to_short_variable_names):#123 is config short anmes still going tp have dtuypes and stuff?
+def edit_input_data(data_config_short_names, scenario, economy, model_end_year,model_start_year,sheet,sheet_name,wb,long_variable_names_to_short_variable_names,use_long_var_names=False):#123 is config short anmes still going tp have dtuypes and stuff?
     """This function is passed sheets from the input data file and edits them based on the data_config_short_names. It then returns the edited sheet."""
     #filter on and drop specifc columns:
     if 'SCENARIO' in sheet.columns:
@@ -203,11 +203,7 @@ def edit_input_data(data_config_short_names, scenario, economy, model_end_year,m
                 logger.error(f'{sheet_name} sheet is missing the column {col}. Either add it to the sheet or remove it from the config/config.yaml file.')
                 wb.close()
                 sys.exit()
-            # elif col in data_config_short_names.keys():
-            #     #we have issues with the first character of a string being a number. so for all cols that are dtype: str, if the cols ahs a digit as its first letter, we will change it to have a letter as the first character, we will make that letter 'a'.
-            #     if data_config_short_names[col]['dtype'] == 'str':
-            #         sheet[col] = sheet[col].apply(lambda x: 'a'+str(x) if str(x)[0].isdigit() else x)"123
-            elif col in long_variable_names_to_short_variable_names.keys():
+            elif col in long_variable_names_to_short_variable_names.keys() and use_long_var_names == False:
                 #we are having issues with the values in our input data being too long for coinc cbc. so we will attempt to decrease their lgnth.
                 sheet[col] = sheet[col].apply(lambda x: long_variable_names_to_short_variable_names[col][x] if x in long_variable_names_to_short_variable_names[col].keys() else raise_error_if_var_name_not_in_dict(x))
             else:
@@ -235,15 +231,12 @@ def edit_input_data(data_config_short_names, scenario, economy, model_end_year,m
         if sheet_name == 'YEAR':
             sheet = sheet[sheet['VALUE']<=model_end_year]
             sheet = sheet[sheet['VALUE']>=model_start_year]
-        # #if the dtype is str, we need to make sure that the first character is not a digit
-        # if data_config_short_names[sheet_name]['dtype'] == 'str':
-        #     sheet['VALUE'] = sheet['VALUE'].apply(lambda x: 'a'+str(x) if str(x)[0].isdigit() else x)123
 
         #we are having issues with the values in our input data being too long for coinc cbc. so we will attempt to decrease their lgnth.
         #if col is 'REGION' then change col to the last three letters of the col123
-        if sheet_name == 'REGION':
+        if sheet_name == 'REGION' and use_long_var_names == False:
             sheet['VALUE'] = sheet['VALUE'].apply(lambda x: long_variable_names_to_short_variable_names[sheet_name][x] if x in long_variable_names_to_short_variable_names[sheet_name].keys() else raise_error_if_var_name_not_in_dict(x))
-        elif sheet_name in long_variable_names_to_short_variable_names.keys():
+        elif sheet_name in long_variable_names_to_short_variable_names.keys() and use_long_var_names == False:
             #use the long_variable_names_to_short_variable_names dict to change the values in the sheet
             sheet['VALUE'] = sheet['VALUE'].apply(lambda x: long_variable_names_to_short_variable_names[sheet_name][x] if x in long_variable_names_to_short_variable_names[sheet_name].keys() else raise_error_if_var_name_not_in_dict(x))
         else:
@@ -261,9 +254,10 @@ def edit_input_data(data_config_short_names, scenario, economy, model_end_year,m
 
     return sheet
 
-def import_long_variable_names_to_short_variable_names():
+def import_long_variable_names_to_short_variable_names(paths_dict):
     #import the conrdocance and create a dict with each sheet as a key, then a nested dict with the long name as the key and the short name as the value. THis will then be used to change all values for those sheets (which represent INDICES or cols) in the input data to the short name.
-    wb = pd.ExcelFile('config/long_variable_names_to_short_variable_names.xlsx')
+    
+    wb = pd.ExcelFile(paths_dict['tmp_long_variable_names_to_short_variable_names'])
     long_variable_names_to_short_variable_names = dict()
     for sheet_name in wb.sheet_names:
         sheet = pd.read_excel(wb,sheet_name)
@@ -277,11 +271,12 @@ def extract_input_data(paths_dict,config_dict):
     model_end_year = config_dict['model_end_year']
     model_start_year = config_dict['model_start_year']
     data_config_short_names = create_data_config_with_short_names_as_keys(config_dict)
-    long_variable_names_to_short_variable_names = import_long_variable_names_to_short_variable_names()
+    long_variable_names_to_short_variable_names = import_long_variable_names_to_short_variable_names(paths_dict)
 
 
     #using the data extracted from the data_config.yaml file, extract that data from the excel sheet and save it to a dictionary:
     input_data = dict()
+    input_data_long_var_names = dict()#used for creating vis res file as it uses the long var names
     #open excel workbook:
     wb = pd.ExcelFile(paths_dict['input_data_file_path'])
     #now import data from excel sheet:
@@ -300,67 +295,50 @@ def extract_input_data(paths_dict,config_dict):
         #get the sheet using the sheet_name
         sheet = wb.parse(sheet_name)
 
-        sheet = edit_input_data(data_config_short_names, scenario, economy, model_end_year,model_start_year,sheet,sheet_name,wb,long_variable_names_to_short_variable_names)
-        
-        input_data[sheet_name] = sheet
+        sheet_short_var_names = edit_input_data(data_config_short_names, scenario, economy, model_end_year,model_start_year,sheet,sheet_name,wb,long_variable_names_to_short_variable_names)
+        sheet_long_var_names = edit_input_data(data_config_short_names, scenario, economy, model_end_year,model_start_year,sheet,sheet_name,wb,long_variable_names_to_short_variable_names,use_long_var_names=True)
+
+        input_data_long_var_names[sheet_name] = sheet_long_var_names
+        input_data[sheet_name] = sheet_short_var_names
     #close excel workbook:
     wb.close()
 
-    return input_data
+    return input_data,input_data_long_var_names
 
-def write_data_to_temp_workbook(paths_dict, input_data):
+def write_data_to_temp_workbook(paths_dict, input_data, long_var_names=False):
     #write the data to a temp workbook before converting to the osemosys format
     
-    with pd.ExcelWriter(paths_dict['path_to_combined_input_data_workbook']) as writer:
-        for k, v in input_data.items():
-            v.to_excel(writer, sheet_name=k, index=False, merge_cells=False)
-    logger.info(f"Combined file of Excel input data has been written to the tmp folder.\n")
+    if not long_var_names:
+        with pd.ExcelWriter(paths_dict['path_to_combined_input_data_workbook']) as writer:
+            for k, v in input_data.items():
+                v.to_excel(writer, sheet_name=k, index=False, merge_cells=False)
+        logger.info(f"Combined file of Excel input data has been written to the tmp folder.\n")
+    else:
+        with pd.ExcelWriter(paths_dict['path_to_combined_input_data_workbook_long_var_names']) as writer:
+            for k, v in input_data.items():
+                v.to_excel(writer, sheet_name=k, index=False, merge_cells=False)
+        logger.info(f"Combined file of Excel input data for long var names has been written to the tmp folder.\n")
 
     return
 
-def write_input_data_as_csvs_to_data_folder(paths_dict, input_data):
-    #aim is to create folder so the data can be accessed in convert_csvs_to_datafile()
-    for k, v in input_data.items():
-        # v.to_excel(writer, sheet_name=k, index=False, merge_cells=False)
-        v.to_csv(paths_dict['input_csvs_folder']+'/' + k + '.csv', index=False)
-    logger.info(f"Combined file of Excel input data has been written as csvs to {paths_dict['input_csvs_folder']}.\n")
-    return
-
-def convert_csvs_to_datafile(paths_dict):
-    #convert the csvs in paths_dict['input_csvs_folder'] to a datafile. This is an alternative to prepare_data_for_osemosys()
-    command = f"otoole convert csv datafile {paths_dict['input_csvs_folder']} {paths_dict['path_to_input_data_file']} {paths_dict['path_to_new_data_config']}"
-
-    result = subprocess.run(command,shell=True, capture_output=True, text=True)
-    logger.info(f"Running the following command to convert the csvs to a datafile:\n{command}")
-    logger.info(command+'\n')
-    logger.info(result.stdout+'\n')
-    logger.info(result.stderr+'\n')
-
-    logger.info(f"Data file in text format has been written and saved in the tmp folder as {paths_dict['path_to_input_data_file']}.\n")
-    return
-
-def convert_workbook_to_datafile(paths_dict, config_dict):
+def convert_workbook_to_datafile(paths_dict, config_dict, long_var_names=False):
     #The data needs to be converted from the Excel format to the text file format. We use otoole for this task.
+    if not long_var_names:
+        command = f"otoole convert excel datafile {paths_dict['path_to_combined_input_data_workbook']} {paths_dict['path_to_input_data_file']} {paths_dict['path_to_new_data_config']}"
 
-    command = f"otoole convert excel datafile {paths_dict['path_to_combined_input_data_workbook']} {paths_dict['path_to_input_data_file']} {paths_dict['path_to_new_data_config']}"
-
-    result = subprocess.run(command,shell=True, capture_output=True, text=True)
-    logger.info(f"Running the following command to convert the workbook to a datafile:\n{command}")
-    logger.info(command+'\n')
-    logger.info(result.stdout+'\n')
-    logger.info(result.stderr+'\n')
-
-
-
-    # reader = ReadExcel(user_config=config_dict['data_config'])#TODO is this going to work as expected?
-    # writer = WriteDatafile(user_config=config_dict['data_config'])
-
-    # data, default_values = reader.read(paths_dict['path_to_combined_input_data_workbook'])
-
-    # writer.write(data, paths_dict['path_to_input_data_file'], default_values)
-
-    logger.info(f"Data file in text format has been written and saved in the tmp folder as {paths_dict['path_to_input_data_file']}.\n")
-
+        result = subprocess.run(command,shell=True, capture_output=True, text=True)
+        logger.info(f"Running the following command to convert the workbook to a datafile:\n{command}")
+        logger.info(command+'\n')
+        logger.info(result.stdout+'\n')
+        logger.info(result.stderr+'\n')
+        logger.info(f"Data file in text format has been written and saved in the tmp folder as {paths_dict['path_to_input_data_file']}.\n")
+    else:
+        command = f"otoole convert excel datafile {paths_dict['path_to_combined_input_data_workbook_long_var_names']} {paths_dict['path_to_input_data_file_long_var_names']} {paths_dict['path_to_new_data_config']}"
+        result = subprocess.run(command,shell=True, capture_output=True, text=True)
+        logger.info(command+'\n')
+        logger.info(result.stdout+'\n')
+        logger.info(result.stderr+'\n')
+        logger.info(f"Running the following command to convert the workbook to a datafile:\n{command}")
     return 
 
 def replace_long_var_names_in_osemosys_script(paths_dict, config_dict):
@@ -444,7 +422,8 @@ def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
         f.write(f'Combined Input Data workbook path: {paths_dict["path_to_combined_input_data_workbook"]}\n')
         f.write(f'Input Data File path: {paths_dict["path_to_input_data_file"]}\n')
         f.write(f'Log file path: {paths_dict["log_file_path"]}\n')
-        if config_dict['solving_method'] == 'coin':
+        #if coin in solving method, then write the intermediate data file paths
+        if 'coin' in config_dict['solving_method']:
             f.write(f'cbc intermediate data file path: {paths_dict["cbc_intermediate_data_file_path"]}\n')
             f.write(f'cbc results data file path: {paths_dict["cbc_results_data_file_path"]}\n')
 
@@ -460,7 +439,7 @@ def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
 
     return
 
-def create_new_directories(tmp_directory, results_directory,visualisation_directory,input_csvs_folder, FILE_DATE_ID, path_to_input_csvs, config_dict,keep_current_tmp_files,write_to_workbook):
+def create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, config_dict,keep_current_tmp_files):
     #create the tmp and results directories if they dont exist. ALso check if there are files in the tmp directory and if so, move them to a new folder with the FILE_DATE_ID in the name. 
     #EXCEPT if osemosys_cloud_input is y, then we dont want to do this because the user will be running main.py to extract results form the cloud output, as tehy ahve already done it once to prepare data now they are doing it once to extract results, and we dont want to move the files in the tmp directory in between those two runs
 
@@ -495,112 +474,7 @@ def create_new_directories(tmp_directory, results_directory,visualisation_direct
             for file in os.listdir(visualisation_directory):
                 if os.path.isfile(f'{visualisation_directory}/{file}'):
                     shutil.move(f'{visualisation_directory}/{file}', new_visualisation_dir)
-    if not write_to_workbook:   
-        if not os.path.exists(f'{path_to_input_csvs}'):
-            os.makedirs(f'{path_to_input_csvs}')
-        else:
-            if len(os.listdir(f'{path_to_input_csvs}')) > 0:
-                new_input_csvs_dir = f"{tmp_directory}/{FILE_DATE_ID}/{input_csvs_folder}"
-                #make the new temp directory:
-                os.makedirs(new_input_csvs_dir)
-                #move all files (BUT NOT FOLDERS!):
-                for file in os.listdir(f'{path_to_input_csvs}'):
-                    if os.path.isfile(f'{path_to_input_csvs}/{file}'):
-                        shutil.move(f'{path_to_input_csvs}/{file}', new_input_csvs_dir)
     return
-
-
-def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files=False,write_to_workbook=False):
-    """set up the paths to the various files and folders we will need to run the model. This will create a dictionary for the paths so we dont have to keep passing lots of arguments to functions"""
-    solving_method = config_dict['solving_method']
-    scenario = config_dict['scenario']
-    economy = config_dict['economy']
-    data_config_file = config_dict['data_config_file']
-    input_data_sheet_file = config_dict['input_data_sheet_file']
-
-    if solving_method == 'cloud':
-        scenario_folder=f'cloud_{scenario}'
-    else:
-        scenario_folder=f'{scenario}'
-
-    
-    tmp_directory = f'./tmp/{economy}_{scenario_folder}'
-    results_directory = f'./results/{economy}_{scenario_folder}'
-    visualisation_directory = f'./visualisations/{economy}_{scenario_folder}'
-
-    input_csvs_folder = f'input_csvs'
-    path_to_input_csvs = f'{tmp_directory}/{input_csvs_folder}'
-    
-
-    #create path to save copy of outputs to txt file in case of error:
-    log_file_path = f'{tmp_directory}/process_log_{economy}_{scenario}_{FILE_DATE_ID}.txt'
-
-    create_new_directories(tmp_directory, results_directory,visualisation_directory,input_csvs_folder, FILE_DATE_ID, path_to_input_csvs, config_dict,keep_current_tmp_files,write_to_workbook)
-
-    #create model run specifications txt file using the input variables as the details and the FILE_DATE_ID as the name:
-    model_run_specifications_file = f'{tmp_directory}/specs_{FILE_DATE_ID}.txt'
-
-    path_to_data_config = f'{root_dir}/config/{data_config_file}'
-    if not os.path.exists(path_to_data_config):
-        logger.warning(f'data config file {path_to_data_config} does not exist')
-    
-    path_to_new_data_config = f'{tmp_directory}/{economy}_{scenario}_{data_config_file}'
-    path_to_combined_input_data_workbook = f'{tmp_directory}/combined_data_{economy}_{scenario}.xlsx'
-
-    input_data_file_path=f"{root_dir}/data/{input_data_sheet_file}"
-
-    # path_to_combined_input_data_workbook=f'{tmp_directory}/combined_data_{economy}_{scenario}.xlsx'
-
-    path_to_input_data_file = f'{tmp_directory}/datafile_from_python_{economy}_{scenario}.txt'
-     
-    
-
-    #check that osemosys_model_script is either 'osemosys.txt' or 'osemosys_fast.txt':
-    if config_dict['osemosys_model_script'] not in ['osemosys.txt', 'osemosys_fast.txt']:
-        logger.warning(f"WARNING: osemosys_model_script is {config_dict['osemosys_model_script']}. It should be either osemosys.txt or osemosys_fast.txt")
-        #sys.exit()
-    osemosys_model_script_path = f"{root_dir}/config/{config_dict['osemosys_model_script']}"
-
-    new_osemosys_model_script_path = f'{tmp_directory}/model_{economy}_{scenario}.txt'
-    #TODO implement something like https://stackoverflow.com/questions/24849998/how-to-catch-exception-output-from-python-subprocess-check-output
-
-    cbc_intermediate_data_file_path = f'{tmp_directory}/cbc_input_{economy}_{scenario}.lp'
-    cbc_results_data_file_path=f'{tmp_directory}/cbc_results_{economy}_{scenario}.sol'
-
-    results_workbook = f'{results_directory}/{economy}_results_{scenario}_{FILE_DATE_ID}.xlsx'
-
-    combined_results_tall_years = f'{results_directory}/tall_years_{economy}_results_{scenario}_{FILE_DATE_ID}.csv'
-    combined_results_tall_sheet_names = f'{results_directory}/tall_sheet_names_{economy}_results_{scenario}_{FILE_DATE_ID}.csv'
-
-    #PUT EVERYTHING IN A DICTIONARY
-    paths_dict = {}
-    paths_dict['tmp_directory'] = tmp_directory
-    paths_dict['results_directory'] = results_directory
-    paths_dict['visualisation_directory'] = visualisation_directory
-    paths_dict['path_to_data_config'] = path_to_data_config
-    paths_dict['path_to_combined_input_data_workbook'] = path_to_combined_input_data_workbook
-    paths_dict['input_data_file_path'] = input_data_file_path
-    paths_dict['path_to_input_data_file'] = path_to_input_data_file
-    paths_dict['path_to_input_csvs'] = path_to_input_csvs
-
-    paths_dict['path_to_new_data_config']  = path_to_new_data_config
-    paths_dict['log_file_path'] = log_file_path
-    paths_dict['cbc_intermediate_data_file_path'] = cbc_intermediate_data_file_path
-    paths_dict['cbc_results_data_file_path'] = cbc_results_data_file_path
-    paths_dict['new_osemosys_model_script_path'] = new_osemosys_model_script_path
-    paths_dict['osemosys_model_script_path'] = osemosys_model_script_path
-    paths_dict['results_workbook'] = results_workbook
-    paths_dict['combined_results_tall_years'] = combined_results_tall_years
-    paths_dict['combined_results_tall_sheet_names'] = combined_results_tall_sheet_names
-    paths_dict['model_run_specifications_file'] = model_run_specifications_file
-    paths_dict['path_to_validation_config'] = f'{root_dir}/config/validate.yaml'
-    paths_dict['tall_results_dfs_pickle'] = f'{tmp_directory}/tall_results_dfs_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
-    paths_dict['paths_dict_pickle'] = f'{tmp_directory}/paths_dict_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
-    paths_dict['config_dict_pickle'] = f'{tmp_directory}/config_dict_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
-    
-    aggregated_results_and_inputs_folder_name = f"{FILE_DATE_ID}_{config_dict['economy']}_{config_dict['scenario']}_{config_dict['solving_method']}"
-    paths_dict['aggregated_results_and_inputs_folder_name'] = aggregated_results_and_inputs_folder_name
-    return paths_dict
 
 def validate_input_data(paths_dict):
     """validate the data using otoole validate function. One day it would be good to create a validation file for the options:
@@ -647,3 +521,101 @@ def write_data_config_to_new_file(paths_dict,config_dict):
         yaml.dump(new_data_config, outfile, default_flow_style=False)
     return
     
+
+##################################################################################
+
+def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files=False):
+    """set up the paths to the various files and folders we will need to run the model. This will create a dictionary for the paths so we dont have to keep passing lots of arguments to functions"""
+    solving_method = config_dict['solving_method']
+    scenario = config_dict['scenario']
+    economy = config_dict['economy']
+    data_config_file = config_dict['data_config_file']
+    input_data_sheet_file = config_dict['input_data_sheet_file']
+
+    if solving_method == 'cloud':
+        scenario_folder=f'cloud_{scenario}'
+    else:
+        scenario_folder=f'{scenario}'
+
+    
+    tmp_directory = f'./tmp/{economy}_{scenario_folder}'
+    results_directory = f'./results/{economy}_{scenario_folder}'
+    visualisation_directory = f'./visualisations/{economy}_{scenario_folder}'   
+
+    #create path to save copy of outputs to txt file in case of error:
+    log_file_path = f'{tmp_directory}/process_log_{economy}_{scenario}_{FILE_DATE_ID}.txt'
+
+    create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, config_dict,keep_current_tmp_files)
+
+    #create model run specifications txt file using the input variables as the details and the FILE_DATE_ID as the name:
+    model_run_specifications_file = f'{tmp_directory}/specs_{FILE_DATE_ID}.txt'
+
+    path_to_data_config = f'{root_dir}/config/{data_config_file}'
+    if not os.path.exists(path_to_data_config):
+        logger.warning(f'data config file {path_to_data_config} does not exist')
+    
+    path_to_new_data_config = f'{tmp_directory}/{economy}_{scenario}_{data_config_file}'
+    path_to_combined_input_data_workbook = f'{tmp_directory}/combined_data_{economy}_{scenario}.xlsx'
+    path_to_combined_input_data_workbook_long_var_names = f'{tmp_directory}/combined_data_{economy}_{scenario}_long_var_names.xlsx'
+
+    input_data_file_path=f"{root_dir}/data/{input_data_sheet_file}"
+    path_to_input_data_file_long_var_names = f'{tmp_directory}/datafile_from_python_{economy}_{scenario}_long_var_names.txt'
+    # path_to_combined_input_data_workbook=f'{tmp_directory}/combined_data_{economy}_{scenario}.xlsx'
+
+    path_to_input_data_file = f'{tmp_directory}/datafile_from_python_{economy}_{scenario}.txt'
+     
+    
+
+    #check that osemosys_model_script is either 'osemosys.txt' or 'osemosys_fast.txt':
+    if config_dict['osemosys_model_script'] not in ['osemosys.txt', 'osemosys_fast.txt']:
+        logger.warning(f"WARNING: osemosys_model_script is {config_dict['osemosys_model_script']}. It should be either osemosys.txt or osemosys_fast.txt")
+        #sys.exit()
+    osemosys_model_script_path = f"{root_dir}/config/{config_dict['osemosys_model_script']}"
+
+    new_osemosys_model_script_path = f'{tmp_directory}/model_{economy}_{scenario}.txt'
+    #TODO implement something like https://stackoverflow.com/questions/24849998/how-to-catch-exception-output-from-python-subprocess-check-output
+
+    cbc_intermediate_data_file_path = f'{tmp_directory}/cbc_input_{economy}_{scenario}.lp'
+    cbc_results_data_file_path=f'{tmp_directory}/cbc_results_{economy}_{scenario}.sol'
+
+    results_workbook = f'{results_directory}/{economy}_results_{scenario}_{FILE_DATE_ID}.xlsx'
+
+    combined_results_tall_years = f'{results_directory}/tall_years_{economy}_results_{scenario}_{FILE_DATE_ID}.csv'
+    combined_results_tall_sheet_names = f'{results_directory}/tall_sheet_names_{economy}_results_{scenario}_{FILE_DATE_ID}.csv'
+
+    #PUT EVERYTHING IN A DICTIONARY
+    paths_dict = {}
+    paths_dict['tmp_directory'] = tmp_directory
+    paths_dict['results_directory'] = results_directory
+    paths_dict['visualisation_directory'] = visualisation_directory
+    paths_dict['path_to_data_config'] = path_to_data_config
+    paths_dict['path_to_combined_input_data_workbook'] = path_to_combined_input_data_workbook
+    paths_dict['path_to_combined_input_data_workbook_long_var_names'] = path_to_combined_input_data_workbook_long_var_names
+    paths_dict['input_data_file_path'] = input_data_file_path
+    paths_dict['path_to_input_data_file_long_var_names'] = path_to_input_data_file_long_var_names
+    paths_dict['path_to_input_data_file'] = path_to_input_data_file
+
+    paths_dict['path_to_new_data_config']  = path_to_new_data_config
+    paths_dict['log_file_path'] = log_file_path
+    paths_dict['cbc_intermediate_data_file_path'] = cbc_intermediate_data_file_path
+    paths_dict['cbc_results_data_file_path'] = cbc_results_data_file_path
+    paths_dict['new_osemosys_model_script_path'] = new_osemosys_model_script_path
+    paths_dict['osemosys_model_script_path'] = osemosys_model_script_path
+    paths_dict['results_workbook'] = results_workbook
+    paths_dict['combined_results_tall_years'] = combined_results_tall_years
+    paths_dict['combined_results_tall_sheet_names'] = combined_results_tall_sheet_names
+    paths_dict['model_run_specifications_file'] = model_run_specifications_file
+    paths_dict['path_to_validation_config'] = f'{root_dir}/config/validate.yaml'
+    paths_dict['tall_results_dfs_pickle'] = f'{tmp_directory}/tall_results_dfs_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
+    paths_dict['paths_dict_pickle'] = f'{tmp_directory}/paths_dict_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
+    paths_dict['config_dict_pickle'] = f'{tmp_directory}/config_dict_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
+    
+    aggregated_results_and_inputs_folder_name = f"{FILE_DATE_ID}_{config_dict['economy']}_{config_dict['scenario']}_{config_dict['solving_method']}"
+    paths_dict['aggregated_results_and_inputs_folder_name'] = aggregated_results_and_inputs_folder_name
+
+    #save some files now to the tmp directory
+    #save 'config/long_variable_names_to_short_variable_names.xlsx' to tmp directory
+    paths_dict['tmp_long_variable_names_to_short_variable_names'] = f'{tmp_directory}/long_variable_names_to_short_variable_names.xlsx'
+    shutil.copy(f'{root_dir}/config/long_variable_names_to_short_variable_names.xlsx', paths_dict['tmp_long_variable_names_to_short_variable_names'])
+
+    return paths_dict
