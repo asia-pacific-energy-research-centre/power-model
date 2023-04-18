@@ -249,14 +249,12 @@ def create_res_visualisation(paths_dict,config_dict):
     #run visualisation tool
     #https://otoole.readthedocs.io/en/latest/
 
-    #PLEASE NOTE THAT THE VIS TOOL REQUIRES THE PACKAGE pydot TO BE INSTALLED. IF IT IS NOT INSTALLED, IT WILL THROW AN ERROR. TO INSTALL IT, RUN THE FOLLOWING COMMAND IN THE TERMINAL: pip install pydot OR conda install pydot
-
     #For some reason we cannot make the terminal command work in python, so we have to run it in the terminal. The following command will print the command to run in the terminal:
 
-    path_to_visualisation = f'{results_directory}/energy_system_visualisation_{scenario}_{economy}.png'
+    path_to_visualisation = f'{paths_dict["visualisation_directory"]}/energy_system_visualisation_{scenario}_{economy}.png' 
 
     command = f'otoole viz res datafile {path_to_input_data_file} {path_to_visualisation} {path_to_new_data_config}'
-    logger.info(f'\n\n\nPlease run the following command in the terminal to create the visualisation:\n{command}\n\n\n')
+    logger.info(f'\n\n#################\nPlease run the following command in the terminal to create the visualisation. It will be saved in the visualisation directory {paths_dict["visualisation_directory"]}:\n\n{command}\n#################n\n')
     
     return
 
