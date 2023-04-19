@@ -15,4 +15,5 @@ dependencies:
  - pip:
    - otoole
    - mip
+   - pydot
    - graphvis
