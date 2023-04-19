@@ -18,10 +18,10 @@ simplicity/
 
 #Dont Ignore the following:
 !data/data-sheet-power.xlsx
-!config/long_variable_names_to_short_variable_names.xlsx
+!config/long_variable_names_to_short_variable_names-MASTER.xlsx
 !data/8th_output.xlsx
 !config/data_config_all_calculated.yaml
-!config/plotting_config_and_timeslices.xlsx
+!config/plotting_config_and_timeslices-MASTER.xlsx
 #################DEFAULT#################
 
 # Byte-compiled / optimized / DLL files
