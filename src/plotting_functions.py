@@ -26,7 +26,7 @@ warnings.filterwarnings("ignore", message="The default value of numeric_only in 
 #load in technology, emissions and colors mappings from excel file, using the sheet name as the key
 mapping = pd.read_excel('config/plotting_config_and_timeslices.xlsx', sheet_name=None)
 powerplant_mapping = mapping['POWERPLANT'].set_index('long_name').to_dict()['plotting_name']
-fuel_mapping = mapping['FUEL'].set_index('long_name').to_dict()['plotting_name']
+input_fuel_mapping = mapping['INPUT_FUEL'].set_index('long_name').to_dict()['plotting_name']
 emissions_mapping = mapping['EMISSION'].set_index('long_name').to_dict()['plotting_name']
 technology_color_dict = mapping['plotting_name_to_color'].set_index('plotting_name').to_dict()['color']
 timeslice_dict = OrderedDict(mapping['timeslices'].set_index('timeslice').to_dict(orient='index'))
@@ -100,7 +100,7 @@ def extract_storage_charge_and_discharge(tall_results_dfs):
     return storage_charge,storage_discharge
     
 def extract_and_map_ProductionByTechnology(tall_results_dfs):
-    """Extract generation (and other) data from ProductionByTechnology sheet. But also extract storage charge and discharge and handle it separately then append them generation. Also convert to GWh. Note that the final data will not have been summed up by technology, timeslice or year yet."""
+    """Extract generation (and other) data from ProductionByTechnology sheet. But also extract storage charge and discharge and handle it separately then append them generation. Also convert to TWh. Note that the final data will not have been summed up by technology, timeslice or year yet."""
     generation = tall_results_dfs['ProductionByTechnology'].copy()
     
     generation = drop_categories_not_in_mapping(generation, powerplant_mapping)
@@ -112,7 +112,7 @@ def extract_and_map_ProductionByTechnology(tall_results_dfs):
     storage_charge,storage_discharge = extract_storage_charge_and_discharge(tall_results_dfs)
     #append storage charge and discharge to generation
     generation = pd.concat([generation,storage_charge,storage_discharge])
-    #convert to GWh by /3.6
+    #convert to TWh by /3.6
     generation['VALUE'] = generation['VALUE']/3.6
     return generation
 
@@ -131,7 +131,7 @@ def plot_generation_annual(tall_results_dfs, paths_dict):
     demand = tall_results_dfs['Demand'].copy()
     #sum demand by year
     demand = demand.groupby(['YEAR']).sum().reset_index()
-    #convert to GWh by /3.6
+    #convert to TWh by /3.6
     demand['VALUE'] = demand['VALUE']/3.6
     #create a column called TECHNOLOGY with value 'Demand'
     demand['TECHNOLOGY'] = 'Demand'
@@ -139,7 +139,7 @@ def plot_generation_annual(tall_results_dfs, paths_dict):
     #order by value
     generation = generation.sort_values(by=['YEAR','VALUE'],ascending=False)
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the YEAR
-    title = 'Generation by technology GWh'
+    title = 'Generation by technology TWh'
     fig = px.area(generation, x="YEAR", y="VALUE", color='TECHNOLOGY',title=title,color_discrete_map=create_color_dict(generation['TECHNOLOGY']))
     #and add line with points for demand
     fig.add_scatter(x=demand['YEAR'], y=demand['VALUE'], mode='lines+markers', name='Demand', line=dict(color=technology_color_dict['Demand']), marker=dict(color=technology_color_dict['Demand']))
@@ -150,23 +150,25 @@ def plot_generation_annual(tall_results_dfs, paths_dict):
     return fig,title
 
 def plot_emissions_annual(tall_results_dfs, paths_dict):
-    """Plot emissions by year by technology"""
+    """Plot emissions by year by technology
+    #note that we could change the nane in legend from technology to input fuel or something"""
     #load emissions
     emissions = tall_results_dfs['AnnualTechnologyEmission'].copy()
     
-    #drop technologies not in powerplant_mapping
-    emissions = drop_categories_not_in_mapping(emissions, emissions_mapping, column='EMISSION')
-    #map EMISSION to readable names:
-    emissions['FUEL'] = emissions['EMISSION'].apply(lambda x: extract_readable_name_from_mapping(x, emissions_mapping,'plot_emissions_annual'))
+    #drop technologies not in INPUT_FUEL mapping
+    emissions = drop_categories_not_in_mapping(emissions, input_fuel_mapping, column='TECHNOLOGY')#Note the column is TECHNOLOGY here, not emission. this is a concious choice
 
+    #map TECHNOLOGY to readable names:
+    emissions['TECHNOLOGY'] = emissions['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, input_fuel_mapping,'plot_emissions_annual'))
+    
     # sum emissions by technology and year
-    emissions = emissions.groupby(['FUEL','YEAR']).sum().reset_index()
+    emissions = emissions.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
     #order the FUEL by value
     emissions = emissions.sort_values(by=['YEAR','VALUE'], ascending=False)
     
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the time
-    title = 'Emissions by fuel MTC02'
-    fig = px.area(emissions, x="YEAR", y="VALUE", color='FUEL', title=title,color_discrete_map=create_color_dict(emissions['FUEL']))
+    title = 'Emissions by technology MTC02'
+    fig = px.area(emissions, x="YEAR", y="VALUE", color='TECHNOLOGY', title=title,color_discrete_map=create_color_dict(emissions['TECHNOLOGY']))
     #save as html
     fig.write_html(paths_dict['visualisation_directory']+'/annual_emissions.html', auto_open=False)
 
@@ -214,13 +216,13 @@ def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
     generation = generation.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
 
     #join both dataframes on technology and year
-    generation_capacity = generation.merge(capacity, on=['TECHNOLOGY','YEAR'], suffixes=('_gen_gwh','_cap_gw'))
+    generation_capacity = generation.merge(capacity, on=['TECHNOLOGY','YEAR'], suffixes=('_gen_TWh','_cap_gw'))
     
     #drop transmission from technology for both gen and capacity
     generation_capacity = generation_capacity.loc[generation_capacity['TECHNOLOGY'] != 'Transmission']
 
-    #calculate capacity factor as generation/capacity/8760/1000 > since gen is in GWh and cap in GW, divide by 8760 hours to get 1 (or less than 1)
-    generation_capacity['VALUE'] = (generation_capacity['VALUE_gen_gwh']/generation_capacity['VALUE_cap_gw'])/8.760
+    #calculate capacity factor as generation/capacity/8760/1000 > since gen is in TWh and cap in GW, divide by 8760 hours to get 1 (or less than 1)
+    generation_capacity['VALUE'] = (generation_capacity['VALUE_gen_TWh']/generation_capacity['VALUE_cap_gw'])/8.760
 
     #order the technologies by capacity
     generation_capacity = generation_capacity.sort_values(by=['YEAR','VALUE'], ascending=False)
@@ -241,7 +243,7 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     demand = tall_results_dfs['Demand'].copy()
     #sum demand by year, timeslice
     demand = demand.groupby(['YEAR','TIMESLICE']).sum().reset_index()#todo havent checked that demand by timeselice ends up alright
-    #convert to GWh by /3.6
+    #convert to TWh by /3.6
     demand['VALUE'] = demand['VALUE']/3.6
     #create a column called TECHNOLOGY with value 'Demand'
     demand['TECHNOLOGY'] = 'Demand'
@@ -368,7 +370,7 @@ def plot_8th_generation_by_tech(data_8th,paths_dict):
     generation['YEAR'] = generation['YEAR'].astype(int)
     
     generation = generation.sort_values(by=['VALUE'], ascending=False)
-    title = 'Generation GWh in 8th edition power model reference scenario'
+    title = 'Generation TWh in 8th edition power model reference scenario'
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the time
     fig = px.area(generation, x="YEAR", y="VALUE", color='TECHNOLOGY', title=title, color_discrete_map=create_color_dict(generation['TECHNOLOGY']))
 
