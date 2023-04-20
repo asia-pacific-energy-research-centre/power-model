@@ -332,7 +332,7 @@ def plot_8th_graphs(paths_dict, config_dict):
     
     #NOW PLOT A DIFFERENT GRAPH FOR EACH SHEET WE EXPECT. YOU WILL AHVE TO CREATE A NEW FUNCTION FOR EACH GRAPH
     #plot generation by technology
-    fig_generation,title_generation = plot_8th_generation_by_tech(data_8th,paths_dict,,economy,scenario)
+    fig_generation,title_generation = plot_8th_generation_by_tech(data_8th,paths_dict,economy,scenario)
     return fig_generation,title_generation
 
 def plot_8th_generation_by_tech(data_8th,paths_dict,economy,scenario):
