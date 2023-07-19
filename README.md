@@ -54,7 +54,7 @@ The `osemosys_fast.txt` file is where the calculations occur. Following the patt
 ## 5. Using results
 Saved in the results folder will be a few different files. The ones with name ~ tall_...xlsx, will be a combination of all the results in one csv. 
 
-Also, if you have set the variable save_results_vis_and_inputs to True in the main.py file, then you will also have a folder in results/ with the FILEDATEID and some general settings in it's name (i.e. /2023-04-11-134916_19_THA_Reference_coin_mip/) which will contain all the resutls, input, intermediate and visualisation files. This can be useful for debugging and testing.
+Also, if you have set the variable SAVE_RESULTS_VIS_AND_INPUTS to True in the main.py file, then you will also have a folder in results/ with the FILEDATEID and some general settings in it's name (i.e. /2023-04-11-134916_19_THA_Reference_coin_mip/) which will contain all the resutls, input, intermediate and visualisation files. This can be useful for debugging and testing.
 
 ### Extras: 
 ## Creating visualisation of RES

@@ -439,7 +439,7 @@ def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
 
     return
 
-def create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, config_dict,keep_current_tmp_files):
+def create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, config_dict,KEEP_CURRENT_TMP_FILES,DELETE_OLD_TEMP_FILES):
     #create the tmp and results directories if they dont exist. ALso check if there are files in the tmp directory and if so, move them to a new folder with the FILE_DATE_ID in the name. 
     #EXCEPT if osemosys_cloud_input is y, then we dont want to do this because the user will be running main.py to extract results form the cloud output, as tehy ahve already done it once to prepare data now they are doing it once to extract results, and we dont want to move the files in the tmp directory in between those two runs
 
@@ -449,14 +449,18 @@ def create_new_directories(tmp_directory, results_directory,visualisation_direct
     else:
         #if theres already file in the tmp directory then we should move those to a new folder so we dont overwrite them:
         #check if there are files:
-        if len(os.listdir(tmp_directory)) > 0 and config_dict['osemosys_cloud_input'] != 'y' and not keep_current_tmp_files:
-            new_temp_dir = f"./tmp/{tmp_directory}/{FILE_DATE_ID}"
-            #make the new temp directory:
-            os.makedirs(new_temp_dir)
-            #move all files (BUT NOT FOLDERS!):
-            for file in os.listdir(tmp_directory):
-                if os.path.isfile(f'{tmp_directory}/{file}'):
-                    shutil.move(f'{tmp_directory}/{file}', new_temp_dir)
+        if len(os.listdir(tmp_directory)) > 0 and config_dict['osemosys_cloud_input'] != 'y' and not KEEP_CURRENT_TMP_FILES:
+            if DELETE_OLD_TEMP_FILES:
+                os.remove(tmp_directory)
+                os.makedirs(tmp_directory)
+            else:
+                new_temp_dir = f"./tmp/{tmp_directory}/{FILE_DATE_ID}"
+                #make the new temp directory:
+                os.makedirs(new_temp_dir)
+                #move all files (BUT NOT FOLDERS!):
+                for file in os.listdir(tmp_directory):
+                    if os.path.isfile(f'{tmp_directory}/{file}'):
+                        shutil.move(f'{tmp_directory}/{file}', new_temp_dir)
 
     #RESULTS
     if not os.path.exists(results_directory):#no need to check if the results dir exists because the data will be saved with FILE_DATE_ID in the name, its just too hard to do that with the tmp directory
@@ -524,7 +528,7 @@ def write_data_config_to_new_file(paths_dict,config_dict):
 
 ##################################################################################
 
-def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files=False):
+def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,KEEP_CURRENT_TMP_FILES=False,DELETE_OLD_TEMP_FILES=False):
     """set up the paths to the various files and folders we will need to run the model. This will create a dictionary for the paths so we dont have to keep passing lots of arguments to functions"""
     solving_method = config_dict['solving_method']
     scenario = config_dict['scenario']
@@ -545,7 +549,7 @@ def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files=F
     #create path to save copy of outputs to txt file in case of error:
     log_file_path = f'{tmp_directory}/process_log_{economy}_{scenario}_{FILE_DATE_ID}.txt'
 
-    create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, config_dict,keep_current_tmp_files)
+    create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, config_dict,KEEP_CURRENT_TMP_FILES,DELETE_OLD_TEMP_FILES)
 
     #create model run specifications txt file using the input variables as the details and the FILE_DATE_ID as the name:
     model_run_specifications_file = f'{tmp_directory}/specs_{FILE_DATE_ID}.txt'
