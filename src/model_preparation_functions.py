@@ -444,16 +444,15 @@ def create_new_directories(tmp_directory, results_directory,visualisation_direct
     #EXCEPT if osemosys_cloud_input is y, then we dont want to do this because the user will be running main.py to extract results form the cloud output, as tehy ahve already done it once to prepare data now they are doing it once to extract results, and we dont want to move the files in the tmp directory in between those two runs
 
     #TMP
+    if DELETE_OLD_TEMP_FILES:
+        os.remove(tmp_directory)
+    
     if not os.path.exists(tmp_directory):
         os.makedirs(tmp_directory)
     else:
         #if theres already file in the tmp directory then we should move those to a new folder so we dont overwrite them:
         #check if there are files:
         if len(os.listdir(tmp_directory)) > 0 and config_dict['osemosys_cloud_input'] != 'y' and not KEEP_CURRENT_TMP_FILES:
-            if DELETE_OLD_TEMP_FILES:
-                os.remove(tmp_directory)
-                os.makedirs(tmp_directory)
-            else:
                 new_temp_dir = f"./tmp/{tmp_directory}/{FILE_DATE_ID}"
                 #make the new temp directory:
                 os.makedirs(new_temp_dir)
