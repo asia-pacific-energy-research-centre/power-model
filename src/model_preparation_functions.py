@@ -445,7 +445,8 @@ def create_new_directories(tmp_directory, results_directory,visualisation_direct
 
     #TMP
     if DELETE_OLD_TEMP_FILES:
-        os.remove(tmp_directory)
+        if os.path.exists(tmp_directory):
+            os.remove(tmp_directory)
     
     if not os.path.exists(tmp_directory):
         os.makedirs(tmp_directory)
