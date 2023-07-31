@@ -11,9 +11,9 @@ Make sure you run this command in the folder you want.
 
 You need to create a conda environment. To install, move to your working directory and copy and paste the following in your command line:
 
-`conda env create --prefix ./env --file ./config/environment.yml`
+`conda env create --prefix ./power_model_env --file ./config/environment.yml`
 
-`conda activate ./env`
+`conda activate ./power_model_env`
 
 ## 2. To run the model 
 Make sure you did Step 1 (only need to do it once).

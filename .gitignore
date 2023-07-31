@@ -12,6 +12,9 @@ archive/
 launch.json
 *.ipynb
 *.yaml
+*.txt
+*.json
+/power_model_env
 # temporary
 archive/*
 simplicity/
@@ -22,6 +25,8 @@ simplicity/
 !data/8th_output.xlsx
 !config/data_config_all_calculated.yaml
 !config/plotting_config_and_timeslices-MASTER.xlsx
+!config/osemosys.txt
+!config/osemosys_fast.txt
 #################DEFAULT#################
 
 # Byte-compiled / optimized / DLL files

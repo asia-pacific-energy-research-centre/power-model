@@ -458,7 +458,6 @@ def create_new_directories(tmp_directory, results_directory,visualisation_direct
     if EMPTY_TMP_FOLDER_BEFORE_RUNNING:
         if os.path.exists(tmp_directory):
             shutil.rmtree(tmp_directory)
-    breakpoint()
     if not os.path.exists(tmp_directory):
         os.makedirs(tmp_directory)
     else:
