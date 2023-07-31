@@ -44,6 +44,8 @@ If the model solves successfully, a bunch of CSV files will be written to the sa
 
 If there is an error message saying the model is infeasible, check your model data. You can also double check the process_log_{economy}_{scenario}.txt file for outputs from the solving process. If the model is infeasible, the results files will not be written and you will get a "file not found" error message or something. This is your clue that the model did not solve. You always want to see a message in the solver output saying "OPTIMAL LP SOLUTION FOUND".
 
+You may find issues with the 'datafile_from_python_ECONOMYNAME_SCENARIO.txt' file not being created and this causing the solver to not work. One possible reason that is hard to spot is that installing/uninstalling otoole might fix it. this is because when otoole is installed it seems to record the location of itself in its code. So if you install it in one location, then move it, it will still be looking for the old location. To fix this, uninstall otoole, then reinstall it in the new location. I have put an issue on Otooles github about this so maybe it will be fixed.
+
 ## 4. Adding results to config yml files
 To add results (e.g., capacity factor) you need to edit the following files:
 - osemosys.txt

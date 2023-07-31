@@ -326,12 +326,24 @@ def convert_workbook_to_datafile(paths_dict, config_dict, long_var_names=False):
     if not long_var_names:
         command = f"otoole convert excel datafile {paths_dict['path_to_combined_input_data_workbook']} {paths_dict['path_to_input_data_file']} {paths_dict['path_to_new_data_config']}"
 
-        result = subprocess.run(command,shell=True, capture_output=True, text=True)
+        p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
+        for line in p.stdout:
+            print(line, end='')  # print to console in real-time
+            logger.info(line)  # also log the output
+
+        p.wait()  # wait for the subprocess to finish
+
         logger.info(f"Running the following command to convert the workbook to a datafile:\n{command}")
-        logger.info(command+'\n')
-        logger.info(result.stdout+'\n')
-        logger.info(result.stderr+'\n')
         logger.info(f"Data file in text format has been written and saved in the tmp folder as {paths_dict['path_to_input_data_file']}.\n")
+
+
+        # result = subprocess.run(command,shell=True, capture_output=True, text=True)
+        # logger.info(f"Running the following command to convert the workbook to a datafile:\n{command}")
+        # logger.info(command+'\n')
+        # logger.info(result.stdout+'\n')
+        # logger.info(result.stderr+'\n')
+        # logger.info(f"Data file in text format has been written and saved in the tmp folder as {paths_dict['path_to_input_data_file']}.\n")
     else:
         command = f"otoole convert excel datafile {paths_dict['path_to_combined_input_data_workbook_long_var_names']} {paths_dict['path_to_input_data_file_long_var_names']} {paths_dict['path_to_new_data_config']}"
         result = subprocess.run(command,shell=True, capture_output=True, text=True)
@@ -439,22 +451,21 @@ def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
 
     return
 
-def create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, config_dict,KEEP_CURRENT_TMP_FILES,DELETE_OLD_TEMP_FILES):
+def create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, config_dict,USE_TMP_FILES_FROM_PREVIOUS_RUN,EMPTY_TMP_FOLDER_BEFORE_RUNNING):
     #create the tmp and results directories if they dont exist. ALso check if there are files in the tmp directory and if so, move them to a new folder with the FILE_DATE_ID in the name. 
     #EXCEPT if osemosys_cloud_input is y, then we dont want to do this because the user will be running main.py to extract results form the cloud output, as tehy ahve already done it once to prepare data now they are doing it once to extract results, and we dont want to move the files in the tmp directory in between those two runs
-
     #TMP
-    if DELETE_OLD_TEMP_FILES:
+    if EMPTY_TMP_FOLDER_BEFORE_RUNNING:
         if os.path.exists(tmp_directory):
-            os.remove(tmp_directory)
-    
+            shutil.rmtree(tmp_directory)
+    breakpoint()
     if not os.path.exists(tmp_directory):
         os.makedirs(tmp_directory)
     else:
         #if theres already file in the tmp directory then we should move those to a new folder so we dont overwrite them:
         #check if there are files:
-        if len(os.listdir(tmp_directory)) > 0 and config_dict['osemosys_cloud_input'] != 'y' and not KEEP_CURRENT_TMP_FILES:
-                new_temp_dir = f"./tmp/{tmp_directory}/{FILE_DATE_ID}"
+        if (len(os.listdir(tmp_directory)) > 0) and (config_dict['osemosys_cloud_input'] != 'y') and (not USE_TMP_FILES_FROM_PREVIOUS_RUN):
+                new_temp_dir = f"./{tmp_directory}/{FILE_DATE_ID}"
                 #make the new temp directory:
                 os.makedirs(new_temp_dir)
                 #move all files (BUT NOT FOLDERS!):
@@ -528,7 +539,7 @@ def write_data_config_to_new_file(paths_dict,config_dict):
 
 ##################################################################################
 
-def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,KEEP_CURRENT_TMP_FILES=False,DELETE_OLD_TEMP_FILES=False):
+def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,USE_TMP_FILES_FROM_PREVIOUS_RUN=False,EMPTY_TMP_FOLDER_BEFORE_RUNNING=False):
     """set up the paths to the various files and folders we will need to run the model. This will create a dictionary for the paths so we dont have to keep passing lots of arguments to functions"""
     solving_method = config_dict['solving_method']
     scenario = config_dict['scenario']
@@ -549,7 +560,7 @@ def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,KEEP_CURRENT_TMP_FILES=F
     #create path to save copy of outputs to txt file in case of error:
     log_file_path = f'{tmp_directory}/process_log_{economy}_{scenario}_{FILE_DATE_ID}.txt'
 
-    create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, config_dict,KEEP_CURRENT_TMP_FILES,DELETE_OLD_TEMP_FILES)
+    create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, config_dict,USE_TMP_FILES_FROM_PREVIOUS_RUN,EMPTY_TMP_FOLDER_BEFORE_RUNNING)
 
     #create model run specifications txt file using the input variables as the details and the FILE_DATE_ID as the name:
     model_run_specifications_file = f'{tmp_directory}/specs_{FILE_DATE_ID}.txt'

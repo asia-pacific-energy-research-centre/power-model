@@ -20,11 +20,11 @@ import pickle as pickle
 #LESS IMPORTANT VARIABLES TO SET (their default values are fine):
 FILE_DATE_ID = time.strftime("%m-%d-%H%M")
 root_dir = '.' # because this file is in src, the root may change if it is run from this file or from command line
-KEEP_CURRENT_TMP_FILES = False
+USE_TMP_FILES_FROM_PREVIOUS_RUN = False
 DONT_SOLVE = False
 plotting = True
 SAVE_RESULTS_VIS_AND_INPUTS = True
-DELETE_OLD_TEMP_FILES = True
+EMPTY_TMP_FOLDER_BEFORE_RUNNING = True
 ################################################################################
 
 def main(input_data_sheet_file):
@@ -44,7 +44,7 @@ def main(input_data_sheet_file):
     # config_dict['data_config_file'] ="config.yaml"
     # config_dict['solving_method'] = 'coin'#or glpsol or cloud
 
-    paths_dict = model_preparation_functions.set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,KEEP_CURRENT_TMP_FILES,DELETE_OLD_TEMP_FILES)
+    paths_dict = model_preparation_functions.set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,USE_TMP_FILES_FROM_PREVIOUS_RUN,EMPTY_TMP_FOLDER_BEFORE_RUNNING)
 
     ################################################################################
     #SET UP LOGGING
@@ -136,7 +136,7 @@ def is_notebook() -> bool:
         return False      # Probably standard Python interpreter
     
 if is_notebook():
-    input_data_sheet_file="data-sheet-power_36TS.xlsx"#"simplicity_data.xlsx"#"data-sheet-power_36TS.xlsx"##set this based on the data sheet you want to run if you are running this from jupyter notebook
+    input_data_sheet_file="19_THA_data_TGT.xlsx"#"simplicity_data.xlsx"#"data-sheet-power_36TS.xlsx"##set this based on the data sheet you want to run if you are running this from jupyter notebook
     #make directory the root of the project
     if os.getcwd().split('\\')[-1] == 'src':
         os.chdir('..')
