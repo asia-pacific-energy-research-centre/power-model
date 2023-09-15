@@ -160,8 +160,11 @@ def create_data_config_with_short_names_as_keys(config_dict):
             del data_config_short_names[key]
     return data_config_short_names
 
-def raise_error_if_var_name_not_in_dict(x):
+def raise_error_if_var_name_not_in_dict(x, col, wb):
     #not sure if this is the best way to do this but it works
+    #it 
+    # seemed like we were using col befor ebut i dont know where that came from
+    breakpoint()
     logger.error(f'{x} is not in the long_variable_names_to_short_variable_names dictionary for the column {col}. Please add it to the dictionary or change it in the input data.')
     wb.close()
     sys.exit()
@@ -205,7 +208,7 @@ def edit_input_data(data_config_short_names, scenario, economy, model_end_year,m
                 sys.exit()
             elif col in long_variable_names_to_short_variable_names.keys() and use_long_var_names == False:
                 #we are having issues with the values in our input data being too long for coinc cbc. so we will attempt to decrease their lgnth.
-                sheet[col] = sheet[col].apply(lambda x: long_variable_names_to_short_variable_names[col][x] if x in long_variable_names_to_short_variable_names[col].keys() else raise_error_if_var_name_not_in_dict(x))
+                sheet[col] = sheet[col].apply(lambda x: long_variable_names_to_short_variable_names[col][x] if x in long_variable_names_to_short_variable_names[col].keys() else raise_error_if_var_name_not_in_dict(x,col, wb))
             else:
                 pass
         #check for VALUE col even thogh it is not in the indices list
@@ -235,10 +238,10 @@ def edit_input_data(data_config_short_names, scenario, economy, model_end_year,m
         #we are having issues with the values in our input data being too long for coinc cbc. so we will attempt to decrease their lgnth.
         #if col is 'REGION' then change col to the last three letters of the col123
         if sheet_name == 'REGION' and use_long_var_names == False:
-            sheet['VALUE'] = sheet['VALUE'].apply(lambda x: long_variable_names_to_short_variable_names[sheet_name][x] if x in long_variable_names_to_short_variable_names[sheet_name].keys() else raise_error_if_var_name_not_in_dict(x))
+            sheet['VALUE'] = sheet['VALUE'].apply(lambda x: long_variable_names_to_short_variable_names[sheet_name][x] if x in long_variable_names_to_short_variable_names[sheet_name].keys() else raise_error_if_var_name_not_in_dict(x,sheet_name, wb))
         elif sheet_name in long_variable_names_to_short_variable_names.keys() and use_long_var_names == False:
             #use the long_variable_names_to_short_variable_names dict to change the values in the sheet
-            sheet['VALUE'] = sheet['VALUE'].apply(lambda x: long_variable_names_to_short_variable_names[sheet_name][x] if x in long_variable_names_to_short_variable_names[sheet_name].keys() else raise_error_if_var_name_not_in_dict(x))
+            sheet['VALUE'] = sheet['VALUE'].apply(lambda x: long_variable_names_to_short_variable_names[sheet_name][x] if x in long_variable_names_to_short_variable_names[sheet_name].keys() else raise_error_if_var_name_not_in_dict(x,sheet_name, wb))
         else:
             pass
 

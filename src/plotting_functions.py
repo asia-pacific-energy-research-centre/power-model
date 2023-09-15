@@ -1,3 +1,5 @@
+
+#%%
 # making changes to the graphing.
 import pandas as pd
 import numpy as np
@@ -67,35 +69,58 @@ def plotting_handler(tall_results_dfs=None,paths_dict=None, config_dict=None,loa
     create_dashboard(figs, paths_dict,subplot_titles)
     
 def extract_and_map_ProductionByTechnology(tall_results_dfs):
-    """Extract generation (and other) data from ProductionByTechnology sheet. But also extract storage charge and discharge and handle it separately then append them generation. Also convert to TWh. Note that the final data will not have been summed up by technology, timeslice or year yet."""
+    """Extract generation (and other) data from ProductionByTechnology sheet. But also extract storage charge and discharge and handle it separately then append them generation. Also convert to TWh. Note that the final data will not have been summed up by technology, timeslice or year yet.
+    
+    """
     ###GENERATION and STORAGE DISCHARGE###
-    generation = tall_results_dfs['ProductionByTechnology'].copy()
+    production = tall_results_dfs['ProductionByTechnology'].copy()
+    heat = production[production['FUEL'].str.contains('heat') == True]
+    generation = production[production['FUEL'].str.contains('heat') == False]
+        
     generation = drop_categories_not_in_mapping(generation, powerplant_mapping)
+    heat = drop_categories_not_in_mapping(heat, powerplant_mapping)
     #map TECHNOLOGY to readable names:
     generation['TECHNOLOGY'] = generation['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_and_map_ProductionByTechnology'))
+    heat['TECHNOLOGY'] = heat['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_and_map_ProductionByTechnology'))
 
     ###STORAGE CHARGE###
     storage_charge = tall_results_dfs['UseByTechnology'].copy()
+    storage_charge_elec = storage_charge[storage_charge['FUEL'].str.contains('heat') == False] 
+    storage_charge_heat  = storage_charge[storage_charge['FUEL'].str.contains('heat') == True]
+        
     #map TECHNOLOGY to readable names:
-    storage_charge['TECHNOLOGY'] = storage_charge['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_and_map_ProductionByTechnology'))
+    storage_charge_elec['TECHNOLOGY'] = storage_charge_elec['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_and_map_ProductionByTechnology'))
+    storage_charge_heat['TECHNOLOGY'] = storage_charge_heat['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_and_map_ProductionByTechnology'))
     #filter for only techs with storage in name in storage_charge (nothing needs to be done for generation as that also contains storage)
-    storage_charge = storage_charge[storage_charge['TECHNOLOGY'].str.contains('Storage') == True]
+    storage_charge_elec = storage_charge_elec[storage_charge_elec['TECHNOLOGY'].str.contains('Storage') == True]
+    storage_charge_heat = storage_charge_heat[storage_charge_heat['TECHNOLOGY'].str.contains('Storage') == True]
     #if they are empty raise a warning
-    if storage_charge.empty:
+    if storage_charge_elec.empty:
+        warnings.warn('Storage charge is empty')
+    if storage_charge_heat.empty:
         warnings.warn('Storage charge is empty')
     #make negative
-    storage_charge['VALUE'] = -storage_charge['VALUE']
+    storage_charge_elec['VALUE'] = -storage_charge_elec['VALUE']
+    storage_charge_heat['VALUE'] = -storage_charge_heat['VALUE']
 
     #append storage charge and discharge to generation
-    generation = pd.concat([generation,storage_charge])
-
+    generation = pd.concat([generation,storage_charge_elec])
+    heat = pd.concat([heat,storage_charge_heat])
     #convert to TWh by /3.6
     generation['VALUE'] = generation['VALUE']/3.6
-    return generation
+    return generation, heat
+
+def plot_input_use_by_technology():
+    """REGION	TIMESLICE	TECHNOLOGY	FUEL
+    Plot the UseByTechnology sheet from output by the technology and fuel cols. will need to drop the timeselice col. Think it will be in pj.
+    tall_results_dfs['UseByTechnology']
+    """
+    return
 
 def plot_generation_annual(tall_results_dfs, paths_dict):
-    """Using data from ProductionByTechnology sheet , plot generation by technology. Also plot total demand as a line on the same graph"""
-    generation = extract_and_map_ProductionByTechnology(tall_results_dfs)
+    """Using data from ProductionByTechnology sheet , plot generation by technology. Also plot total demand as a line on the same graph"""##TODO MAKE THIS IDENTIFY IF FUEL COL CONTAINS HEAT OR ELECTRICITY AND MAKE SURE TO LABEL THE TECHNOLOGY ACCORDINGLY
+    breakpoint()
+    generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)#TODO DO OMTHING WITH HEAT
     #sum generation by technology and year
     generation = generation.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
 
@@ -177,7 +202,7 @@ def plot_capacity_annual(tall_results_dfs, paths_dict):
 
 def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
     
-    generation = extract_and_map_ProductionByTechnology(tall_results_dfs)
+    generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)
     generation = generation.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
     #remove technologies for storage
     generation = generation[generation['TECHNOLOGY'].str.contains('Storage') == False]
@@ -212,7 +237,7 @@ def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
 def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     """Calculate average generation by timeslice for each technology and year. Also calculate average generation by technology and year for power plants, to Storage, from Storage and  demand"""
     ###GENERATION###
-    generation = extract_and_map_ProductionByTechnology(tall_results_dfs)
+    generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)
     #sum generation by technology, timeslice and year
     generation = generation.groupby(['TECHNOLOGY','YEAR','TIMESLICE']).sum().reset_index()
 
@@ -316,8 +341,9 @@ def plot_8th_graphs(paths_dict, config_dict):
 
     #extract data based on the config file
     #NOTEHTAT THIS WILL USE THE SAME SETTINGS AS THE 9TH OUTPUT FOR ECONOMY AND SCENARIO. it might be useful later to have a different config file for the 8th output
-    scenario = 'Reference'#config_dict['scenario']
-    economy = '19_THA'#config_dict['economy']
+    breakpoint()
+    scenario = config_dict['scenario']
+    economy = config_dict['economy']
     for sheet in expected_sheet_names:
         data_8th[sheet] = data_8th[sheet][data_8th[sheet]['REGION'] == economy]
         data_8th[sheet] = data_8th[sheet][data_8th[sheet]['SCENARIO'] == scenario]
@@ -462,9 +488,10 @@ def double_check_timeslice_details(timeslice_dict):
     assert sum([x['hours'] for x in timeslice_dict.values()]) == 8760
     
 
+#%%
 # ##########################################################################################
 # #load the data
-# pickle_paths = ['./results/2023-04-12-113500_19_THA_Reference_coin_mip/tmp/tall_results_dfs_19_THA_Reference_2023-04-12-113500.pickle','./results/2023-04-12-113500_19_THA_Reference_coin_mip/tmp/paths_dict_19_THA_Reference_2023-04-12-113500.pickle', './results/2023-04-12-113500_19_THA_Reference_coin_mip/tmp_config_dict_19_THA_Reference_2023-04-12-113500.pickle']
-# plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
+pickle_paths = ['./results/09-15-1533_20_USA_Reference_coin_mip/tmp/tall_results_dfs_20_USA_Reference_09-15-1533.pickle','./results/09-15-1533_20_USA_Reference_coin_mip/tmp/paths_dict_20_USA_Reference_09-15-1533.pickle', './results/09-15-1533_20_USA_Reference_coin_mip/tmp/config_dict_20_USA_Reference_09-15-1533.pickle']
+plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
 
-
+#%%
