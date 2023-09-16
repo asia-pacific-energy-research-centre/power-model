@@ -83,7 +83,7 @@ def extract_and_map_ProductionByTechnology(tall_results_dfs):
         
     production = drop_categories_not_in_mapping(production, powerplant_mapping)
     #map TECHNOLOGY to readable names:
-    production['TECHNOLOGY'] = production['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_and_map_ProductionByTechnology'))
+    production['TECHNOLOGY'] = production['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'powerplant_mapping', 'extract_and_map_ProductionByTechnology'))
     
     heat = production[production['FUEL'].str.contains('heat') == True]
     generation = production[production['FUEL'].str.contains('heat') == False]
@@ -92,7 +92,7 @@ def extract_and_map_ProductionByTechnology(tall_results_dfs):
     storage_charge = tall_results_dfs['UseByTechnology'].copy()
         
     #map TECHNOLOGY to readable names:
-    storage_charge['TECHNOLOGY'] = storage_charge['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_and_map_ProductionByTechnology'))
+    storage_charge['TECHNOLOGY'] = storage_charge['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'powerplant_mapping', 'extract_and_map_ProductionByTechnology'))
     
     storage_charge = storage_charge[storage_charge['TECHNOLOGY'].str.contains('Storage') == True]
     
@@ -129,8 +129,8 @@ def extract_and_map_UseByTechnology(tall_results_dfs):
         
     input_use = drop_categories_not_in_mapping(input_use, powerplant_mapping)#not sure if this is the right thign to use here
     #map TECHNOLOGY to readable names:
-    input_use['TECHNOLOGY'] = input_use['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_and_map_UseByTechnology'))
-    input_use['FUEL'] = input_use['FUEL'].apply(lambda x: extract_readable_name_from_mapping(x, fuel_mapping,'extract_and_map_UseByTechnology'))
+    input_use['TECHNOLOGY'] = input_use['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'powerplant_mapping', 'extract_and_map_UseByTechnology'))
+    input_use['FUEL'] = input_use['FUEL'].apply(lambda x: extract_readable_name_from_mapping(x, fuel_mapping,'fuel_mapping', 'extract_and_map_UseByTechnology'))
 
     # ###STORAGE CHARGE###
     # storage_charge = tall_results_dfs['UseByTechnology'].copy() #TODO IS STORAGE A THING FOR INPUT? also might it be dischagrge?
@@ -156,7 +156,6 @@ def plot_input_use_by_fuel_and_technology(tall_results_dfs, paths_dict):
     Plot the UseByTechnology sheet from output by the technology and fuel cols. will need to drop the timeselice col. Think it will be in pj.
     tall_results_dfs['UseByTechnology']
     """
-    breakpoint()
     input_use = extract_and_map_UseByTechnology(tall_results_dfs)#TODO DO OMTHING WITH HEAT
     #sum input_use by technology and year
     input_use = input_use.groupby(['FUEL', 'TECHNOLOGY', 'YEAR']).sum().reset_index()
@@ -252,7 +251,7 @@ def plot_emissions_annual(tall_results_dfs, paths_dict):
     emissions = drop_categories_not_in_mapping(emissions, input_fuel_mapping, column='TECHNOLOGY')#Note the column is TECHNOLOGY here, not emission. this is a concious choice
 
     #map TECHNOLOGY to readable names:
-    emissions['TECHNOLOGY'] = emissions['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, input_fuel_mapping,'plot_emissions_annual'))
+    emissions['TECHNOLOGY'] = emissions['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, input_fuel_mapping,'input_fuel_mapping', 'plot_emissions_annual'))
     
     # sum emissions by technology and year
     emissions = emissions.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
@@ -275,7 +274,7 @@ def plot_capacity_annual(tall_results_dfs, paths_dict):
     #drop technologies not in powerplant_mapping
     capacity = drop_categories_not_in_mapping(capacity, powerplant_mapping)
     #map TECHNOLOGY to readable names:
-    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'plot_capacity_annual'))
+    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'powerplant_mapping','plot_capacity_annual'))
     
     #remove transmission from technology
     capacity = capacity.loc[capacity['TECHNOLOGY'] != 'Transmission']
@@ -305,7 +304,7 @@ def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
     capacity = tall_results_dfs['TotalCapacityAnnual'].copy()#'CapacityByTechnology']
     capacity = drop_categories_not_in_mapping(capacity, powerplant_mapping)
     #couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
-    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'plot_capacity_factor_annual'))
+    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'powerplant_mapping', 'plot_capacity_factor_annual'))
     #sum by technology and year
     capacity = capacity.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
 
@@ -358,7 +357,7 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     capacity = tall_results_dfs['TotalCapacityAnnual'].copy()#'CapacityByTechnology']
     capacity = drop_categories_not_in_mapping(capacity, powerplant_mapping)
     #couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
-    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'plot_average_generation_by_timeslice'))
+    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping, 'powerplant_mapping', 'plot_average_generation_by_timeslice'))
     #drop any vars with storage in name. We have those from generation df
     capacity = capacity.loc[capacity['TECHNOLOGY'].str.contains('Storage') == False]
     capacity = capacity.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
@@ -540,16 +539,17 @@ def drop_categories_not_in_mapping(df, mapping, column='TECHNOLOGY'):
         warnings.warn(f'Filtering data in {column} caused the dataframe to become empty')
     return df
 
-def extract_readable_name_from_mapping(long_name,mapping, function_name, ignore_missing_mappings=False, print_warning_messages=True):
+def extract_readable_name_from_mapping(long_name,mapping, mapping_name, function_name, ignore_missing_mappings=False, print_warning_messages=True):
     """Use the mappings of what categories we expect in the power model and map them to readable names"""
     if long_name not in mapping.keys():
         if ignore_missing_mappings:
             if print_warning_messages:
-                logging.warning(f"Category {long_name} is not in the expected set of long_names in the mapping. This occured during extract_readable_name_from_mapping(), for the function {function_name}")
+                logging.warning(f"Category {long_name} is not in the expected set of long_names in the {mapping_name}. This occured during extract_readable_name_from_mapping(), for the function {function_name}")
             return long_name
         else:
-            logging.error(f"Category {long_name} is not in the expected set of long_names in the mapping. This occured during extract_readable_name_from_mapping(), for the function {function_name}")
-            raise ValueError(f"Category {long_name} is not in the expected set of long_names in the mapping. This occured during extract_readable_name_from_mapping(), for the function {function_name}")
+            logging.error(f"Category {long_name} is not in the expected set of long_names in the {mapping_name}. This occured during extract_readable_name_from_mapping(), for the function {function_name}")
+            breakpoint()
+            raise ValueError(f"Category {long_name} is not in the expected set of long_names in the {mapping_name}. This occured during extract_readable_name_from_mapping(), for the function {function_name}")
             return long_name
     return mapping[long_name]
     
@@ -590,11 +590,11 @@ def double_check_timeslice_details(timeslice_dict):
 # pickle_paths = ['./results/09-15-1533_20_USA_Reference_coin_mip/tmp/tall_results_dfs_20_USA_Reference_09-15-1533.pickle','./results/09-15-1533_20_USA_Reference_coin_mip/tmp/paths_dict_20_USA_Reference_09-15-1533.pickle', './results/09-15-1533_20_USA_Reference_coin_mip/tmp/config_dict_20_USA_Reference_09-15-1533.pickle']
 # plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
 
-# #%%
-# # #load the data
-# pickle_paths = ['./results/09-14-1715_19_THA_Target_coin_mip/tmp/tall_results_dfs_19_THA_Target_09-14-1715.pickle','./results/09-14-1715_19_THA_Target_coin_mip/tmp/paths_dict_19_THA_Target_09-14-1715.pickle', './results/09-14-1715_19_THA_Target_coin_mip/tmp/config_dict_19_THA_Target_09-14-1715.pickle']
+# # #%%
+# # # #load the data
+# pickle_paths = ['./results/09-16-1402_19_THA_Target_coin_mip/tmp/tall_results_dfs_19_THA_Target_09-16-1402.pickle','./results/09-16-1402_19_THA_Target_coin_mip/tmp/paths_dict_19_THA_Target_09-16-1402.pickle', './results/09-16-1402_19_THA_Target_coin_mip/tmp/config_dict_19_THA_Target_09-16-1402.pickle']
 # plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
 
-# # plotting_functions.plotting_handler(tall_results_dfs=tall_results_dfs,paths_dict=paths_dict,config_dict=config_dict,load_from_pickle=True, pickle_paths=None)
+# plotting_functions.plotting_handler(tall_results_dfs=tall_results_dfs,paths_dict=paths_dict,config_dict=config_dict,load_from_pickle=True, pickle_paths=None)
 
 # %%
