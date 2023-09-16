@@ -33,7 +33,7 @@ emissions_mapping = mapping['EMISSION'].set_index('long_name').to_dict()['plotti
 technology_color_dict = mapping['plotting_name_to_color'].set_index('plotting_name').to_dict()['color']
 timeslice_dict = OrderedDict(mapping['timeslices'].set_index('timeslice').to_dict(orient='index'))
 
-def plotting_handler(tall_results_dfs=None,paths_dict=None, config_dict=None,load_from_pickle=True,pickle_paths=None):
+def plotting_handler(tall_results_dfs=None,paths_dict={}, config_dict=None,load_from_pickle=True,pickle_paths=None):
     """Handler for plotting functions, pickle path is a list of two paths, the first is the path to the pickle of tall_results_dfs, the second is the path to the pickle of paths_dict. You will need to set them manually."""
     if load_from_pickle:
         if pickle_paths is None:

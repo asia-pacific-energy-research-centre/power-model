@@ -160,13 +160,14 @@ def create_data_config_with_short_names_as_keys(config_dict):
             del data_config_short_names[key]
     return data_config_short_names
 
-def raise_error_if_var_name_not_in_dict(x, col, wb):
+def raise_error_if_var_name_not_in_dict(x, col, wb=None):
     #not sure if this is the best way to do this but it works
     #it 
     # seemed like we were using col befor ebut i dont know where that came from
     breakpoint()
     logger.error(f'{x} is not in the long_variable_names_to_short_variable_names dictionary for the column {col}. Please add it to the dictionary or change it in the input data.')
-    wb.close()
+    if wb != None:
+        wb.close()
     sys.exit()
 
 def edit_input_data(data_config_short_names, scenario, economy, model_end_year,model_start_year,sheet,sheet_name,wb,long_variable_names_to_short_variable_names,use_long_var_names=False):#123 is config short anmes still going tp have dtuypes and stuff?
@@ -331,9 +332,12 @@ def convert_workbook_to_datafile(paths_dict, config_dict, long_var_names=False):
 
         p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
-        for line in p.stdout:
-            print(line, end='')  # print to console in real-time
-            logger.info(line)  # also log the output
+        if p.stdout is not None:
+            for line in p.stdout:
+                print(line, end='')  # print to console in real-time
+                logger.info(line)  # also log the output
+        else:
+            logger.info("No output from subprocess in convert_workbook_to_datafile()")
 
         p.wait()  # wait for the subprocess to finish
 

@@ -148,7 +148,7 @@ def convert_results_variables_back_to_long_names(results_dfs,paths_dict):
                 #use the long_variable_names_to_short_variable_names dict to change the values in the sheet
                 #first check if the string has apostrophes at the start and end. If so, remove them, these occur because the string has a number at the start
                 results_dfs[sheet][col] = results_dfs[sheet][col].str.strip("'")
-                results_dfs[sheet][col] = results_dfs[sheet][col].apply(lambda x: short_variable_names_to_long_variable_names[col][x] if x in short_variable_names_to_long_variable_names[col].keys() else model_preparation_functions.raise_error_if_var_name_not_in_dict(x))
+                results_dfs[sheet][col] = results_dfs[sheet][col].apply(lambda x: short_variable_names_to_long_variable_names[col][x] if x in short_variable_names_to_long_variable_names[col].keys() else model_preparation_functions.raise_error_if_var_name_not_in_dict(x, col))
     return results_dfs
 
 def get_sheet_names_for_file_names(config_dict, results_dfs):
