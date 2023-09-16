@@ -162,7 +162,9 @@ def create_data_config_with_short_names_as_keys(config_dict):
 
 def raise_error_if_var_name_not_in_dict(x, col, wb):
     #not sure if this is the best way to do this but it works
-    #it seemed like we were using col befor ebut i dont know where that came from
+    #it 
+    # seemed like we were using col befor ebut i dont know where that came from
+    breakpoint()
     logger.error(f'{x} is not in the long_variable_names_to_short_variable_names dictionary for the column {col}. Please add it to the dictionary or change it in the input data.')
     wb.close()
     sys.exit()
@@ -459,7 +461,6 @@ def create_new_directories(tmp_directory, results_directory,visualisation_direct
     if EMPTY_TMP_FOLDER_BEFORE_RUNNING:
         if os.path.exists(tmp_directory):
             shutil.rmtree(tmp_directory)
-    breakpoint()
     if not os.path.exists(tmp_directory):
         os.makedirs(tmp_directory)
     else:
