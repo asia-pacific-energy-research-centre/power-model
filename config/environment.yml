@@ -13,7 +13,7 @@ dependencies:
  - plotly
  - pip
  - pip:
-   - otoole
+   - otoole==1.0.4
    - mip
    - pydot
    - graphviz

@@ -63,9 +63,9 @@ def plotting_handler(tall_results_dfs=None,paths_dict={}, config_dict=None,load_
     fig_8th_graph_generation, fig_8th_graph_generation_title = plot_8th_graphs(paths_dict,config_dict)
 
     #put all figs in a list
-    figs = [fig_8th_graph_generation,fig_gen, fig_emissions, fig_capacity, fig_heat, fig_use_tech, fig_use_fuel]#+ figs_list_average_generation_by_timeslice #found timeselices to be too complicated to plot in dashboard so left them out
+    figs = [fig_8th_graph_generation,fig_gen, fig_emissions, fig_capacity, fig_heat, fig_use_tech]#, fig_use_fuel]#+ figs_list_average_generation_by_timeslice #found timeselices to be too complicated to plot in dashboard so left them out
     # fig_capacity_factor,#we wont plot capacity factor in dashboard
-    subplot_titles = [fig_8th_graph_generation_title,title_gen, fig_emissions_title, fig_capacity_title, title_heat, title_use_tech, title_use_fuel] #+ figs_list_average_generation_by_timeslice_title
+    subplot_titles = [fig_8th_graph_generation_title,title_gen, fig_emissions_title, fig_capacity_title, title_heat, title_use_tech]#, title_use_fuel] #+ figs_list_average_generation_by_timeslice_title
     
     if not HEAT_DATA_AVAILABLE:
         figs.remove(fig_heat)
@@ -217,6 +217,10 @@ def plot_generation_and_heat_annual(tall_results_dfs, paths_dict):
     generation = generation.sort_values(by=['YEAR','VALUE'],ascending=False)
     heat = heat.sort_values(by=['YEAR','VALUE'],ascending=False)
 
+    heat['VALUE'] =heat['VALUE']*3.6
+
+    #ADD HEAT DEMAND SCATTER HRE FINN
+
     #PLOT GENERATION
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the YEAR
     title_gen = 'Generation by technology TWh'
@@ -228,7 +232,7 @@ def plot_generation_and_heat_annual(tall_results_dfs, paths_dict):
     fig_gen.write_html(paths_dict['visualisation_directory']+'/annual_generation.html', auto_open=False)
 
     #PLOT HEAT
-    title_heat = 'Heat by technology TWh'
+    title_heat = 'Heat by technology PJ'
     fig_heat = px.area(heat, x="YEAR", y="VALUE", color='TECHNOLOGY',title=title_heat,color_discrete_map=create_color_dict(heat['TECHNOLOGY']))
     
     #save as html
@@ -293,7 +297,7 @@ def plot_capacity_annual(tall_results_dfs, paths_dict):
     return fig,title
 
 def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
-    
+    #TODO CHECK THAT HEAT IS BEING HANDLED CORRECTLY
     generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)
     generation = generation.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
     #remove technologies for storage
@@ -328,6 +332,7 @@ def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
 
 def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     """Calculate average generation by timeslice for each technology and year. Also calculate average generation by technology and year for power plants, to Storage, from Storage and  demand"""
+    #TODO CHECK THAT HEAT IS BEING HANDLED CORRECTLY
     ###GENERATION###
     generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)
     #sum generation by technology, timeslice and year
