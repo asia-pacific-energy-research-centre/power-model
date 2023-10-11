@@ -245,7 +245,7 @@ def plot_generation_and_heat_annual(tall_results_dfs, paths_dict):
     fig_heat = px.area(heat, x="YEAR", y="VALUE", color='TECHNOLOGY',title=title_heat,color_discrete_map=create_color_dict(heat['TECHNOLOGY']))
     
     #and add line with points for heat_demand
-    fig_heat.add_scatter(x=heat_demand['YEAR'], y=heat_demand['VALUE'], mode='lines+markers', name='Demand', line=dict(color=technology_color_dict['Demand']), marker=dict(color=technology_color_dict['Demand']))
+    # fig_heat.add_scatter(x=heat_demand['YEAR'], y=heat_demand['VALUE'], mode='lines+markers', name='Demand', line=dict(color=technology_color_dict['Demand']), marker=dict(color=technology_color_dict['Demand']))
     
     #save as html
     fig_heat.write_html(paths_dict['visualisation_directory']+'/annual_heat_production.html', auto_open=False)    
