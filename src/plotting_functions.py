@@ -193,8 +193,13 @@ def plot_input_use_by_fuel_and_technology(tall_results_dfs, paths_dict):
     return fig_use_fuel,title_use_fuel, fig_use_tech,title_use_tech
 
 def plot_generation_and_heat_annual(tall_results_dfs, paths_dict):
-    """Using data from ProductionByTechnology sheet , plot generation by technology. Also plot total demand as a line on the same graph"""##TODO MAKE THIS IDENTIFY IF FUEL COL CONTAINS HEAT OR ELECTRICITY AND MAKE SURE TO LABEL THE TECHNOLOGY ACCORDINGLY
-    generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)#TODO DO OMTHING WITH HEAT
+    """Using data from ProductionByTechnology sheet , plot generation and heat by technology. Also plot total demand as a line on the same graph. gen and heart are done at same time because they come from same spreadsheet
+    
+    
+    tall_results_dfs - tall_results_dfs contains all the data from the output files. It is a dictionary with the sheet name as the key and the dataframe as the value.
+    paths_dict - paths_dict contains all the paths to the input and output files. It is a dictionary with the path name as the key and the path as the value.
+    """
+    generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)
     #sum generation by technology and year
     generation = generation.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
     heat = heat.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
@@ -204,22 +209,26 @@ def plot_generation_and_heat_annual(tall_results_dfs, paths_dict):
     heat = heat[heat['TECHNOLOGY'].str.contains('Storage') == False]#dont know if this matters for heat tbh
     generation = generation[generation['TECHNOLOGY'] != 'Transmission']
     heat = heat[heat['TECHNOLOGY'] != 'Transmission']
-
-    elec_demand = tall_results_dfs['Demand'].copy()
+    
+    elec_demand = tall_results_dfs['Demand'].loc[tall_results_dfs['Demand']['FUEL'].str.contains('heat') == False].copy()
     #sum elec_demand by year
     elec_demand = elec_demand.groupby(['YEAR']).sum().reset_index()
     #convert to TWh by /3.6
     elec_demand['VALUE'] = elec_demand['VALUE']/3.6
     #create a column called TECHNOLOGY with value 'Demand'
     elec_demand['TECHNOLOGY'] = 'Demand'
+    #NB we found that we werent gettig any heat from the demand sheet so we dont need this. but leaving it here just in case
+    # heat_demand = tall_results_dfs['Demand'].loc[tall_results_dfs['Demand']['FUEL'].str.contains('heat') == True].copy()
+    # #sum heat_demand by year
+    # heat_demand = heat_demand.groupby(['YEAR']).sum().reset_index()
+    # #convert to TWh by /3.6
+    # heat_demand['VALUE'] = heat_demand['VALUE']/3.6
+    # #create a column called TECHNOLOGY with value 'Demand'
+    # heat_demand['TECHNOLOGY'] = 'Demand'#
     
     #order by value
     generation = generation.sort_values(by=['YEAR','VALUE'],ascending=False)
     heat = heat.sort_values(by=['YEAR','VALUE'],ascending=False)
-
-    heat['VALUE'] =heat['VALUE']*3.6
-
-    #ADD HEAT DEMAND SCATTER HRE FINN
 
     #PLOT GENERATION
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the YEAR
@@ -234,6 +243,9 @@ def plot_generation_and_heat_annual(tall_results_dfs, paths_dict):
     #PLOT HEAT
     title_heat = 'Heat by technology PJ'
     fig_heat = px.area(heat, x="YEAR", y="VALUE", color='TECHNOLOGY',title=title_heat,color_discrete_map=create_color_dict(heat['TECHNOLOGY']))
+    
+    #and add line with points for heat_demand
+    fig_heat.add_scatter(x=heat_demand['YEAR'], y=heat_demand['VALUE'], mode='lines+markers', name='Demand', line=dict(color=technology_color_dict['Demand']), marker=dict(color=technology_color_dict['Demand']))
     
     #save as html
     fig_heat.write_html(paths_dict['visualisation_directory']+'/annual_heat_production.html', auto_open=False)    
@@ -297,7 +309,15 @@ def plot_capacity_annual(tall_results_dfs, paths_dict):
     return fig,title
 
 def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
-    #TODO CHECK THAT HEAT IS BEING HANDLED CORRECTLY
+    """plots generation/capacity/8760/1000 > since gen is in TWh and cap in GW, divide by 8760 hours to get 1 (or less than 1)
+
+    Args:
+        tall_results_dfs (_type_): _description_
+        paths_dict (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)
     generation = generation.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
     #remove technologies for storage
@@ -332,23 +352,29 @@ def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
 
 def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     """Calculate average generation by timeslice for each technology and year. Also calculate average generation by technology and year for power plants, to Storage, from Storage and  demand"""
-    #TODO CHECK THAT HEAT IS BEING HANDLED CORRECTLY
     ###GENERATION###
     generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)
     #sum generation by technology, timeslice and year
     generation = generation.groupby(['TECHNOLOGY','YEAR','TIMESLICE']).sum().reset_index()
 
     ###DEMAND###
-    demand = tall_results_dfs['Demand'].copy()
-    #sum demand by year, timeslice
-    demand = demand.groupby(['YEAR','TIMESLICE']).sum().reset_index()#todo havent checked that demand by timeselice ends up alright
+    elec_demand = tall_results_dfs['Demand'].loc[tall_results_dfs['Demand']['FUEL'].str.contains('heat') == False].copy()
+    #sum elec_demand by year, timeslice
+    elec_demand = elec_demand.groupby(['YEAR','TIMESLICE']).sum().reset_index()
     #convert to TWh by /3.6
-    demand['VALUE'] = demand['VALUE']/3.6
+    elec_demand['VALUE'] = elec_demand['VALUE']/3.6
     #create a column called TECHNOLOGY with value 'Demand'
-    demand['TECHNOLOGY'] = 'Demand'
+    elec_demand['TECHNOLOGY'] = 'Demand'
+    
+    # heat_demand = tall_results_dfs['Demand'].loc[tall_results_dfs['Demand']['FUEL'].str.contains('heat') == True].copy()
+    # #sum heat_demand by year, timeslice
+    # heat_demand = heat_demand.groupby(['YEAR','TIMESLICE']).sum().reset_index()
+    # #create a column called TECHNOLOGY with value 'Demand'
+    # heat_demand['TECHNOLOGY'] = 'Demand'
 
     #concat generation and demand
-    generation = pd.concat([generation,demand])  
+    generation = pd.concat([generation,elec_demand])  
+    # heat = pd.concat([heat,heat_demand])
 
     double_check_timeslice_details(timeslice_dict)
     #extract details about timeslice and put them into a column called TOTAL_HOURS
@@ -590,9 +616,9 @@ def double_check_timeslice_details(timeslice_dict):
     
 
 #%%
-# ##########################################################################################
-# # #load the data
-# pickle_paths = ['./results/09-15-1533_20_USA_Reference_coin_mip/tmp/tall_results_dfs_20_USA_Reference_09-15-1533.pickle','./results/09-15-1533_20_USA_Reference_coin_mip/tmp/paths_dict_20_USA_Reference_09-15-1533.pickle', './results/09-15-1533_20_USA_Reference_coin_mip/tmp/config_dict_20_USA_Reference_09-15-1533.pickle']
+# # ##########################################################################################
+# # # #load the data
+# pickle_paths = ['./results/10-11-1054_20_USA_Reference_coin_mip/tmp/tall_results_dfs_20_USA_Reference_10-11-1054.pickle','./results/10-11-1054_20_USA_Reference_coin_mip/tmp/paths_dict_20_USA_Reference_10-11-1054.pickle', './results/10-11-1054_20_USA_Reference_coin_mip/tmp/config_dict_20_USA_Reference_10-11-1054.pickle']
 # plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
 
 # # #%%
