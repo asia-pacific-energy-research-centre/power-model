@@ -28,7 +28,9 @@ warnings.filterwarnings("ignore", message="The default value of numeric_only in 
 mapping = pd.read_excel('config/plotting_config_and_timeslices.xlsx', sheet_name=None)
 powerplant_mapping = mapping['POWERPLANT'].set_index('long_name').to_dict()['plotting_name']
 input_fuel_mapping = mapping['INPUT_FUEL'].set_index('long_name').to_dict()['plotting_name']
-fuel_mapping = mapping['FUEL'].set_index('long_name').to_dict()['plotting_name']#this seems to be more specifcially the input fuel but i dont know how it differs from input_fuel_mapping. 
+fuel_mapping = mapping['FUEL'].set_index('long_name').to_dict()['plotting_name']
+EBT_mapping = mapping['EBT_mapping'] #keep this as a df as we will use it to merge with the data
+#this seems to be more specifcially the input fuel but i dont know how it differs from input_fuel_mapping. 
 emissions_mapping = mapping['EMISSION'].set_index('long_name').to_dict()['plotting_name']
 technology_color_dict = mapping['plotting_name_to_color'].set_index('plotting_name').to_dict()['color']
 timeslice_dict = OrderedDict(mapping['timeslices'].set_index('timeslice').to_dict(orient='index'))
@@ -74,6 +76,50 @@ def plotting_handler(tall_results_dfs=None,paths_dict={}, config_dict=None,load_
     put_all_graphs_in_one_html(figs, paths_dict)
     create_dashboard(figs, paths_dict,subplot_titles)
     
+    #laslty create the output csv of use by technology, summed up by FUEL and YEAR. This is used as teh final output from the model, for when the outlook is written*
+    extract_and_format_final_energy_output_for_EBT(paths_dict, config_dict, tall_results_dfs)
+    
+def extract_and_format_final_energy_output_for_EBT(paths_dict, config_dict, tall_results_dfs):
+    #the data is mostly in the categories we want, we will do only a few things to finalise it:
+    fuel_use = tall_results_dfs['UseByTechnology'].copy()
+    #we created a mapping based on what the combination of TECHNOLOGY and FUEL should be called. We will use this to rename the columns:
+    EBT_mapping = mapping['EBT_mapping']
+    #merge the mapping with the data
+    fuel_use = fuel_use.merge(EBT_mapping, on=['TECHNOLOGY','FUEL'], how='left')
+    #check the reequired columns are there:
+    #fuels	subfuels	sectors	sub1sectors	sub2sectors	sub3sectors	sub4sectors
+    required_columns = ['fuels','subfuels','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']
+    for col in required_columns:
+        if col not in fuel_use.columns:
+            raise ValueError('The column '+col+' is not in the UseByTechnology sheet. Please add it to the sheet and try again.')
+    #drop where REMOVE is true
+    fuel_use = fuel_use[fuel_use['REMOVE'] == False]
+    #drop the REMOVE col
+    fuel_use = fuel_use.drop(columns=['REMOVE'])
+    #where the mapping is in any col let the user know
+    if fuel_use.isnull().values.any():
+        breakpoint()
+        raise ValueError('There are some combinations of TECHNOLOGY and FUEL that are not in the mapping. Please add them to the TECHNOLOGY_FUEL sheet in config/plotting_config_and_timeslices.xlsx')
+    
+    #we want to drop the TECHNOLOGY and FUEL cols nwo
+    fuel_use = fuel_use.drop(columns=['TECHNOLOGY','FUEL'])
+    #rename REGION to economy
+    fuel_use = fuel_use.rename(columns={'REGION':'economy'})
+    #create scenario col
+    fuel_use['scenario'] = config_dict['scenario'].lower()
+    #group by all cols and sum up the VALUE col
+    fuel_use = fuel_use.groupby(['scenario','economy','fuels','subfuels','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','YEAR']).sum().reset_index()
+    #pivot on YEAR col
+    fuel_use =fuel_use.pivot(index=['scenario','economy','fuels','subfuels','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors'], columns='YEAR', values='VALUE').reset_index()
+    
+    #save
+    economy = fuel_use.loc[0,'economy']
+    fuel_use.to_csv(paths_dict['visualisation_directory']+'/EBT_output_'+economy+'_'+config_dict['scenario']+'_'+paths_dict['FILE_DATE_ID']+'.csv')
+    
+    print('Saved final energy output for EBT to '+paths_dict['visualisation_directory']+'/EBT_output_'+economy+'_'+config_dict['scenario']+'_'+paths_dict['FILE_DATE_ID']+'.csv')
+    
+    
+        
 def extract_and_map_ProductionByTechnology(tall_results_dfs):
     """Extract generation (and other) data from ProductionByTechnology sheet. But also extract storage charge and discharge and handle it separately then append them generation. Also convert to TWh. Note that the final data will not have been summed up by technology, timeslice or year yet.
     
@@ -156,6 +202,7 @@ def plot_input_use_by_fuel_and_technology(tall_results_dfs, paths_dict):
     Plot the UseByTechnology sheet from output by the technology and fuel cols. will need to drop the timeselice col. Think it will be in pj.
     tall_results_dfs['UseByTechnology']
     """
+    breakpoint()
     input_use = extract_and_map_UseByTechnology(tall_results_dfs)#TODO DO OMTHING WITH HEAT
     #sum input_use by technology and year
     input_use = input_use.groupby(['FUEL', 'TECHNOLOGY', 'YEAR']).sum().reset_index()

@@ -606,6 +606,7 @@ def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,USE_TMP_FILES_FROM_PREVI
 
     #PUT EVERYTHING IN A DICTIONARY
     paths_dict = {}
+    paths_dict['FILE_DATE_ID'] = FILE_DATE_ID
     paths_dict['tmp_directory'] = tmp_directory
     paths_dict['results_directory'] = results_directory
     paths_dict['visualisation_directory'] = visualisation_directory
