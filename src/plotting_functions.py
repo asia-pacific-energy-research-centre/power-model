@@ -626,9 +626,9 @@ def plot_8th_graphs(paths_dict, config_dict):
     #extract data based on the config file
     #NOTEHTAT THIS WILL USE THE SAME SETTINGS AS THE 9TH OUTPUT FOR ECONOMY AND SCENARIO. it might be useful later to have a different config file for the 8th output
     scenario = config_dict['scenario']
-    if scenario == 'Target':
-        # scenario='Carbon Neutral'
-        scenario='Reference'#TODO CHANGE THIS BACK TO TARGET WHEN YOU HAVE THE DATA
+   # if scenario == 'Target':
+   #     # scenario='Carbon Neutral'
+   #     scenario='Reference'#TODO CHANGE THIS BACK TO TARGET WHEN YOU HAVE THE DATA
     economy = config_dict['economy']
     
     for sheet in expected_sheet_names:
