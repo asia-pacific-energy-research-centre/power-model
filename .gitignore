@@ -27,6 +27,7 @@ exploration/*
 !config/plotting_config_and_timeslices-MASTER.xlsx
 !config/osemosys.txt
 !config/osemosys_fast.txt
+!config/EBT_mapping-MASTER.xlsx
 #################DEFAULT#################
 
 # Byte-compiled / optimized / DLL files
