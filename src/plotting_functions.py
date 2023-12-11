@@ -29,11 +29,9 @@ mapping = pd.read_excel('config/plotting_config_and_timeslices.xlsx', sheet_name
 powerplant_mapping = mapping['POWERPLANT']
 input_fuel_mapping = mapping['INPUT_FUEL']
 fuel_mapping = mapping['FUEL']
-EBT_mapping = mapping['EBT_mapping']
-# EBT_mapping_FUEL = mapping['EBT_mapping_FUEL']
-# EBT_mapping_TECHNOLOGY = mapping['EBT_mapping_TECH']
-#this seems to be more specifcially the input fuel but i dont know how it differs from input_fuel_mapping. 
-emissions_mapping = mapping['EMISSION']
+EBT_mapping = pd.read_excel('config/EBT_mapping.xlsx', sheet_name=None)
+ProductionByTechnology_mapping = EBT_mapping['ProductionByTechnologyAnnual']
+TotalCapacityAnnual_mapping = EBT_mapping['TotalCapacityAnnual']
 technology_color_dict = mapping['plotting_name_to_color'].set_index('plotting_name').to_dict()['color']
 timeslice_dict = OrderedDict(mapping['timeslices'].set_index('timeslice').to_dict(orient='index'))
 
@@ -80,7 +78,7 @@ def plotting_handler(tall_results_dfs=None,paths_dict={}, config_dict=None,load_
     create_dashboard(figs, paths_dict,subplot_titles, dashboard_title='all_graphs')
     
     #laslty create the output csv of use by technology, summed up by FUEL and YEAR. This is used as teh final output from the model, for when the outlook is written*
-    extract_and_format_final_energy_output_for_EBT(paths_dict, config_dict, tall_results_dfs)
+    extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_results_dfs)
     
     
 
@@ -174,72 +172,36 @@ def create_costs_by_tech_dashboard(fixed_costs, variable_costs, paths_dict, subp
     # Create the dashboard HTML
     create_dashboard(figs, paths_dict, subplot_titles, dashboard_title='costs_by_tech')
 
-def extract_and_format_final_energy_output_for_EBT(paths_dict, config_dict, tall_results_dfs):
-    #the data is mostly in the categories we want, we will do only a few things to finalise it:
+def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_results_dfs):
+    """we've created a mapping just like is used for the plotting, to map the TECHNOLOGY and FUEL cols to the EBT readable names in the catogories: sectors, sub1sectors, sub2sectors, sub3sectors, sub4sectors, fuels, subfuels. We wil use this process for both the ProductionByTechnologyAnnual and TotalCapacityAnnual sheets for energuy and capacity respectively."""
     breakpoint()
-    # fuel_use = tall_results_dfs['UseByTechnology'].copy()
-    # #drop TIMESLICE col and sheet name col
-    # fuel_use = fuel_use.drop(columns=['TIMESLICE'])
-    # #sum up by remaining cols
-    # fuel_use = fuel_use.groupby(['REGION','TECHNOLOGY','FUEL','YEAR', 'SHEET_NAME']).sum().reset_index()
-    # breakpoint()
     
-    production = tall_results_dfs['ProductionByTechnology'].copy()
-    production = production.drop(columns=['TIMESLICE'])
-    production = production.groupby(['REGION','TECHNOLOGY','FUEL','YEAR']).sum().reset_index()
-    #create a col called HEAT and set it to true if the fuel contains heat
-    production['HEAT'] = production['FUEL'].str.contains('heat')
+    production = tall_results_dfs['ProductionByTechnologyAnnual'].copy()
+    capacity = tall_results_dfs['TotalCapacityAnnual'].copy()
+    production = production[['REGION','TECHNOLOGY','FUEL','YEAR', 'VALUE']].groupby(['REGION','TECHNOLOGY','FUEL','YEAR']).sum().reset_index().copy()
+    capacity = capacity[['REGION','TECHNOLOGY','YEAR', 'VALUE']].groupby(['REGION','TECHNOLOGY','YEAR']).sum().reset_index().copy()
     
+    production = production.merge(ProductionByTechnology_mapping, on=['TECHNOLOGY','FUEL'], how='left')
+    capacity = capacity.merge(TotalCapacityAnnual_mapping, on=['TECHNOLOGY'], how='left')
     
-    #merge EBT_mapping_TECHNOLOGY and EBT_mapping_FUEL. Do it using a full cross so that we get all combinations of TECHNOLOGY and FUEL
-    # EBT_mapping = pd.merge(EBT_mapping_TECHNOLOGY, EBT_mapping_FUEL, how='cross', suffixes=('_TECHNOLOGY', '_FUEL')).drop_duplicates()
-    #merge the mapping with the data
-    # fuel_use = fuel_use.merge(EBT_mapping, on=['TECHNOLOGY','FUEL', 'SHEET_NAME'], how='left')
-    production = production.merge(EBT_mapping, on=['TECHNOLOGY','FUEL'], how='left')
+    #drop where TO_USE is  False
+    production = production[production['TO_USE'] == True].copy()
+    capacity = capacity[capacity['TO_USE'] == True].copy()
     
-    # #TODO I THINK WE CAN JSUT ASSUME ANYTHING IN FUEL_USE IS NEGATIVE AND ANYTHING IN PRODUCTION IS POSITIVE
-    # fuel_use['VALUE'] = -fuel_use['VALUE']
-    # #drop SHEET_NAME col
-    # # fuel_use = fuel_use.drop(columns=['SHEET_NAME','HEAT'])
-    # production = production.drop(columns=['SHEET_NAME','HEAT'])
+    #where fuel is not 17_electricity, set VALUE to negative
+    production['VALUE'] = np.where(production['FUEL'] != '17_electricity', -production['VALUE'], production['VALUE'])
     
-    #check the reequired columns are there:
-    #fuels	subfuels	sectors	sub1sectors	sub2sectors	sub3sectors	sub4sectors
-    required_columns = ['fuels','subfuels','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']
-    for col in required_columns:
-        if col not in production.columns:
-            raise ValueError('The column '+col+' is not in the ProductionByTechnology sheet. Please add it to the sheet and try again.')
     #where the mapping is missing in any col let the user know
-    # if fuel_use.isnull().values.any():
-    #     breakpoint()
-    #     missing_rows = fuel_use[fuel_use.isnull().any(axis=1)]
-    #     #dentify if hte mmissing rows are for TECHNOLOGY or FUEL:
-    #     #if fuels and subfuels are null and sectors arent then its only a fuel issue (and could also be a technology issue)
-    #     FUEL_missing = missing_rows[missing_rows['fuels'].isnull() & missing_rows['sectors'].notnull()][['FUEL']].drop_duplicates()
-    #     TECHNOLOGY_missing = missing_rows[missing_rows['fuels'].notnull() & missing_rows['sectors'].isnull()][['TECHNOLOGY']].drop_duplicates()
-    #     TECHNOLOGY_and_FUEL_missing = missing_rows[missing_rows['fuels'].isnull() & missing_rows['sectors'].isnull()][['TECHNOLOGY','FUEL']].drop_duplicates()
-    #     raise ValueError('There are some combinations of TECHNOLOGY and FUEL that are not in the ESTO mapping for input use. The missing combinations are: FUELS: '+str(FUEL_missing)+' TECHNOLOGY: '+str(TECHNOLOGY_missing)+' TECHNOLOGY and FUEL: '+str(TECHNOLOGY_and_FUEL_missing))
     if production.isnull().values.any():
-        #print the rows that are missing:
+        breakpoint()
         missing_rows = production[production.isnull().any(axis=1)][['TECHNOLOGY','FUEL']].drop_duplicates()
-        raise ValueError('There are some combinations of TECHNOLOGY and FUEL that are not in the ESTO mapping for production. The missing combinations are: '+str(missing_rows))
-    breakpoint()
-    #drop where REMOVE is true
-    # fuel_use = fuel_use[fuel_use['REMOVE_TECHNOLOGY'] == False]
-    # fuel_use = fuel_use.drop(columns=['REMOVE_TECHNOLOGY'])
-    production = production[production['REMOVE'] == False]
-    production = production.drop(columns=['REMOVE'])
-    
-    #where OUTPUT is False, set VALUE to negative
-    production.loc[production['OUTPUT'] == False, 'VALUE'] = -production['VALUE']
-    # # fuel_use = fuel_use[fuel_use['REMOVE_FUEL'] == False]
-    # # fuel_use = fuel_use.drop(columns=['REMOVE_FUEL'])
-    # production = production[production['REMOVE_FUEL'] == False]
-    # production = production.drop(columns=['REMOVE_FUEL'])
-    
-    # #concat production and fuel use
-    # input_and_output = pd.concat([fuel_use,production])
-    
+        raise ValueError('There are some combinations of TECHNOLOGY and FUEL that are not in the ESTO mapping for input use. The missing combinations are: '+str(missing_rows))
+    if capacity.isnull().values.any():
+        breakpoint()
+        #print the rows that are missing:
+        missing_rows = capacity[capacity.isnull().any(axis=1)][['TECHNOLOGY']].drop_duplicates()
+        raise ValueError('There are some TECHNOLOGYs that are not in the ESTO mapping for capacity. The missing values are: '+str(missing_rows))
+           
     #we want to drop the TECHNOLOGY and FUEL cols nwo
     production = production.drop(columns=['TECHNOLOGY','FUEL'])
     #rename REGION to economy
@@ -251,18 +213,28 @@ def extract_and_format_final_energy_output_for_EBT(paths_dict, config_dict, tall
     #pivot on YEAR col
     production =production.pivot(index=['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','fuels','subfuels'], columns='YEAR', values='VALUE').reset_index()
     
+    #same for caacity
+    capacity = capacity.drop(columns=['TECHNOLOGY'])
+    #rename REGION to economy
+    capacity = capacity.rename(columns={'REGION':'economy'})
+    #create scenario col
+    capacity['scenario'] = config_dict['scenario'].lower()
+    #group by all cols and sum up the VALUE col
+    capacity = capacity.groupby(['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','YEAR']).sum().reset_index()
+    #pivot on YEAR col
+    capacity =capacity.pivot(index=['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors'], columns='YEAR', values='VALUE').reset_index()
+    
     #save
     economy = production.loc[0,'economy']
-    production.to_csv(paths_dict['visualisation_directory']+'/EBT_output_'+economy+'_'+config_dict['scenario']+'_'+paths_dict['FILE_DATE_ID']+'.csv')
+    production.to_csv(paths_dict['visualisation_directory']+'/EBT_energy_'+economy+'_'+config_dict['scenario']+'_'+paths_dict['FILE_DATE_ID']+'.csv')
+    capacity.to_csv(paths_dict['visualisation_directory']+'/EBT_capacity_'+economy+'_'+config_dict['scenario']+'_'+paths_dict['FILE_DATE_ID']+'.csv')
     
-    print('Saved final energy output for EBT to '+paths_dict['visualisation_directory']+'/EBT_output_'+economy+'_'+config_dict['scenario']+'_'+paths_dict['FILE_DATE_ID']+'.csv')
-    breakpoint()
-    
+    print('Saved final energy output for EBT to '+paths_dict['visualisation_directory']+'/EBT_energy_'+economy+'_'+config_dict['scenario']+'_'+paths_dict['FILE_DATE_ID']+'.csv')
+    print('Saved final capacity output for EBT to '+paths_dict['visualisation_directory']+'/EBT_capacity_'+economy+'_'+config_dict['scenario']+'_'+paths_dict['FILE_DATE_ID']+'.csv')   
     
         
 def extract_and_map_ProductionByTechnology(tall_results_dfs):
     """Extract generation (and other) data from ProductionByTechnology sheet. But also extract storage charge and discharge and handle it separately then append them generation. Also convert to TWh. Note that the final data will not have been summed up by technology, timeslice or year yet.
-    
     """
     ###GENERATION and STORAGE DISCHARGE###
     production = tall_results_dfs['ProductionByTechnology'].copy()
