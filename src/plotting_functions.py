@@ -77,7 +77,7 @@ def plotting_handler(tall_results_dfs=None,paths_dict={}, config_dict=None,load_
     put_all_graphs_in_one_html(figs, paths_dict)
     create_dashboard(figs, paths_dict,subplot_titles, dashboard_title='all_graphs')
     
-    #laslty create the output csv of use by technology, summed up by FUEL and YEAR. This is used as teh final output from the model, for when the outlook is written*
+    #laslty create the output csvs for use by EBT system
     extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_results_dfs)
     
     
@@ -174,7 +174,6 @@ def create_costs_by_tech_dashboard(fixed_costs, variable_costs, paths_dict, subp
 
 def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_results_dfs):
     """we've created a mapping just like is used for the plotting, to map the TECHNOLOGY and FUEL cols to the EBT readable names in the catogories: sectors, sub1sectors, sub2sectors, sub3sectors, sub4sectors, fuels, subfuels. We wil use this process for both the ProductionByTechnologyAnnual and TotalCapacityAnnual sheets for energuy and capacity respectively."""
-    breakpoint()
     
     production = tall_results_dfs['ProductionByTechnologyAnnual'].copy()
     capacity = tall_results_dfs['TotalCapacityAnnual'].copy()
@@ -773,13 +772,13 @@ def double_check_timeslice_details(timeslice_dict):
 #%%
 # # ##########################################################################################
 # # # #load the data
-pickle_paths = ['./results/10-31-1642_20_USA_Reference_coin_mip/tmp/tall_results_dfs_20_USA_Reference_10-31-1642.pickle','./results/10-31-1642_20_USA_Reference_coin_mip/tmp/paths_dict_20_USA_Reference_10-31-1642.pickle', './results/10-31-1642_20_USA_Reference_coin_mip/tmp/config_dict_20_USA_Reference_10-31-1642.pickle']
-plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
+# pickle_paths = ['./results/10-31-1642_20_USA_Reference_coin_mip/tmp/tall_results_dfs_20_USA_Reference_10-31-1642.pickle','./results/10-31-1642_20_USA_Reference_coin_mip/tmp/paths_dict_20_USA_Reference_10-31-1642.pickle', './results/10-31-1642_20_USA_Reference_coin_mip/tmp/config_dict_20_USA_Reference_10-31-1642.pickle']
+# plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
 
-# # #%%
-# # # #load the data
-pickle_paths = ['./results/11-02-1120_19_THA_Target_coin_mip/tmp/tall_results_dfs_19_THA_Target_11-02-1120.pickle','./results/11-02-1120_19_THA_Target_coin_mip/tmp/paths_dict_19_THA_Target_11-02-1120.pickle', './results/11-02-1120_19_THA_Target_coin_mip/tmp/config_dict_19_THA_Target_11-02-1120.pickle']
-plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
+# # # #%%
+# # # # #load the data
+# pickle_paths = ['./results/11-02-1120_19_THA_Target_coin_mip/tmp/tall_results_dfs_19_THA_Target_11-02-1120.pickle','./results/11-02-1120_19_THA_Target_coin_mip/tmp/paths_dict_19_THA_Target_11-02-1120.pickle', './results/11-02-1120_19_THA_Target_coin_mip/tmp/config_dict_19_THA_Target_11-02-1120.pickle']
+# plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
 
 # plotting_functions.plotting_handler(tall_results_dfs=tall_results_dfs,paths_dict=paths_dict,config_dict=config_dict,load_from_pickle=True, pickle_paths=None)
 
