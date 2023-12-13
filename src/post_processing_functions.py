@@ -596,13 +596,27 @@ def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_result
     production = production.merge(ProductionByTechnology_mapping, on=['TECHNOLOGY','FUEL'], how='left')
     capacity = capacity.merge(TotalCapacityAnnual_mapping, on=['TECHNOLOGY'], how='left')
     
+    #also, create an output fuel=17_electricity row for sector=09_total_transformation_sector, for each uniue sub2sectors. This is a bit complicated but essentially we will take the dta where sectors is 18_electricity_output_in_gwh, grab the sub2sectors and remove the first 9 characters, eg. 18_02_01_ then call that the powerplant. Then match that wth the same powerplants in sub2sectors in the 09_total_transformation_sector sector to use that row for its sectors columns. Call the fuel column 17_electricity though.
+    electricity_output = production[production['sectors'] == '18_electricity_output_in_gwh'].copy()
+    electricity_output['powerplant'] = electricity_output['sub2sectors'].str[9:]
+    electricity_output_new_rows = production[production['sectors']=='09_total_transformation_sector'].copy()
+    electricity_output_new_rows['powerplant'] = electricity_output_new_rows['sub2sectors'].str[9:]
+    electricity_output_new_rows =electricity_output_new_rows[['powerplant','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']].drop_duplicates()
+    electricity_output_new_rows = electricity_output_new_rows.merge(electricity_output.drop(columns=['sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']), on='powerplant', how='right')    
+    electricity_output_new_rows['fuels'] = '17_electricity'
+    electricity_output_new_rows['subfuels'] = 'x'
+    electricity_output_new_rows = electricity_output_new_rows.drop(columns=['powerplant'])
+    #set multiplier to 1
+    electricity_output_new_rows['MULTIPLIER'] = 1
+    production = pd.concat([production, electricity_output_new_rows], ignore_index=True)
+    
     #drop where TO_USE is  False
     production = production[production['TO_USE'] == True].copy()
     capacity = capacity[capacity['TO_USE'] == True].copy()
     
     # in production times the value by MULITPLIER. this is used for losses, unit conversion and so on:
     production['VALUE'] = production['VALUE']*production['MULTIPLIER']
-    
+    breakpoint()
     #where the mapping is missing in any col let the user know
     if production.isnull().values.any():
         breakpoint()
@@ -637,8 +651,8 @@ def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_result
     capacity =capacity.pivot(index=['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors'], columns='YEAR', values='VALUE').reset_index()
     
     #save
-    production.to_csv(paths_dict['EBT_output_energy'])
-    capacity.to_csv(paths_dict['EBT_output_capacity'])
+    production.to_csv(paths_dict['EBT_output_energy'], index=False)
+    capacity.to_csv(paths_dict['EBT_output_capacity'], index=False)
     
     print('Saved final energy output for EBT')
     print('Saved final capacity output for EBT')
