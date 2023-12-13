@@ -35,6 +35,8 @@ TotalCapacityAnnual_mapping = EBT_mapping['TotalCapacityAnnual']
 technology_color_dict = mapping['plotting_name_to_color'].set_index('plotting_name').to_dict()['color']
 timeslice_dict = OrderedDict(mapping['timeslices'].set_index('timeslice').to_dict(orient='index'))
 
+CREATE_COSTS_DASHBOARD=False
+
 def plotting_handler(tall_results_dfs=None,paths_dict={}, config_dict=None,load_from_pickle=True,pickle_paths=None):
     """Handler for plotting functions, pickle path is a list of two paths, the first is the path to the pickle of tall_results_dfs, the second is the path to the pickle of paths_dict. You will need to set them manually."""
     if load_from_pickle:
@@ -64,11 +66,11 @@ def plotting_handler(tall_results_dfs=None,paths_dict={}, config_dict=None,load_
     
     fig_8th_graph_generation, fig_8th_graph_generation_title = plot_8th_graphs(paths_dict,config_dict)
 
-    fig_cost_per_unit_production,title_cost_per_unit_production, fig_fixed_and_variable,title_fixed_and_variable = plot_cost_per_unit_production(tall_results_dfs, paths_dict, config_dict)
+    fig_cost_per_unit_production,title_cost_per_unit_production, fig_fixed_and_variable,title_fixed_and_variable = plot_cost_per_unit_production(tall_results_dfs, paths_dict, config_dict, CREATE_COSTS_DASHBOARD=CREATE_COSTS_DASHBOARD)
     #put all figs in a list
-    figs = [fig_8th_graph_generation,fig_gen, fig_emissions, fig_capacity, fig_heat, fig_use_tech, fig_cost_per_unit_production, fig_fixed_and_variable]#, fig_use_fuel]#+ figs_list_average_generation_by_timeslice #found timeselices to be too complicated to plot in dashboard so left them out
+    figs = [fig_8th_graph_generation,fig_gen, fig_emissions, fig_capacity, fig_heat, fig_use_tech]#, fig_cost_per_unit_production, fig_fixed_and_variable]#, fig_use_fuel]#+ figs_list_average_generation_by_timeslice #found timeselices to be too complicated to plot in dashboard so left them out
     # fig_capacity_factor,#we wont plot capacity factor in dashboard
-    subplot_titles = [fig_8th_graph_generation_title,title_gen, fig_emissions_title, fig_capacity_title, title_heat, title_use_tech, title_cost_per_unit_production, title_fixed_and_variable]#, title_use_fuel] #+ figs_list_average_generation_by_timeslice_title
+    subplot_titles = [fig_8th_graph_generation_title,title_gen, fig_emissions_title, fig_capacity_title, title_heat, title_use_tech]#, title_cost_per_unit_production, title_fixed_and_variable]#, title_use_fuel] #+ figs_list_average_generation_by_timeslice_title
     
     if not HEAT_DATA_AVAILABLE:
         figs.remove(fig_heat)
@@ -95,7 +97,7 @@ def format_costs(fixed_cost_df, variable_cost_df):
     variable_cost_df = variable_cost_df.sort_values(by=['YEAR','VALUE'],ascending=False)
     return fixed_cost_df, variable_cost_df
 
-def plot_cost_per_unit_production(tall_results_dfs, paths_dict, config_dict):
+def plot_cost_per_unit_production(tall_results_dfs, paths_dict, config_dict, CREATE_COSTS_DASHBOARD=True):
 
     generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)
     fixed_cost_df, variable_cost_df = extract_and_map_Costs(tall_results_dfs, powerplant_mapping)
@@ -142,8 +144,9 @@ def plot_cost_per_unit_production(tall_results_dfs, paths_dict, config_dict):
     #     fig.update_yaxes(title_text="Fixed Cost", secondary_y=False)
     #     fig.update_yaxes(title_text="Variable Cost", secondary_y=True)
     #     fig.write_html(paths_dict['visualisation_directory'] + f'/fixed_and_variable_cost_{technology}.html', auto_open=False)
-    
-    create_costs_by_tech_dashboard(fixed_cost_df, variable_cost_df, paths_dict, config_dict)
+    if CREATE_COSTS_DASHBOARD:
+        create_costs_by_tech_dashboard(fixed_cost_df, variable_cost_df, paths_dict, config_dict)
+        
     return fig_cost_per_unit_production,title_cost_per_unit_production, fig_fixed_and_variable,title_fixed_and_variable
 
 
