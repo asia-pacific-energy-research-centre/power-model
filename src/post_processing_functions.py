@@ -511,6 +511,8 @@ def save_results_visualisations_and_inputs_to_folder(paths_dict, save_plotting,s
         shutil.copy(paths_dict['results_workbook'],results_folder)
         shutil.copy(paths_dict['combined_results_tall_years'], results_folder)
         shutil.copy(paths_dict['combined_results_tall_sheet_names'], results_folder)
+        shutil.copy(paths_dict['EBT_output_energy'], results_folder)
+        shutil.copy(paths_dict['EBT_output_capacity'], results_folder)
         #and save the datafile paths_dict['input_data_file_path'] to the new folder
         shutil.copy(paths_dict['input_data_file_path'], tmp_folder)
 
@@ -561,3 +563,84 @@ def save_results_as_pickle(paths_dict,tall_results_dfs, config_dict):
     #save config_dict as a pickle
     with open(paths_dict['config_dict_pickle'], 'wb') as f:
         pickle.dump(config_dict, f)
+        
+def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_results_dfs):
+    """we've created a mapping just like is used for the plotting, to map the TECHNOLOGY and FUEL cols to the EBT readable names in the catogories: sectors, sub1sectors, sub2sectors, sub3sectors, sub4sectors, fuels, subfuels. We wil use this process for both the ProductionByTechnologyAnnual and TotalCapacityAnnual sheets for energuy and capacity respectively."""
+        
+    EBT_mapping = pd.read_excel('config/EBT_mapping.xlsx', sheet_name=None)
+    ProductionByTechnology_mapping = EBT_mapping['ProductionByTechnologyAnnual'].drop(columns=['comment'])
+    TotalCapacityAnnual_mapping = EBT_mapping['TotalCapacityAnnual'].drop(columns=['comment'])
+
+    production = tall_results_dfs['ProductionByTechnologyAnnual'].copy()
+    capacity = tall_results_dfs['TotalCapacityAnnual'].copy()
+    production = production[['REGION','TECHNOLOGY','FUEL','YEAR', 'VALUE']].groupby(['REGION','TECHNOLOGY','FUEL','YEAR']).sum().reset_index().copy()
+    capacity = capacity[['REGION','TECHNOLOGY','YEAR', 'VALUE']].groupby(['REGION','TECHNOLOGY','YEAR']).sum().reset_index().copy()
+    
+    #add own use to production to get full electricity generation (that is, where FUEL is 17_electricity_own, add it to 17_electricity for the same TECHNOLOGY:
+    own_use = production[production['FUEL'] == '17_electricity_own'].copy()
+    own_use['FUEL'] = '17_electricity'
+    own_use = own_use.rename(columns={'VALUE':'OWN_USE'})
+    production = production.merge(own_use, on=['REGION','TECHNOLOGY','FUEL','YEAR'], how='left')
+    production['VALUE'] = production['VALUE'] + production['OWN_USE'].fillna(0)
+    production = production.drop(columns=['OWN_USE'])   
+    
+    #do same for 18_heat and 18_heat_own
+    own_use = production[production['FUEL'] == '18_heat_own'].copy()
+    own_use['FUEL'] = '18_heat'
+    own_use = own_use.rename(columns={'VALUE':'OWN_USE'})
+    production = production.merge(own_use, on=['REGION','TECHNOLOGY','FUEL','YEAR'], how='left')
+    production['VALUE'] = production['VALUE'] + production['OWN_USE'].fillna(0)
+    production = production.drop(columns=['OWN_USE'])
+    
+    #do merge with mapping
+    production = production.merge(ProductionByTechnology_mapping, on=['TECHNOLOGY','FUEL'], how='left')
+    capacity = capacity.merge(TotalCapacityAnnual_mapping, on=['TECHNOLOGY'], how='left')
+    
+    #drop where TO_USE is  False
+    production = production[production['TO_USE'] == True].copy()
+    capacity = capacity[capacity['TO_USE'] == True].copy()
+    
+    # in production times the value by MULITPLIER. this is used for losses, unit conversion and so on:
+    production['VALUE'] = production['VALUE']*production['MULTIPLIER']
+    
+    #where the mapping is missing in any col let the user know
+    if production.isnull().values.any():
+        breakpoint()
+        missing_rows = production[production.isnull().any(axis=1)][['TECHNOLOGY','FUEL']].drop_duplicates()
+        raise ValueError('There are some combinations of TECHNOLOGY and FUEL that are not in the ESTO mapping for input use. The missing combinations are: '+str(missing_rows))
+    if capacity.isnull().values.any():
+        breakpoint()
+        #print the rows that are missing:
+        missing_rows = capacity[capacity.isnull().any(axis=1)][['TECHNOLOGY']].drop_duplicates()
+        raise ValueError('There are some TECHNOLOGYs that are not in the ESTO mapping for capacity. The missing values are: '+str(missing_rows))
+           
+    #we want to drop the TECHNOLOGY and FUEL cols nwo
+    production = production.drop(columns=['TECHNOLOGY','FUEL'])
+    #rename REGION to economy
+    production = production.rename(columns={'REGION':'economy'})
+    #create scenario col
+    production['scenario'] = config_dict['scenario'].lower()
+    #group by all cols and sum up the VALUE col
+    production = production.groupby(['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','fuels','subfuels','YEAR']).sum().reset_index()
+    #pivot on YEAR col
+    production =production.pivot(index=['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','fuels','subfuels'], columns='YEAR', values='VALUE').reset_index()
+    
+    #same for caacity
+    capacity = capacity.drop(columns=['TECHNOLOGY'])
+    #rename REGION to economy
+    capacity = capacity.rename(columns={'REGION':'economy'})
+    #create scenario col
+    capacity['scenario'] = config_dict['scenario'].lower()
+    #group by all cols and sum up the VALUE col
+    capacity = capacity.groupby(['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','YEAR']).sum().reset_index()
+    #pivot on YEAR col
+    capacity =capacity.pivot(index=['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors'], columns='YEAR', values='VALUE').reset_index()
+    
+    #save
+    production.to_csv(paths_dict['EBT_output_energy'])
+    capacity.to_csv(paths_dict['EBT_output_capacity'])
+    
+    print('Saved final energy output for EBT')
+    print('Saved final capacity output for EBT')
+    
+    

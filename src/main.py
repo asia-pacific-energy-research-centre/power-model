@@ -100,6 +100,8 @@ def main(input_data_sheet_file):
         post_processing_functions.save_results_as_long_csvs(paths_dict,config_dict,tall_results_dfs)
 
         post_processing_functions.save_results_as_pickle(paths_dict,tall_results_dfs,config_dict)
+        
+        post_processing_functions.extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_results_dfs)
         ##########################
         #Visualisation:
         ##########################
@@ -112,7 +114,7 @@ def main(input_data_sheet_file):
 
         if plotting:
             plotting_functions.plotting_handler(tall_results_dfs=tall_results_dfs,paths_dict=paths_dict,config_dict=config_dict,load_from_pickle=True, pickle_paths=None)
-
+        
         if SAVE_RESULTS_VIS_AND_INPUTS:
             post_processing_functions.save_results_visualisations_and_inputs_to_folder(paths_dict,save_plotting=True, save_results_and_inputs=False)
 

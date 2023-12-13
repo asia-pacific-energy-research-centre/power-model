@@ -29,9 +29,6 @@ mapping = pd.read_excel('config/plotting_config_and_timeslices.xlsx', sheet_name
 powerplant_mapping = mapping['POWERPLANT']
 input_fuel_mapping = mapping['INPUT_FUEL']
 fuel_mapping = mapping['FUEL']
-EBT_mapping = pd.read_excel('config/EBT_mapping.xlsx', sheet_name=None)
-ProductionByTechnology_mapping = EBT_mapping['ProductionByTechnologyAnnual']
-TotalCapacityAnnual_mapping = EBT_mapping['TotalCapacityAnnual']
 technology_color_dict = mapping['plotting_name_to_color'].set_index('plotting_name').to_dict()['color']
 timeslice_dict = OrderedDict(mapping['timeslices'].set_index('timeslice').to_dict(orient='index'))
 
@@ -76,10 +73,6 @@ def plotting_handler(tall_results_dfs=None,paths_dict={}, config_dict=None,load_
 
     put_all_graphs_in_one_html(figs, paths_dict)
     create_dashboard(figs, paths_dict,subplot_titles, dashboard_title='all_graphs')
-    
-    #laslty create the output csvs for use by EBT system
-    extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_results_dfs)
-    
     
 
 def format_costs(fixed_cost_df, variable_cost_df):     
@@ -172,65 +165,6 @@ def create_costs_by_tech_dashboard(fixed_costs, variable_costs, paths_dict, subp
     # Create the dashboard HTML
     create_dashboard(figs, paths_dict, subplot_titles, dashboard_title='costs_by_tech')
 
-def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_results_dfs):
-    """we've created a mapping just like is used for the plotting, to map the TECHNOLOGY and FUEL cols to the EBT readable names in the catogories: sectors, sub1sectors, sub2sectors, sub3sectors, sub4sectors, fuels, subfuels. We wil use this process for both the ProductionByTechnologyAnnual and TotalCapacityAnnual sheets for energuy and capacity respectively."""
-    
-    production = tall_results_dfs['ProductionByTechnologyAnnual'].copy()
-    capacity = tall_results_dfs['TotalCapacityAnnual'].copy()
-    production = production[['REGION','TECHNOLOGY','FUEL','YEAR', 'VALUE']].groupby(['REGION','TECHNOLOGY','FUEL','YEAR']).sum().reset_index().copy()
-    capacity = capacity[['REGION','TECHNOLOGY','YEAR', 'VALUE']].groupby(['REGION','TECHNOLOGY','YEAR']).sum().reset_index().copy()
-    
-    production = production.merge(ProductionByTechnology_mapping, on=['TECHNOLOGY','FUEL'], how='left')
-    capacity = capacity.merge(TotalCapacityAnnual_mapping, on=['TECHNOLOGY'], how='left')
-    
-    #drop where TO_USE is  False
-    production = production[production['TO_USE'] == True].copy()
-    capacity = capacity[capacity['TO_USE'] == True].copy()
-    
-    #where fuel is not 17_electricity, set VALUE to negative
-    production['VALUE'] = np.where(production['FUEL'] != '17_electricity', -production['VALUE'], production['VALUE'])
-    
-    #where the mapping is missing in any col let the user know
-    if production.isnull().values.any():
-        breakpoint()
-        missing_rows = production[production.isnull().any(axis=1)][['TECHNOLOGY','FUEL']].drop_duplicates()
-        raise ValueError('There are some combinations of TECHNOLOGY and FUEL that are not in the ESTO mapping for input use. The missing combinations are: '+str(missing_rows))
-    if capacity.isnull().values.any():
-        breakpoint()
-        #print the rows that are missing:
-        missing_rows = capacity[capacity.isnull().any(axis=1)][['TECHNOLOGY']].drop_duplicates()
-        raise ValueError('There are some TECHNOLOGYs that are not in the ESTO mapping for capacity. The missing values are: '+str(missing_rows))
-           
-    #we want to drop the TECHNOLOGY and FUEL cols nwo
-    production = production.drop(columns=['TECHNOLOGY','FUEL'])
-    #rename REGION to economy
-    production = production.rename(columns={'REGION':'economy'})
-    #create scenario col
-    production['scenario'] = config_dict['scenario'].lower()
-    #group by all cols and sum up the VALUE col
-    production = production.groupby(['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','fuels','subfuels','YEAR']).sum().reset_index()
-    #pivot on YEAR col
-    production =production.pivot(index=['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','fuels','subfuels'], columns='YEAR', values='VALUE').reset_index()
-    
-    #same for caacity
-    capacity = capacity.drop(columns=['TECHNOLOGY'])
-    #rename REGION to economy
-    capacity = capacity.rename(columns={'REGION':'economy'})
-    #create scenario col
-    capacity['scenario'] = config_dict['scenario'].lower()
-    #group by all cols and sum up the VALUE col
-    capacity = capacity.groupby(['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','YEAR']).sum().reset_index()
-    #pivot on YEAR col
-    capacity =capacity.pivot(index=['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors'], columns='YEAR', values='VALUE').reset_index()
-    
-    #save
-    economy = production.loc[0,'economy']
-    production.to_csv(paths_dict['visualisation_directory']+'/EBT_energy_'+economy+'_'+config_dict['scenario']+'_'+paths_dict['FILE_DATE_ID']+'.csv')
-    capacity.to_csv(paths_dict['visualisation_directory']+'/EBT_capacity_'+economy+'_'+config_dict['scenario']+'_'+paths_dict['FILE_DATE_ID']+'.csv')
-    
-    print('Saved final energy output for EBT to '+paths_dict['visualisation_directory']+'/EBT_energy_'+economy+'_'+config_dict['scenario']+'_'+paths_dict['FILE_DATE_ID']+'.csv')
-    print('Saved final capacity output for EBT to '+paths_dict['visualisation_directory']+'/EBT_capacity_'+economy+'_'+config_dict['scenario']+'_'+paths_dict['FILE_DATE_ID']+'.csv')   
-    
         
 def extract_and_map_ProductionByTechnology(tall_results_dfs):
     """Extract generation (and other) data from ProductionByTechnology sheet. But also extract storage charge and discharge and handle it separately then append them generation. Also convert to TWh. Note that the final data will not have been summed up by technology, timeslice or year yet.
