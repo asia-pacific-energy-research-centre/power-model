@@ -565,14 +565,17 @@ def save_results_as_pickle(paths_dict,tall_results_dfs, config_dict):
         pickle.dump(config_dict, f)
         
 def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_results_dfs):
-    """we've created a mapping just like is used for the plotting, to map the TECHNOLOGY and FUEL cols to the EBT readable names in the catogories: sectors, sub1sectors, sub2sectors, sub3sectors, sub4sectors, fuels, subfuels. We wil use this process for both the ProductionByTechnologyAnnual and TotalCapacityAnnual sheets for energuy and capacity respectively."""
+    """we've created a mapping just like is used for the plotting, to map the TECHNOLOGY and FUEL cols to the EBT readable names in the catogories: sectors, sub1sectors, sub2sectors, sub3sectors, sub4sectors, fuels, subfuels. We wil use this process for both the ProductionByTechnologyAnnual, UseByTechnology and TotalCapacityAnnual sheets for energy output, energy input and capacity respectively."""
         
     EBT_mapping = pd.read_excel('config/EBT_mapping.xlsx', sheet_name=None)
     ProductionByTechnology_mapping = EBT_mapping['ProductionByTechnologyAnnual'].drop(columns=['comment'])
     TotalCapacityAnnual_mapping = EBT_mapping['TotalCapacityAnnual'].drop(columns=['comment'])
+    UseByTechnology_mapping = EBT_mapping['UseByTechnology'].drop(columns=['comment'])
 
+    input = tall_results_dfs['UseByTechnology'].copy()
     production = tall_results_dfs['ProductionByTechnologyAnnual'].copy()
     capacity = tall_results_dfs['TotalCapacityAnnual'].copy()
+    input = input[['REGION','TECHNOLOGY','FUEL','YEAR', 'VALUE']].groupby(['REGION','TECHNOLOGY','FUEL','YEAR']).sum().reset_index().copy()
     production = production[['REGION','TECHNOLOGY','FUEL','YEAR', 'VALUE']].groupby(['REGION','TECHNOLOGY','FUEL','YEAR']).sum().reset_index().copy()
     capacity = capacity[['REGION','TECHNOLOGY','YEAR', 'VALUE']].groupby(['REGION','TECHNOLOGY','YEAR']).sum().reset_index().copy()
     
@@ -595,32 +598,26 @@ def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_result
     #do merge with mapping
     production = production.merge(ProductionByTechnology_mapping, on=['TECHNOLOGY','FUEL'], how='left')
     capacity = capacity.merge(TotalCapacityAnnual_mapping, on=['TECHNOLOGY'], how='left')
+    input = input.merge(UseByTechnology_mapping, on=['TECHNOLOGY','FUEL'], how='left')
     
-    #also, create an output fuel=17_electricity row for sector=09_total_transformation_sector, for each uniue sub2sectors. This is a bit complicated but essentially we will take the dta where sectors is 18_electricity_output_in_gwh, grab the sub2sectors and remove the first 9 characters, eg. 18_02_01_ then call that the powerplant. Then match that wth the same powerplants in sub2sectors in the 09_total_transformation_sector sector to use that row for its sectors columns. Call the fuel column 17_electricity though.
-    electricity_output = production[production['sectors'] == '18_electricity_output_in_gwh'].copy()
-    electricity_output['powerplant'] = electricity_output['sub2sectors'].str[9:]
-    electricity_output_new_rows = production[production['sectors']=='09_total_transformation_sector'].copy()
-    electricity_output_new_rows['powerplant'] = electricity_output_new_rows['sub2sectors'].str[9:]
-    electricity_output_new_rows =electricity_output_new_rows[['powerplant','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']].drop_duplicates()
-    electricity_output_new_rows = electricity_output_new_rows.merge(electricity_output.drop(columns=['sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']), on='powerplant', how='right')    
-    electricity_output_new_rows['fuels'] = '17_electricity'
-    electricity_output_new_rows['subfuels'] = 'x'
-    electricity_output_new_rows = electricity_output_new_rows.drop(columns=['powerplant'])
-    #set multiplier to 1
-    electricity_output_new_rows['MULTIPLIER'] = 1
-    production = pd.concat([production, electricity_output_new_rows], ignore_index=True)
+    #add a row in input which actually represents the electricity output, in pj. this will come from production.
+    electricity_output_new_rows = create_total_transformation_rows_for_17_electricity(production, input)
+    
+    #join all energy dfs
+    energy = pd.concat([input, electricity_output_new_rows, production], ignore_index=True)
     
     #drop where TO_USE is  False
-    production = production[production['TO_USE'] == True].copy()
+    energy = energy[energy['TO_USE'] == True].copy()
     capacity = capacity[capacity['TO_USE'] == True].copy()
     
     # in production times the value by MULITPLIER. this is used for losses, unit conversion and so on:
-    production['VALUE'] = production['VALUE']*production['MULTIPLIER']
-    breakpoint()
+    energy['VALUE'] = energy['VALUE']*energy['MULTIPLIER']
+    capacity['VALUE'] = capacity['VALUE']*capacity['MULTIPLIER']
+    
     #where the mapping is missing in any col let the user know
-    if production.isnull().values.any():
+    if energy.isnull().values.any():
         breakpoint()
-        missing_rows = production[production.isnull().any(axis=1)][['TECHNOLOGY','FUEL']].drop_duplicates()
+        missing_rows = energy[energy.isnull().any(axis=1)][['TECHNOLOGY','FUEL']].drop_duplicates()
         raise ValueError('There are some combinations of TECHNOLOGY and FUEL that are not in the ESTO mapping for input use. The missing combinations are: '+str(missing_rows))
     if capacity.isnull().values.any():
         breakpoint()
@@ -629,15 +626,15 @@ def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_result
         raise ValueError('There are some TECHNOLOGYs that are not in the ESTO mapping for capacity. The missing values are: '+str(missing_rows))
            
     #we want to drop the TECHNOLOGY and FUEL cols nwo
-    production = production.drop(columns=['TECHNOLOGY','FUEL'])
+    energy = energy.drop(columns=['TECHNOLOGY','FUEL'])
     #rename REGION to economy
-    production = production.rename(columns={'REGION':'economy'})
+    energy = energy.rename(columns={'REGION':'economy'})
     #create scenario col
-    production['scenario'] = config_dict['scenario'].lower()
+    energy['scenario'] = config_dict['scenario'].lower()
     #group by all cols and sum up the VALUE col
-    production = production.groupby(['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','fuels','subfuels','YEAR']).sum().reset_index()
+    energy = energy.groupby(['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','fuels','subfuels','YEAR']).sum().reset_index()
     #pivot on YEAR col
-    production =production.pivot(index=['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','fuels','subfuels'], columns='YEAR', values='VALUE').reset_index()
+    energy =energy.pivot(index=['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','fuels','subfuels'], columns='YEAR', values='VALUE').reset_index()
     
     #same for caacity
     capacity = capacity.drop(columns=['TECHNOLOGY'])
@@ -651,10 +648,34 @@ def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_result
     capacity =capacity.pivot(index=['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors'], columns='YEAR', values='VALUE').reset_index()
     
     #save
-    production.to_csv(paths_dict['EBT_output_energy'], index=False)
+    energy.to_csv(paths_dict['EBT_output_energy'], index=False)
     capacity.to_csv(paths_dict['EBT_output_capacity'], index=False)
     
     print('Saved final energy output for EBT')
     print('Saved final capacity output for EBT')
     
+
+
+def create_total_transformation_rows_for_17_electricity(production, input):
+    #create an output fuel=17_electricity row for sector=09_total_transformation_sector, for each uniue sub2sectors. This is a bit complicated but essentially we will take the dta from production where sectors is 18_electricity_output_in_gwh, grab the sub2sectors and remove the first 9 characters, eg. 18_02_01_ then call that the powerplant. Then match that wth the same powerplants in sub2sectors in input_df to use that row for its sectors columns. Call the fuel column 17_electricity though.
     
+    electricity_output = production[production['sectors'] == '18_electricity_output_in_gwh'].copy()
+    electricity_output['powerplant'] = electricity_output['sub2sectors'].str[9:]   
+    #if electricity_output['sub2sectors'] is x though, keep it as x. just so we dont get nas, eventually wed rather have a sub2sector for this (which is 'other' in chp)
+    electricity_output.loc[electricity_output['sub2sectors'] == 'x', 'powerplant'] = 'x'
+    
+    input_new_rows = input[input['sectors']=='09_total_transformation_sector'].copy()
+    #if electricity_output['sub2sectors'] is x though, keep it as x. just so we dont get nas, eventually wed rather have a sub2sector for this (which is 'other' in chp)
+    input_new_rows['powerplant'] = input_new_rows['sub2sectors'].str[9:]
+    input_new_rows.loc[input_new_rows['sub2sectors'] == 'x', 'powerplant'] = 'x'
+    input_new_rows = input_new_rows[['powerplant','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']].drop_duplicates()
+    
+    input_new_rows = input_new_rows.merge(electricity_output.drop(columns=['sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']), on='powerplant', how='right')    
+    
+    input_new_rows['fuels'] = '17_electricity'
+    input_new_rows['subfuels'] = 'x'
+    input_new_rows = input_new_rows.drop(columns=['powerplant'])
+    
+    #set multiplier to 1
+    input_new_rows['MULTIPLIER'] = 1
+    return input_new_rows
