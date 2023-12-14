@@ -630,22 +630,23 @@ def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_result
     #rename REGION to economy
     energy = energy.rename(columns={'REGION':'economy'})
     #create scenario col
-    energy['scenario'] = config_dict['scenario'].lower()
+    energy['scenarios'] = config_dict['scenario'].lower()
     #group by all cols and sum up the VALUE col
-    energy = energy.groupby(['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','fuels','subfuels','YEAR']).sum().reset_index()
+    energy = energy.groupby(['scenarios','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','fuels','subfuels','YEAR']).sum().reset_index()
     #pivot on YEAR col
-    energy =energy.pivot(index=['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','fuels','subfuels'], columns='YEAR', values='VALUE').reset_index()
+    energy =energy.pivot(index=['scenarios','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','fuels','subfuels'], columns='YEAR', values='VALUE').reset_index()
     
     #same for caacity
     capacity = capacity.drop(columns=['TECHNOLOGY'])
     #rename REGION to economy
     capacity = capacity.rename(columns={'REGION':'economy'})
     #create scenario col
-    capacity['scenario'] = config_dict['scenario'].lower()
+    capacity['scenarios'] = config_dict['scenario'].lower()
     #group by all cols and sum up the VALUE col
-    capacity = capacity.groupby(['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','YEAR']).sum().reset_index()
+    capacity = capacity.groupby(['scenarios','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','YEAR']).sum().reset_index()
     #pivot on YEAR col
-    capacity =capacity.pivot(index=['scenario','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors'], columns='YEAR', values='VALUE').reset_index()
+    capacity =capacity.pivot(index=['scenarios','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors'], columns='YEAR', values='VALUE').reset_index()
+    
     
     #save
     energy.to_csv(paths_dict['EBT_output_energy'], index=False)
