@@ -662,7 +662,7 @@ def create_total_transformation_rows_for_output_fuels(production, input, config_
     #also do simialr fo heat!
     electricity_output = production[production['sectors'] == '18_electricity_output_in_gwh'].copy()
     #extract data after the 3rd underscore
-    electricity_output['powerplant'] = electricity_output['sub2sectors'].str.split('_', 3).str[-1]
+    electricity_output['powerplant'] = electricity_output['sub2sectors'].str.split('_', n=3).str[-1]
     #if electricity_output['sub2sectors'] is x though, keep it as x. just so we dont get nas, eventually wed rather have a sub2sector for this (which is 'other' in chp)
     electricity_output.loc[electricity_output['sub2sectors'] == 'x', 'powerplant'] = 'x'
     #and also define whether it is CHP or PP based on the technology name:
@@ -671,7 +671,7 @@ def create_total_transformation_rows_for_output_fuels(production, input, config_
     
     input_new_rows_elec = input[input['sectors']=='09_total_transformation_sector'].copy()
     #if electricity_output['sub2sectors'] is x though, keep it as x. just so we dont get nas, eventually wed rather have a sub2sector for this (which is 'other' in chp)
-    input_new_rows_elec['powerplant'] = input_new_rows_elec['sub2sectors'].str.split('_', 3).str[-1]
+    input_new_rows_elec['powerplant'] = input_new_rows_elec['sub2sectors'].str.split('_', n=3).str[-1]
     input_new_rows_elec.loc[input_new_rows_elec['sub2sectors'] == 'x', 'powerplant'] = 'x'
     #keep only rows that contain PP or CHP in the technology name
     input_new_rows_elec = input_new_rows_elec[input_new_rows_elec['TECHNOLOGY'].str.contains('PP|CHP')]
@@ -689,7 +689,7 @@ def create_total_transformation_rows_for_output_fuels(production, input, config_
     ################
     heat_output = production[production['sectors'] == '19_heat_output_in_pj'].copy()
     #extract data after the 3rd underscore
-    heat_output['powerplant'] = heat_output['sub2sectors'].str.split('_', 3).str[-1]
+    heat_output['powerplant'] = heat_output['sub2sectors'].str.split('_', n=3).str[-1]
     #if heat_output['sub2sectors'] is x though, keep it as x. just so we dont get nas, eventually wed rather have a sub2sector for this (which is 'other' in chp)
     heat_output.loc[heat_output['sub2sectors'] == 'x', 'powerplant'] = 'x'
     #and also define whether it is CHP or HP based on the technology name:
@@ -700,7 +700,7 @@ def create_total_transformation_rows_for_output_fuels(production, input, config_
     
     input_new_rows_heat = input[input['sectors']=='09_total_transformation_sector'].copy()
     #if heat_output['sub2sectors'] is x though, keep it as x. just so we dont get nas, eventually wed rather have a sub2sector for this (which is 'other' in chp)
-    input_new_rows_heat['powerplant'] = input_new_rows_heat['sub2sectors'].str.split('_', 3).str[-1]
+    input_new_rows_heat['powerplant'] = input_new_rows_heat['sub2sectors'].str.split('_', n=3).str[-1]
     input_new_rows_heat.loc[input_new_rows_heat['sub2sectors'] == 'x', 'powerplant'] = 'x'
     #remove any PP rows
     input_new_rows_heat = input_new_rows_heat[~input_new_rows_heat['TECHNOLOGY'].str.contains('PP')]
