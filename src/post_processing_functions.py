@@ -601,7 +601,7 @@ def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_result
     input = input.merge(UseByTechnology_mapping, on=['TECHNOLOGY','FUEL'], how='left')
     
     #add a row in input which actually represents the electricity output, in pj. this will come from production.
-    input_new_rows = create_total_transformation_rows_for_output_fuels(production, input)
+    input_new_rows = create_total_transformation_rows_for_output_fuels(production, input, config_dict)
     
     #join all energy dfs
     energy = pd.concat([input, input_new_rows, production], ignore_index=True)
@@ -618,7 +618,7 @@ def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_result
     if energy.isnull().values.any():
         breakpoint()
         missing_rows = energy[energy.isnull().any(axis=1)][['TECHNOLOGY','FUEL']].drop_duplicates()
-        raise ValueError('There are some combinations of TECHNOLOGY and FUEL that are not in the ESTO mapping for input use. The missing combinations are: '+str(missing_rows))
+        raise ValueError('There are some combinations of TECHNOLOGY and FUEL that are not in the ESTO mapping for energy. The missing combinations are: '+str(missing_rows))
     if capacity.isnull().values.any():
         breakpoint()
         #print the rows that are missing:
@@ -657,17 +657,16 @@ def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_result
     
 
 
-def create_total_transformation_rows_for_output_fuels(production, input):
+def create_total_transformation_rows_for_output_fuels(production, input, config_dict):
     #create an output fuel=17_electricity row for sector=09_total_transformation_sector, for each uniue sub2sectors. This is a bit complicated but essentially we will take the dta from production where sectors is 18_electricity_output_in_gwh, grab the sub2sectors and remove the first 9 characters, eg. 18_02_01_ then call that the powerplant. Then match that wth the same powerplants in sub2sectors in input_df to use that row for its sectors columns. Call the fuel column 17_electricity though.
     #also do simialr fo heat!
-    
     electricity_output = production[production['sectors'] == '18_electricity_output_in_gwh'].copy()
     electricity_output['powerplant'] = electricity_output['sub2sectors'].str[9:]   
     #if electricity_output['sub2sectors'] is x though, keep it as x. just so we dont get nas, eventually wed rather have a sub2sector for this (which is 'other' in chp)
     electricity_output.loc[electricity_output['sub2sectors'] == 'x', 'powerplant'] = 'x'
     #and also define whether it is CHP or PP based on the technology name:
     electricity_output['powerplant_type'] = np.where(electricity_output['TECHNOLOGY'].str.contains('CHP'), 'CHP', 'PP')
-    electricity_output = electricity_output[['powerplant','powerplant_type','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']].drop_duplicates()
+    electricity_output = electricity_output[['powerplant','powerplant_type','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors', 'VALUE', 'YEAR']].drop_duplicates()
     
     heat_output = production[production['sectors'] == '19_heat_output_in_PJ'].copy()
     heat_output['powerplant'] = heat_output['sub2sectors'].str[9:]
@@ -675,7 +674,7 @@ def create_total_transformation_rows_for_output_fuels(production, input):
     heat_output.loc[heat_output['sub2sectors'] == 'x', 'powerplant'] = 'x'
     #and also define whether it is CHP or HP based on the technology name:
     heat_output['powerplant_type'] = np.where(heat_output['TECHNOLOGY'].str.contains('CHP'), 'CHP', 'HP')
-    heat_output = heat_output[['powerplant','powerplant_type','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']].drop_duplicates()
+    heat_output = heat_output[['powerplant','powerplant_type','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors', 'VALUE', 'YEAR']].drop_duplicates()
     
     input_new_rows_elec = input[input['sectors']=='09_total_transformation_sector'].copy()
     #if electricity_output['sub2sectors'] is x though, keep it as x. just so we dont get nas, eventually wed rather have a sub2sector for this (which is 'other' in chp)
@@ -705,9 +704,13 @@ def create_total_transformation_rows_for_output_fuels(production, input):
     
     input_new_rows = pd.concat([input_new_rows_elec, input_new_rows_heat], ignore_index=True)
     
-    #drop powerplant and powerplant_type cols
-    input_new_rows = input_new_rows.drop(columns=['powerplant','powerplant_type'])
+    #groupby and sum up the VALUE col
+    input_new_rows = input_new_rows.groupby(['sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors', 'fuels','subfuels','YEAR']).sum().reset_index()
     
     #set multiplier to 1
     input_new_rows['MULTIPLIER'] = 1
+    input_new_rows['TO_USE'] = True
+    input_new_rows['TECHNOLOGY'] = 'x'
+    input_new_rows['FUEL'] = 'x'
+    input_new_rows['REGION'] = config_dict['economy']
     return input_new_rows
