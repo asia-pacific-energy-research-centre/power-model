@@ -138,7 +138,7 @@ def is_notebook() -> bool:
         return False      # Probably standard Python interpreter
     
 if is_notebook():
-    input_data_sheet_file="20_USA_data_REF9.xlsx"#"simplicity_data.xlsx"#"data-sheet-power_36TS.xlsx"##set this based on the data sheet you want to run if you are running this from jupyter notebook
+    input_data_sheet_file="08_JPN_data_REF9.xlsx"#"simplicity_data.xlsx"#"data-sheet-power_36TS.xlsx"##set this based on the data sheet you want to run if you are running this from jupyter notebook
     # #make directory the root of the project
     # if os.getcwd().split('\\')[-1] == 'src':
     #     os.chdir('..')
@@ -155,7 +155,7 @@ if is_notebook():
     main(input_data_sheet_file)
 
 elif __name__ == '__main__':
-
+ 
     if len(sys.argv) != 2:
         msg = "Usage: python {} <input_data_sheet_file>"
         print(msg.format(sys.argv[0]))

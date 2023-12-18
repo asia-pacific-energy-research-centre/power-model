@@ -606,6 +606,13 @@ def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_result
     #join all energy dfs
     energy = pd.concat([input, input_new_rows, production], ignore_index=True)
     
+    try:
+        energy.to_csv('production.csv', index=False)
+        input.to_csv('input2.csv', index=False)
+        input_new_rows.to_csv('input_new_rows.csv', index=False)
+        production.to_csv('production.csv', index=False)
+    except:
+        print('couldnt save state2')
     #drop where TO_USE is  False
     energy = energy[energy['TO_USE'] == True].copy()
     capacity = capacity[capacity['TO_USE'] == True].copy()
@@ -658,6 +665,19 @@ def extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_result
 
 
 def create_total_transformation_rows_for_output_fuels(production, input, config_dict):
+    
+    #copy state at this point so wecan test:
+    try:
+        production.to_csv('production.csv', index=False)
+        input.to_csv('input.csv', index=False)
+        with open('config_dict.pkl', 'wb') as f:
+            pickle.dump(config_dict, f)
+    except:
+        print('couldnt save state')
+    
+    # production = pd.read_csv('production.csv')
+    # input = pd.read_csv('input.csv')
+    # config_dict = pd.read_pickle('config_dict.pkl')
     #create an output fuel=17_electricity row for sector=09_total_transformation_sector, for each uniue sub2sectors. This is a bit complicated but essentially we will take the dta from production where sectors is 18_electricity_output_in_gwh, grab the sub2sectors and remove the first 9 characters, eg. 18_02_01_ then call that the powerplant. Then match that wth the same powerplants in sub2sectors in input_df to use that row for its sectors columns. Call the fuel column 17_electricity though.
     #also do simialr fo heat!
     electricity_output = production[production['sectors'] == '18_electricity_output_in_gwh'].copy()
@@ -721,7 +741,6 @@ def create_total_transformation_rows_for_output_fuels(production, input, config_
     ################
     #COMBINE
     ################
-    breakpoint()
     input_new_rows = pd.concat([input_new_rows_elec_merged, input_new_rows_heat_merged], ignore_index=True)
     
     #groupby and sum up the VALUE col

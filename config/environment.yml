@@ -6,7 +6,8 @@ channels:
   - defaults 
   - pip
 dependencies:
- - pandas 
+ - python=3.9.15
+ - pandas=1.5.2
  - numpy 
  - glpk
  - pyyaml
