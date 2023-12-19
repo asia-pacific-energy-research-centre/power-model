@@ -712,8 +712,8 @@ def double_check_timeslice_details(timeslice_dict):
 #%%
 # # ##########################################################################################
 # # # #load the data
-pickle_paths = ['./results/12-18-1209_20_USA_Target_coin_mip/tmp/tall_results_dfs_20_USA_Target_12-18-1209.pickle','./results/12-18-1209_20_USA_Target_coin_mip/tmp/paths_dict_20_USA_Target_12-18-1209.pickle', './results/12-18-1209_20_USA_Target_coin_mip/tmp/config_dict_20_USA_Target_12-18-1209.pickle']
-plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
+# pickle_paths = ['./results/12-18-1209_20_USA_Target_coin_mip/tmp/tall_results_dfs_20_USA_Target_12-18-1209.pickle','./results/12-18-1209_20_USA_Target_coin_mip/tmp/paths_dict_20_USA_Target_12-18-1209.pickle', './results/12-18-1209_20_USA_Target_coin_mip/tmp/config_dict_20_USA_Target_12-18-1209.pickle']
+# plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
 
 # # # #%%
 # # # # #load the data
