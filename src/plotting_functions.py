@@ -304,7 +304,7 @@ def plot_input_use_by_fuel_and_technology(tall_results_dfs, paths_dict):
 
     return fig_use_fuel,title_use_fuel, fig_use_tech,title_use_tech
 
-def format_generation_and_heat_df(generation, heat, keep_timeslice_col=False):
+def format_generation_and_heat_df(generation, heat, keep_timeslice_col=False, INCLUDE_STORAGE=False):
     if keep_timeslice_col:
         group_cols = ['TECHNOLOGY','TIMESLICE','YEAR']
         sort_cols = ['TIMESLICE','YEAR','VALUE']
@@ -315,9 +315,10 @@ def format_generation_and_heat_df(generation, heat, keep_timeslice_col=False):
     generation = generation.groupby(group_cols).sum().reset_index()
     heat = heat.groupby(group_cols).sum().reset_index()
     
-    #drop anything with storage in the name as they are not forms of generation
-    generation = generation[generation['TECHNOLOGY'].str.contains('Storage') == False]
-    heat = heat[heat['TECHNOLOGY'].str.contains('Storage') == False]#dont know if this matters for heat tbh
+    if not INCLUDE_STORAGE:
+        #drop anything with storage in the name as they are not forms of generation
+        generation = generation[generation['TECHNOLOGY'].str.contains('Storage') == False]
+        heat = heat[heat['TECHNOLOGY'].str.contains('Storage') == False]#dont know if this matters for heat tbh
     generation = generation[generation['TECHNOLOGY'] != 'Transmission']
     heat = heat[heat['TECHNOLOGY'] != 'Transmission']
     
@@ -414,9 +415,12 @@ def plot_emissions_annual(tall_results_dfs, paths_dict):
 
     return fig,title
 
-def format_capacity(capacity):
+def format_capacity(capacity, INCLUDE_STORAGE=True):
     capacity = map_to_readable_names(capacity, powerplant_mapping, 'TECHNOLOGY', 'powerplant_mapping', 'format_capacity', ignore_missing_mappings=False, print_warning_messages=False)
     
+    if not INCLUDE_STORAGE:
+        #drop anything with storage in the name as they are not forms of generation
+        capacity = capacity[capacity['TECHNOLOGY'].str.contains('Storage') == False]
     #remove transmission from technology
     capacity = capacity.loc[capacity['TECHNOLOGY'] != 'Transmission']
 
@@ -478,11 +482,10 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     ###GENERATION###
     generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)
     elec_demand = extract_and_format_elec_demand(tall_results_dfs, keep_timeslice_col=True)
-    generation, heat = format_generation_and_heat_df(generation, heat, keep_timeslice_col=True)
-    capacity = format_capacity(tall_results_dfs['TotalCapacityAnnual'].copy())
+    generation, heat = format_generation_and_heat_df(generation, heat, keep_timeslice_col=True, INCLUDE_STORAGE=True)
+    capacity = format_capacity(tall_results_dfs['TotalCapacityAnnual'].copy(), INCLUDE_STORAGE=True)#we made decision that it was good to keep storagfe in these cahrts for capacity, even if its not really a form of gen capacity.
     #concat generation and demand
     generation = pd.concat([generation,elec_demand])  
-    # heat = pd.concat([heat,heat_demand])
 
     double_check_timeslice_details(timeslice_dict)
     #extract details about timeslice and put them into a column called TOTAL_HOURS
@@ -565,7 +568,7 @@ def plot_8th_graphs(paths_dict, config_dict):
     scenario = config_dict['scenario']
    # if scenario == 'Target':
    #     # scenario='Carbon Neutral'
-   #     scenario='Reference'#TODO CHANGE THIS BACK TO TARGET WHEN YOU HAVE THE DATA
+   #     scenario='Target'#TODO CHANGE THIS BACK TO TARGET WHEN YOU HAVE THE DATA
     economy = config_dict['economy']
     
     for sheet in expected_sheet_names:
@@ -709,8 +712,8 @@ def double_check_timeslice_details(timeslice_dict):
 #%%
 # # ##########################################################################################
 # # # #load the data
-# pickle_paths = ['./results/10-31-1642_20_USA_Reference_coin_mip/tmp/tall_results_dfs_20_USA_Reference_10-31-1642.pickle','./results/10-31-1642_20_USA_Reference_coin_mip/tmp/paths_dict_20_USA_Reference_10-31-1642.pickle', './results/10-31-1642_20_USA_Reference_coin_mip/tmp/config_dict_20_USA_Reference_10-31-1642.pickle']
-# plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
+pickle_paths = ['./results/12-18-1209_20_USA_Target_coin_mip/tmp/tall_results_dfs_20_USA_Target_12-18-1209.pickle','./results/12-18-1209_20_USA_Target_coin_mip/tmp/paths_dict_20_USA_Target_12-18-1209.pickle', './results/12-18-1209_20_USA_Target_coin_mip/tmp/config_dict_20_USA_Target_12-18-1209.pickle']
+plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
 
 # # # #%%
 # # # # #load the data
