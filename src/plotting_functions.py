@@ -396,7 +396,11 @@ def format_emissions_df(emissions):
     emissions = map_to_readable_names(emissions, input_fuel_mapping, 'TECHNOLOGY', 'input_fuel_mapping', 'format_emissions_df', ignore_missing_mappings=False, print_warning_messages=False)
     
     # sum emissions by technology and year
+    #to split ccs and not ccs into two different techs we will set EMISSION  col to '' if it is C02 and if it is C02cap we will change it to _CCS leave it otherwise. then concat it to TECHNOLOGY col:
+    mapping_dict = {'CO2':'','CO2cap':'_CCS'}
+    emissions['TECHNOLOGY'] = emissions['TECHNOLOGY'] + emissions['EMISSION'].apply(lambda x: mapping_dict[x])
     emissions = emissions.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
+    
     #order the FUEL by value
     emissions = emissions.sort_values(by=['YEAR','VALUE'], ascending=False)
     return emissions
@@ -405,6 +409,7 @@ def plot_emissions_annual(tall_results_dfs, paths_dict):
     """Plot emissions by year by technology
     #note that we could change the nane in legend from technology to input fuel or something"""
     #load emissions
+    breakpoint()
     emissions = tall_results_dfs['AnnualTechnologyEmission'].copy()
     emissions = format_emissions_df(emissions)
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the time
