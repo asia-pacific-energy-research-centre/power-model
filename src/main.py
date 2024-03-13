@@ -101,7 +101,7 @@ def main(input_data_sheet_file):
 
         post_processing_functions.save_results_as_pickle(paths_dict,tall_results_dfs,config_dict)
         
-        post_processing_functions.extract_and_format_final_output_for_EBT(paths_dict, config_dict, tall_results_dfs)
+        post_processing_functions.extract_and_format_final_output_for_EBT(tall_results_dfs, paths_dict['EBT_output_energy'], paths_dict['EBT_output_capacity'], config_dict['economy'], config_dict['scenario'])
         ##########################
         #Visualisation:
         ##########################
@@ -117,11 +117,9 @@ def main(input_data_sheet_file):
         
         if SAVE_RESULTS_VIS_AND_INPUTS:
             post_processing_functions.save_results_visualisations_and_inputs_to_folder(paths_dict,save_plotting=True, save_results_and_inputs=False)
-
 #%%
-
-
-
+# post_processing_functions.recreate_output_ebt_files('19_THA_results_Target_03-12-1207.xlsx', 'energy.csv', 'capacity.csv', '19_THA', 'Target')
+#%%
 ################################################################################
 #FOR RUNNING THROUGH JUPYTER INTERACTIVE NOTEBOOK (FINNS SETUP, allows for running the function outside of the command line through jupyter interactive)
 ################################################################################
@@ -138,7 +136,7 @@ def is_notebook() -> bool:
         return False      # Probably standard Python interpreter
     
 if is_notebook():
-    input_data_sheet_file="08_JPN_data_REF9.xlsx"#"simplicity_data.xlsx"#"data-sheet-power_36TS.xlsx"##set this based on the data sheet you want to run if you are running this from jupyter notebook
+    input_data_sheet_file="03_CDA_data_REF9.xlsx"#"simplicity_data.xlsx"#"data-sheet-power_36TS.xlsx"##set this based on the data sheet you want to run if you are running this from jupyter notebook
     # #make directory the root of the project
     # if os.getcwd().split('\\')[-1] == 'src':
     #     os.chdir('..')

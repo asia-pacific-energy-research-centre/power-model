@@ -409,7 +409,6 @@ def plot_emissions_annual(tall_results_dfs, paths_dict):
     """Plot emissions by year by technology
     #note that we could change the nane in legend from technology to input fuel or something"""
     #load emissions
-    breakpoint()
     emissions = tall_results_dfs['AnnualTechnologyEmission'].copy()
     emissions = format_emissions_df(emissions)
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the time
