@@ -676,19 +676,19 @@ def create_total_transformation_rows_for_output_fuels(production, input, economy
     input_new_rows_elec['powerplant'] = ['_'.join(x.split('_')[3:]) if len(x.split('_')) > 3 else 'x' for x in input_new_rows_elec['sub2sectors']]
     # input_new_rows_elec['powerplant'] = input_new_rows_elec['sub2sectors'].str.split('_', n=3).str[-1]
     # input_new_rows_elec.loc[input_new_rows_elec['sub2sectors'] == 'x', 'powerplant'] = 'x'
-    breakpoint()#ISSUE IN ALEXS CODE TODO
+    # breakpoint()#ISSUE IN ALEXS CODE TODO
     #keep only rows that contain PP or CHP in the technology name
     input_new_rows_elec = input_new_rows_elec[input_new_rows_elec['TECHNOLOGY'].str.contains('PP|CHP')]
     #and also define whether it is CHP or PP based on the technology name:
     input_new_rows_elec['powerplant_type'] = np.where(input_new_rows_elec['TECHNOLOGY'].str.contains('CHP'), 'CHP', 'PP')
     input_new_rows_elec = input_new_rows_elec[['powerplant','powerplant_type','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']].drop_duplicates()
     
-    breakpoint()#ISSUE IN ALEXS CODE TODO
+    # breakpoint()#ISSUE IN ALEXS CODE TODO
     input_new_rows_elec_merged = input_new_rows_elec.merge(electricity_output.drop(columns=['sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']), on=['powerplant','powerplant_type'], how='right')    
     
     input_new_rows_elec_merged['fuels'] = '17_electricity'
     input_new_rows_elec_merged['subfuels'] = 'x'
-    breakpoint()#ISSUE IN ALEXS CODE TODO
+    # breakpoint()#ISSUE IN ALEXS CODE TODO
     ################
     #HEAT
     ################
@@ -714,7 +714,7 @@ def create_total_transformation_rows_for_output_fuels(production, input, economy
     #and also define whether it is CHP or HP based on the technology name:
     input_new_rows_heat['powerplant_type'] = np.where(input_new_rows_heat['TECHNOLOGY'].str.contains('CHP'), 'CHP', 'HP')
     input_new_rows_heat = input_new_rows_heat[['powerplant','powerplant_type','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']].drop_duplicates()
-    breakpoint()#ISSUE IN ALEXS CODE TODO
+    # breakpoint()#ISSUE IN ALEXS CODE TODO
     input_new_rows_heat_merged = input_new_rows_heat.merge(heat_output.drop(columns=['sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']), on=['powerplant','powerplant_type'], how='right')
     
     input_new_rows_heat_merged['fuels'] = '18_heat'
@@ -764,8 +764,11 @@ def convert_excel_results_file_to_results_dfs(excel_file_path):
             indices = [ele for ele in cols if ele not in unwanted_indices]
             #drop any numerical cols
             indices = [ele for ele in indices if not isinstance(ele, (int, float))]
-            
-            tall_df = pd.melt(df,id_vars=indices,var_name='YEAR',value_name='VALUE').copy()
+            if 'VALUE' in df.columns:
+                #We dont have years in this data so we'll just leave it as its tall already.
+                tall_df = df.copy()
+            else:
+                tall_df = pd.melt(df,id_vars=indices,var_name='YEAR',value_name='VALUE').copy()
             tall_df = tall_df.sort_values(by=indices)
         
             tall_results_dfs[sheet] = tall_df
