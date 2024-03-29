@@ -122,6 +122,7 @@ param MinStorageCharge{r in REGION, s in STORAGE, y in YEAR};
 param OperationalLifeStorage{r in REGION, s in STORAGE};
 param CapitalCostStorage{r in REGION, s in STORAGE, y in YEAR};
 param ResidualStorageCapacity{r in REGION, s in STORAGE, y in YEAR};
+param StorageTag{r in REGION, s in STORAGE}, default 1;
 #
 #########			Capacity Constraints		#############
 #
@@ -607,6 +608,9 @@ s.t. SC4_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWee
 s.t. SC4_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint{r in REGION, s in STORAGE, ls in SEASON, ld in DAYTYPE, lh in DAILYTIMEBRACKET, y in YEAR}: if ld > min{ldld in DAYTYPE} min(ldld) then (StorageLevelDayTypeFinish[r,s,ls,ld-1,y]+sum{lhlh in DAILYTIMEBRACKET:lh-lhlh>0} NetChargeWithinDay[r,s,ls,ld,lhlh,y])-StorageUpperLimit[r,s,y] <= 0;
 s.t. SC5_MaxChargeConstraint{r in REGION, s in STORAGE, ls in SEASON, ld in DAYTYPE, lh in DAILYTIMEBRACKET, y in YEAR}: RateOfStorageCharge[r,s,ls,ld,lh,y] <= StorageMaxChargeRate[r,s];
 s.t. SC6_MaxDischargeConstraint{r in REGION, s in STORAGE, ls in SEASON, ld in DAYTYPE, lh in DAILYTIMEBRACKET, y in YEAR}: RateOfStorageDischarge[r,s,ls,ld,lh,y] <= StorageMaxDischargeRate[r,s];
+s.t. SC7_WeeklyBalance{r in REGION, s in STORAGE, ls in SEASON, y in YEAR: StorageTag[r,s] = 2}: sum{ld in DAYTYPE, lh in DAILYTIMEBRACKET}NetChargeWithinDay[r,s,ls,ld,lh,y]*DaysInDayType[ls,ld,y] = 0;
+s.t. SC8_YearlyBalance{r in REGION, s in STORAGE, y in YEAR: StorageTag[r,s] =1}: sum{ls in SEASON, ld in DAYTYPE, lh in DAILYTIMEBRACKET} NetChargeWithinYear[r,s,ls,ld,lh,y] = 0;
+s.t. SC9_PeriodBalance{s in STORAGE, r in REGION}: sum{y in YEAR, l in TIMESLICE, ls in SEASON, ld in DAYTYPE, lh in DAILYTIMEBRACKET} NetChargeWithinYear[r,s,ls,ld,lh,y] = 0;
 #
 #########		Storage Investments				#############
 #
