@@ -20,7 +20,7 @@ SAVE_RESULTS_VIS_AND_INPUTS = True
 EMPTY_TMP_FOLDER_BEFORE_RUNNING = True
 ################################################################################
 #%%
-print(os.getcwd())
+# print(os.getcwd())
 # C:\GitHub\power-model\results\03-18-1613_19_THA_Target_coin_mip_TGT3\results
 post_processing_functions.recreate_output_ebt_files('results/03-18-1613_19_THA_Target_coin_mip_TGT3/results/19_THA_results_Target_03-18-1613.xlsx', 'energy.csv', 'capacity.csv', '19_THA', 'Target')
 #%%
