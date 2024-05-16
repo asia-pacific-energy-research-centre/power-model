@@ -22,5 +22,5 @@ EMPTY_TMP_FOLDER_BEFORE_RUNNING = True
 #%%
 # print(os.getcwd())
 # C:\GitHub\power-model\results\03-18-1613_19_THA_Target_coin_mip_TGT3\results
-post_processing_functions.recreate_output_ebt_files('results/03-18-1613_19_THA_Target_coin_mip_TGT3/results/19_THA_results_Target_03-18-1613.xlsx', 'energy.csv', 'capacity.csv', '19_THA', 'Target')
+post_processing_functions.recreate_output_ebt_files('results/03-21-1119_08_JPN_Reference_coin_mip/results/08_JPN_results_Reference_03-21-1119.xlsx', 'energy.csv', 'capacity.csv', '19_THA', 'Target')
 #%%
