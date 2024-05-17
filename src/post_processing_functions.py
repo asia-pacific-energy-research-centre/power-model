@@ -714,6 +714,7 @@ def create_total_transformation_rows_for_output_fuels(production, input, economy
     #and also define whether it is CHP or HP based on the technology name:
     input_new_rows_heat['powerplant_type'] = np.where(input_new_rows_heat['TECHNOLOGY'].str.contains('CHP'), 'CHP', 'HP')
     input_new_rows_heat = input_new_rows_heat[['powerplant','powerplant_type','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']].drop_duplicates()
+    
     #SOMETIMES WE GET EMPTY DATAFRAMES FOR HEAT, SO IF THEY ARE EMPTY WE WILL JUST RETURN AN EMPTY DATAFRAME:
     if input_new_rows_heat.empty and heat_output.empty:
         input_new_rows_heat_merged = pd.DataFrame(columns=input_new_rows_elec_merged.columns)
