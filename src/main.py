@@ -101,7 +101,7 @@ def main(input_data_sheet_file):
 
         post_processing_functions.save_results_as_pickle(paths_dict,tall_results_dfs,config_dict)
         
-        post_processing_functions.extract_and_format_final_output_for_EBT(tall_results_dfs, paths_dict['EBT_output_energy'], paths_dict['EBT_output_capacity'], config_dict['economy'], config_dict['scenario'])
+        post_processing_functions.extract_and_format_final_output_for_EBT(tall_results_dfs, paths_dict['EBT_output_energy'], paths_dict['EBT_output_capacity'], config_dict['scenario'], config_dict['economy'])
         ##########################
         #Visualisation:
         ##########################
@@ -134,7 +134,7 @@ def is_notebook() -> bool:
         return False      # Probably standard Python interpreter
     
 if is_notebook():
-    input_data_sheet_file="03_CDA_data_REF9.xlsx"#"simplicity_data.xlsx"#"data-sheet-power_36TS.xlsx"##set this based on the data sheet you want to run if you are running this from jupyter notebook
+    input_data_sheet_file="09_ROK_data_REF9_wip1.xlsx"#"simplicity_data.xlsx"#"data-sheet-power_36TS.xlsx"##set this based on the data sheet you want to run if you are running this from jupyter notebook
     # #make directory the root of the project
     # if os.getcwd().split('\\')[-1] == 'src':
     #     os.chdir('..')
@@ -160,3 +160,7 @@ elif __name__ == '__main__':
         input_data_sheet_file = sys.argv[1]
         main(input_data_sheet_file)
 # %%
+
+
+
+

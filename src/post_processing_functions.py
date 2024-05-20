@@ -1,3 +1,4 @@
+#%%
 import pandas as pd
 import numpy as np
 import yaml
@@ -567,6 +568,7 @@ def save_results_as_pickle(paths_dict,tall_results_dfs, config_dict):
          
 def extract_and_format_final_output_for_EBT(tall_results_dfs,EBT_output_energy_path, EBT_output_capacity_path, scenario, economy):
     """we've created a mapping just like is used for the plotting, to map the TECHNOLOGY and FUEL cols to the EBT readable names in the catogories: sectors, sub1sectors, sub2sectors, sub3sectors, sub4sectors, fuels, subfuels. We wil use this process for both the ProductionByTechnologyAnnual, UseByTechnology and TotalCapacityAnnual sheets for energy output, energy input and capacity respectively."""
+    
     EBT_mapping = pd.read_excel('config/EBT_mapping.xlsx', sheet_name=None)
     ProductionByTechnology_mapping = EBT_mapping['ProductionByTechnologyAnnual'].drop(columns=['comment'])
     TotalCapacityAnnual_mapping = EBT_mapping['TotalCapacityAnnual'].drop(columns=['comment'])
@@ -784,4 +786,6 @@ def recreate_output_ebt_files(excel_file_path, EBT_output_energy_path, EBT_outpu
     """
     wide_results_dfs, tall_results_dfs = convert_excel_results_file_to_results_dfs(excel_file_path)
     
-    extract_and_format_final_output_for_EBT(tall_results_dfs, EBT_output_energy_path, EBT_output_capacity_path, economy, scenario)
+    extract_and_format_final_output_for_EBT(tall_results_dfs, EBT_output_energy_path, EBT_output_capacity_path, scenario, economy)
+#%%
+    

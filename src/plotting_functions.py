@@ -30,11 +30,11 @@ powerplant_mapping = mapping['POWERPLANT']
 input_fuel_mapping = mapping['INPUT_FUEL']
 fuel_mapping = mapping['FUEL']
 technology_color_dict = mapping['plotting_name_to_color'].set_index('plotting_name').to_dict()['color']
-timeslice_dict = OrderedDict(mapping['timeslices'].set_index('timeslice').to_dict(orient='index'))
 
+#%%
 CREATE_COSTS_DASHBOARD=False
 
-def plotting_handler(tall_results_dfs=None,paths_dict={}, config_dict=None,load_from_pickle=True,pickle_paths=None):
+def plotting_handler(tall_results_dfs=None,paths_dict={}, config_dict={},load_from_pickle=True,pickle_paths=None):
     """Handler for plotting functions, pickle path is a list of two paths, the first is the path to the pickle of tall_results_dfs, the second is the path to the pickle of paths_dict. You will need to set them manually."""
     if load_from_pickle:
         if pickle_paths is None:
@@ -58,8 +58,7 @@ def plotting_handler(tall_results_dfs=None,paths_dict={}, config_dict=None,load_
     fig_capacity, fig_capacity_title = plot_capacity_annual(tall_results_dfs, paths_dict)
 
     fig_capacity_factor,fig_capacity_factor_title = plot_capacity_factor_annual(tall_results_dfs, paths_dict)
-
-    figs_list_average_generation_by_timeslice,figs_list_average_generation_by_timeslice_title = plot_average_generation_by_timeslice(tall_results_dfs, paths_dict)
+    figs_list_average_generation_by_timeslice,figs_list_average_generation_by_timeslice_title = plot_average_generation_by_timeslice(tall_results_dfs, paths_dict, config_dict['economy'])
     
     fig_8th_graph_generation, fig_8th_graph_generation_title = plot_8th_graphs(paths_dict,config_dict)
 
@@ -481,8 +480,8 @@ def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
     fig.write_html(paths_dict['visualisation_directory']+'/annual_capacity_factor.html', auto_open=False)
     return fig,title
 
-def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
-    """Calculate average generation by timeslice for each technology and year. Also calculate average generation by technology and year for power plants, to Storage, from Storage and  demand"""
+def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict, economy):
+    """Calculate average generation by timeslice for each technology and year. Also calculate average generation by technology and year for power plants, to Storage, from Storage and  demand"""   
     ###GENERATION###
     generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)
     elec_demand = extract_and_format_elec_demand(tall_results_dfs, keep_timeslice_col=True)
@@ -491,7 +490,7 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     #concat generation and demand
     generation = pd.concat([generation,elec_demand])  
 
-    double_check_timeslice_details(timeslice_dict)
+    timeslice_dict = extract_timeslice_details(mapping, economy)
     #extract details about timeslice and put them into a column called TOTAL_HOURS
     generation['TOTAL_HOURS'] = generation['TIMESLICE'].apply(lambda x: timeslice_dict[x]['hours'])
     #calculate average generation by dividing by total hours times 1000
@@ -704,14 +703,20 @@ def create_color_dict(technology_or_fuel_column):
     return technology_color_dict
 
 
-def double_check_timeslice_details(timeslice_dict):
+def extract_timeslice_details(mapping, economy):
     """timeslice_dict is a dictionary of the different details by timeslice. It was created using code by copy pasting the details from Alex's spreadhseet. The first entry is the key, the second is the proportion of the year that the timeslice makes up (all summing to 1), and the third is the number of hours in the timeslice (all summing to 8760)."""
 
+    #extract the economy from mapping['timeslices_economy'] by filtering for it via the column 'economy'
+    timeslice_dict = mapping['timeslices_economy'].copy()
+    timeslice_dict = timeslice_dict[timeslice_dict['economy'] == economy].drop(columns='economy')
+    timeslice_dict = OrderedDict(timeslice_dict.set_index('timeslice').to_dict(orient='index'))
+    
     # #double check that the sum of the proportions is 1 or close to 1
     assert sum([x['proportion_of_total'] for x in timeslice_dict.values()]) > 0.999
     #double check that the sum of the hours is 8760
     assert sum([x['hours'] for x in timeslice_dict.values()]) == 8760
     
+    return timeslice_dict
 
 #%%
 # # ##########################################################################################
@@ -720,8 +725,8 @@ def double_check_timeslice_details(timeslice_dict):
 # plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
 
 # # # #%%
-# # # # #load the data
-# pickle_paths = ['./results/11-02-1120_19_THA_Target_coin_mip/tmp/tall_results_dfs_19_THA_Target_11-02-1120.pickle','./results/11-02-1120_19_THA_Target_coin_mip/tmp/paths_dict_19_THA_Target_11-02-1120.pickle', './results/11-02-1120_19_THA_Target_coin_mip/tmp/config_dict_19_THA_Target_11-02-1120.pickle']
+# # # # #load the data 05-17-1651_03_CDA_Reference_coin_mip
+# pickle_paths = ['./results/05-17-1651_03_CDA_Reference_coin_mip/tmp/tall_results_dfs_03_CDA_Reference_05-17-1651.pickle','./results/05-17-1651_03_CDA_Reference_coin_mip/tmp/paths_dict_03_CDA_Reference_05-17-1651.pickle', './results/05-17-1651_03_CDA_Reference_coin_mip/tmp/config_dict_03_CDA_Reference_05-17-1651.pickle']
 # plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
 
 # plotting_functions.plotting_handler(tall_results_dfs=tall_results_dfs,paths_dict=paths_dict,config_dict=config_dict,load_from_pickle=True, pickle_paths=None)
