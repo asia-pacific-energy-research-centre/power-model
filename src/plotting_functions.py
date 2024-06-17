@@ -51,7 +51,7 @@ def plotting_handler(tall_results_dfs=None,paths_dict={}, config_dict={},load_fr
     #begin plotting:
     fig_gen,title_gen, fig_heat,title_heat, HEAT_DATA_AVAILABLE = plot_generation_and_heat_annual(tall_results_dfs, paths_dict)
     
-    fig_use_fuel,title_use_fuel, fig_use_tech,title_use_tech = plot_input_use_by_fuel_and_technology(tall_results_dfs, paths_dict)
+    fig_use_fuel,title_use_fuel, fig_use_tech_area, title_use_tech_area, fig_use_tech_line, title_use_tech_line = plot_input_use_by_fuel_and_technology(tall_results_dfs, paths_dict)
     
     fig_emissions, fig_emissions_title = plot_emissions_annual(tall_results_dfs, paths_dict)
 
@@ -64,9 +64,9 @@ def plotting_handler(tall_results_dfs=None,paths_dict={}, config_dict={},load_fr
 
     fig_cost_per_unit_production,title_cost_per_unit_production, fig_fixed_and_variable,title_fixed_and_variable = plot_cost_per_unit_production(tall_results_dfs, paths_dict, config_dict, CREATE_COSTS_DASHBOARD=CREATE_COSTS_DASHBOARD)
     #put all figs in a list
-    figs = [fig_8th_graph_generation,fig_gen, fig_emissions, fig_capacity, fig_heat, fig_use_tech]#, fig_cost_per_unit_production, fig_fixed_and_variable]#, fig_use_fuel]#+ figs_list_average_generation_by_timeslice #found timeselices to be too complicated to plot in dashboard so left them out
+    figs = [fig_8th_graph_generation,fig_gen, fig_emissions, fig_capacity, fig_heat, fig_use_tech_line]#, fig_cost_per_unit_production, fig_fixed_and_variable]#, fig_use_fuel]#+ figs_list_average_generation_by_timeslice #found timeselices to be too complicated to plot in dashboard so left them out
     # fig_capacity_factor,#we wont plot capacity factor in dashboard
-    subplot_titles = [fig_8th_graph_generation_title,title_gen, fig_emissions_title, fig_capacity_title, title_heat, title_use_tech]#, title_cost_per_unit_production, title_fixed_and_variable]#, title_use_fuel] #+ figs_list_average_generation_by_timeslice_title
+    subplot_titles = [fig_8th_graph_generation_title,title_gen, fig_emissions_title, fig_capacity_title, title_heat, title_use_tech_line]#, title_cost_per_unit_production, title_fixed_and_variable]#, title_use_fuel] #+ figs_list_average_generation_by_timeslice_title
     
     if not HEAT_DATA_AVAILABLE:
         figs.remove(fig_heat)
@@ -291,17 +291,22 @@ def plot_input_use_by_fuel_and_technology(tall_results_dfs, paths_dict):
     input_use_fuel, input_use_tech = format_input_use(input_use)
         
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the YEAR
-    title_use_tech = 'Input use by technology PJ'
-    fig_use_tech = px.area(input_use_tech, x="YEAR", y="VALUE", color='TECHNOLOGY',title=title_use_tech,color_discrete_map=create_color_dict(input_use['TECHNOLOGY']))
+    title_use_tech_area = 'Input use by technology PJ'
+    fig_use_tech_area = px.area(input_use_tech, x="YEAR", y="VALUE", color='TECHNOLOGY',title=title_use_tech_area,color_discrete_map=create_color_dict(input_use['TECHNOLOGY']))
     #save as html
-    fig_use_tech.write_html(paths_dict['visualisation_directory']+'/annual_use_by_tech.html', auto_open=False)
+    fig_use_tech_area.write_html(paths_dict['visualisation_directory']+'/annual_use_by_tech_area.html', auto_open=False)
+    
+    title_use_tech_line = 'Input use by technology PJ'
+    fig_use_tech_line = px.line(input_use_tech, x="YEAR", y="VALUE", color='TECHNOLOGY',title=title_use_tech_line,color_discrete_map=create_color_dict(input_use['TECHNOLOGY']))
+    #save as html
+    fig_use_tech_line.write_html(paths_dict['visualisation_directory']+'/annual_use_by_tech_line.html', auto_open=False)
     
     title_use_fuel = 'Input use by fuel PJ'
     fig_use_fuel = px.area(input_use_fuel, x="YEAR", y="VALUE", color='FUEL',title=title_use_fuel,color_discrete_map=create_color_dict(input_use['FUEL']))
     #save as html
     fig_use_fuel.write_html(paths_dict['visualisation_directory']+'/annual_use_by_fuel.html', auto_open=False)
 
-    return fig_use_fuel,title_use_fuel, fig_use_tech,title_use_tech
+    return fig_use_fuel,title_use_fuel, fig_use_tech_area, title_use_tech_area, fig_use_tech_line, title_use_tech_line
 
 def format_generation_and_heat_df(generation, heat, keep_timeslice_col=False, INCLUDE_STORAGE=False):
     if keep_timeslice_col:
