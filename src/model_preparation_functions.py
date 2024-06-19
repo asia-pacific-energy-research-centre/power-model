@@ -632,7 +632,7 @@ def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,USE_TMP_FILES_FROM_PREVI
     paths_dict['paths_dict_pickle'] = f'{tmp_directory}/paths_dict_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
     paths_dict['config_dict_pickle'] = f'{tmp_directory}/config_dict_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
     paths_dict['EBT_output_energy'] = f'{results_directory}/EBT_energy_{economy}_{scenario}_{FILE_DATE_ID}.csv'
-    paths_dict['EBT_output_capacity'] = f'{results_directory}/EBT_capacity_{economy}_{scenario}_{FILE_DATE_ID}.csv'
+    paths_dict['EBT_output_capacity'] = f'{results_directory}/EBT_generation_capacity_{economy}_{scenario}_{FILE_DATE_ID}.csv'
     
     aggregated_results_and_inputs_folder_name = f"{FILE_DATE_ID}_{config_dict['economy']}_{config_dict['scenario']}_{config_dict['solving_method']}"
     paths_dict['aggregated_results_and_inputs_folder_name'] = aggregated_results_and_inputs_folder_name
