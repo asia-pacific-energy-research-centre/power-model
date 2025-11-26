@@ -1,3 +1,4 @@
+#%%
 import pandas as pd
 import numpy as np
 import yaml
@@ -148,7 +149,7 @@ def convert_results_variables_back_to_long_names(results_dfs,paths_dict):
                 #use the long_variable_names_to_short_variable_names dict to change the values in the sheet
                 #first check if the string has apostrophes at the start and end. If so, remove them, these occur because the string has a number at the start
                 results_dfs[sheet][col] = results_dfs[sheet][col].str.strip("'")
-                results_dfs[sheet][col] = results_dfs[sheet][col].apply(lambda x: short_variable_names_to_long_variable_names[col][x] if x in short_variable_names_to_long_variable_names[col].keys() else model_preparation_functions.raise_error_if_var_name_not_in_dict(x))
+                results_dfs[sheet][col] = results_dfs[sheet][col].apply(lambda x: short_variable_names_to_long_variable_names[col][x] if x in short_variable_names_to_long_variable_names[col].keys() else model_preparation_functions.raise_error_if_var_name_not_in_dict(x, col))
     return results_dfs
 
 def get_sheet_names_for_file_names(config_dict, results_dfs):
@@ -189,6 +190,7 @@ def save_results_as_excel(paths_dict, config_dict,wide_results_dfs):
     logger.info(f"Results saved in the results folder as {paths_dict['results_workbook']}")        
     return
 
+    
 def save_results_as_long_csvs(paths_dict, config_dict,tall_results_dfs):
     # Now we take the CSV files and combine them into a single df
     combined_data = pd.DataFrame()
@@ -511,6 +513,8 @@ def save_results_visualisations_and_inputs_to_folder(paths_dict, save_plotting,s
         shutil.copy(paths_dict['results_workbook'],results_folder)
         shutil.copy(paths_dict['combined_results_tall_years'], results_folder)
         shutil.copy(paths_dict['combined_results_tall_sheet_names'], results_folder)
+        shutil.copy(paths_dict['EBT_output_energy'], results_folder)
+        shutil.copy(paths_dict['EBT_output_capacity'], results_folder)
         #and save the datafile paths_dict['input_data_file_path'] to the new folder
         shutil.copy(paths_dict['input_data_file_path'], tmp_folder)
 
@@ -561,3 +565,227 @@ def save_results_as_pickle(paths_dict,tall_results_dfs, config_dict):
     #save config_dict as a pickle
     with open(paths_dict['config_dict_pickle'], 'wb') as f:
         pickle.dump(config_dict, f)
+         
+def extract_and_format_final_output_for_EBT(tall_results_dfs,EBT_output_energy_path, EBT_output_capacity_path, scenario, economy):
+    """we've created a mapping just like is used for the plotting, to map the TECHNOLOGY and FUEL cols to the EBT readable names in the catogories: sectors, sub1sectors, sub2sectors, sub3sectors, sub4sectors, fuels, subfuels. We wil use this process for both the ProductionByTechnologyAnnual, UseByTechnology and TotalCapacityAnnual sheets for energy output, energy input and capacity respectively."""
+    
+    EBT_mapping = pd.read_excel('config/EBT_mapping.xlsx', sheet_name=None)
+    ProductionByTechnology_mapping = EBT_mapping['ProductionByTechnologyAnnual'].drop(columns=['comment'])
+    TotalCapacityAnnual_mapping = EBT_mapping['TotalCapacityAnnual'].drop(columns=['comment'])
+    UseByTechnology_mapping = EBT_mapping['UseByTechnology'].drop(columns=['comment'])
+
+    input = tall_results_dfs['UseByTechnology'].copy()
+    production = tall_results_dfs['ProductionByTechnologyAnnual'].copy()
+    capacity = tall_results_dfs['TotalCapacityAnnual'].copy()
+    input = input[['REGION','TECHNOLOGY','FUEL','YEAR', 'VALUE']].groupby(['REGION','TECHNOLOGY','FUEL','YEAR']).sum().reset_index().copy()
+    production = production[['REGION','TECHNOLOGY','FUEL','YEAR', 'VALUE']].groupby(['REGION','TECHNOLOGY','FUEL','YEAR']).sum().reset_index().copy()
+    capacity = capacity[['REGION','TECHNOLOGY','YEAR', 'VALUE']].groupby(['REGION','TECHNOLOGY','YEAR']).sum().reset_index().copy()
+    
+    #add own use to production to get full electricity generation (that is, where FUEL is 17_electricity_own, add it to 17_electricity for the same TECHNOLOGY:
+    own_use = production[production['FUEL'] == '17_electricity_own'].copy()
+    own_use['FUEL'] = '17_electricity'
+    own_use = own_use.rename(columns={'VALUE':'OWN_USE'})
+    production = production.merge(own_use, on=['REGION','TECHNOLOGY','FUEL','YEAR'], how='left')
+    production['VALUE'] = production['VALUE'] + production['OWN_USE'].fillna(0)
+    production = production.drop(columns=['OWN_USE'])   
+    
+    #do same for 18_heat and 18_heat_own
+    own_use = production[production['FUEL'] == '18_heat_own'].copy()
+    own_use['FUEL'] = '18_heat'
+    own_use = own_use.rename(columns={'VALUE':'OWN_USE'})
+    production = production.merge(own_use, on=['REGION','TECHNOLOGY','FUEL','YEAR'], how='left')
+    production['VALUE'] = production['VALUE'] + production['OWN_USE'].fillna(0)
+    production = production.drop(columns=['OWN_USE'])
+    
+    #do merge with mapping
+    production = production.merge(ProductionByTechnology_mapping, on=['TECHNOLOGY','FUEL'], how='left')
+    capacity = capacity.merge(TotalCapacityAnnual_mapping, on=['TECHNOLOGY'], how='left')
+    input = input.merge(UseByTechnology_mapping, on=['TECHNOLOGY','FUEL'], how='left')
+    
+    #add a row in input which actually represents the electricity output, in pj. this will come from production.
+    input_new_rows = create_total_transformation_rows_for_output_fuels(production, input, economy)
+    
+    #join all energy dfs
+    energy = pd.concat([input, input_new_rows, production], ignore_index=True)
+    
+    #drop where TO_USE is  False
+    energy = energy[energy['TO_USE'] == True].copy()
+    capacity = capacity[capacity['TO_USE'] == True].copy()
+    
+    # in production times the value by MULITPLIER. this is used for losses, unit conversion and so on:
+    energy['VALUE'] = energy['VALUE']*energy['MULTIPLIER']
+    capacity['VALUE'] = capacity['VALUE']*capacity['MULTIPLIER']
+    
+    #where the mapping is missing in any col let the user know
+    if energy.isnull().values.any():
+        breakpoint()
+        missing_rows = energy[energy.isnull().any(axis=1)][['TECHNOLOGY','FUEL']].drop_duplicates()
+        raise ValueError('There are some combinations of TECHNOLOGY and FUEL that are not in the ESTO mapping for energy. The missing combinations are: '+str(missing_rows))
+    if capacity.isnull().values.any():
+        breakpoint()
+        #print the rows that are missing:
+        missing_rows = capacity[capacity.isnull().any(axis=1)][['TECHNOLOGY']].drop_duplicates()
+        raise ValueError('There are some TECHNOLOGYs that are not in the ESTO mapping for capacity. The missing values are: '+str(missing_rows))
+           
+    #we want to drop the TECHNOLOGY and FUEL cols nwo
+    energy = energy.drop(columns=['TECHNOLOGY','FUEL'])
+    #rename REGION to economy
+    energy = energy.rename(columns={'REGION':'economy'})
+    #create scenario col
+    energy['scenarios'] = scenario.lower()
+    #group by all cols and sum up the VALUE col
+    energy = energy.groupby(['scenarios','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','fuels','subfuels','YEAR']).sum().reset_index()
+    #pivot on YEAR col
+    energy =energy.pivot(index=['scenarios','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','fuels','subfuels'], columns='YEAR', values='VALUE').reset_index()
+    
+    #same for caacity
+    capacity = capacity.drop(columns=['TECHNOLOGY'])
+    #rename REGION to economy
+    capacity = capacity.rename(columns={'REGION':'economy'})
+    #create scenario col
+    capacity['scenarios'] = scenario.lower()
+    #group by all cols and sum up the VALUE col
+    capacity = capacity.groupby(['scenarios','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors','YEAR']).sum().reset_index()
+    #pivot on YEAR col
+    capacity =capacity.pivot(index=['scenarios','economy','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors'], columns='YEAR', values='VALUE').reset_index()
+    
+    
+    #save
+    energy.to_csv(EBT_output_energy_path, index=False)
+    capacity.to_csv(EBT_output_capacity_path, index=False)
+    
+    print('Saved final energy output for EBT')
+    print('Saved final capacity output for EBT')
+    
+
+
+def create_total_transformation_rows_for_output_fuels(production, input, economy):
+    #create an output fuel=17_electricity row for sector=09_total_transformation_sector, for each uniue sub2sectors. This is a bit complicated but essentially we will take the dta from production where sectors is 18_electricity_output_in_gwh, grab the sub2sectors and remove the first 9 characters, eg. 18_02_01_ then call that the powerplant. Then match that wth the same powerplants in sub2sectors in input_df to use that row for its sectors columns. Call the fuel column 17_electricity though.
+    #also do simialr fo heat!
+    electricity_output = production[production['sectors'] == '18_electricity_output_in_gwh'].copy()
+    #extract data after the 3rd underscore
+    # electricity_output['powerplant'] = electricity_output['sub2sectors'].str.split('_', n=3).str[-1]
+    #if electricity_output['sub2sectors'] is x though, keep it as x. just so we dont get nas, eventually wed rather have a sub2sector for this (which is 'other' in chp)
+    # electricity_output.loc[electricity_output['sub2sectors'] == 'x', 'powerplant'] = 'x'
+    electricity_output['powerplant'] = ['_'.join(x.split('_')[3:]) if len(x.split('_')) > 3 else 'x' for x in electricity_output['sub2sectors']]
+
+    #and also define whether it is CHP or PP based on the technology name:
+    electricity_output['powerplant_type'] = np.where(electricity_output['TECHNOLOGY'].str.contains('CHP'), 'CHP', 'PP')
+    electricity_output = electricity_output[['powerplant','powerplant_type','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors', 'VALUE', 'YEAR']].drop_duplicates()
+    
+    input_new_rows_elec = input[input['sectors']=='09_total_transformation_sector'].copy()
+    #if electricity_output['sub2sectors'] is x though, keep it as x. just so we dont get nas, eventually wed rather have a sub2sector for this (which is 'other' in chp)
+    input_new_rows_elec['powerplant'] = ['_'.join(x.split('_')[3:]) if len(x.split('_')) > 3 else 'x' for x in input_new_rows_elec['sub2sectors']]
+    # input_new_rows_elec['powerplant'] = input_new_rows_elec['sub2sectors'].str.split('_', n=3).str[-1]
+    # input_new_rows_elec.loc[input_new_rows_elec['sub2sectors'] == 'x', 'powerplant'] = 'x'
+    # breakpoint()#ISSUE IN ALEXS CODE TODO
+    #keep only rows that contain PP or CHP in the technology name
+    input_new_rows_elec = input_new_rows_elec[input_new_rows_elec['TECHNOLOGY'].str.contains('PP|CHP')]
+    #and also define whether it is CHP or PP based on the technology name:
+    input_new_rows_elec['powerplant_type'] = np.where(input_new_rows_elec['TECHNOLOGY'].str.contains('CHP'), 'CHP', 'PP')
+    input_new_rows_elec = input_new_rows_elec[['powerplant','powerplant_type','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']].drop_duplicates()
+    
+    # breakpoint()#ISSUE IN ALEXS CODE TODO
+    input_new_rows_elec_merged = input_new_rows_elec.merge(electricity_output.drop(columns=['sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']), on=['powerplant','powerplant_type'], how='right')    
+    
+    input_new_rows_elec_merged['fuels'] = '17_electricity'
+    input_new_rows_elec_merged['subfuels'] = 'x'
+    # breakpoint()#ISSUE IN ALEXS CODE TODO
+    ################
+    #HEAT
+    ################
+    heat_output = production[production['sectors'] == '19_heat_output_in_pj'].copy()
+    #extract data after the 3rd underscore
+    # heat_output['powerplant'] = heat_output['sub2sectors'].str.split('_', n=3).str[-1]
+    # #if heat_output['sub2sectors'] is x though, keep it as x. just so we dont get nas, eventually wed rather have a sub2sector for this (which is 'other' in chp)
+    heat_output['powerplant'] = ['_'.join(x.split('_')[3:]) if len(x.split('_')) > 3 else 'x' for x in heat_output['sub2sectors']]
+    # heat_output.loc[heat_output['sub2sectors'] == 'x', 'powerplant'] = 'x'
+    #and also define whether it is CHP or HP based on the technology name:
+    heat_output['powerplant_type'] = np.where(heat_output['TECHNOLOGY'].str.contains('CHP'), 'CHP', 'HP')
+    heat_output = heat_output[['powerplant','powerplant_type','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors', 'VALUE', 'YEAR']].drop_duplicates()
+    #as of 12/12/2023 we dont have technologies in teh EBT schema for electriicty and otehrs heatplants so we ahve to set their powerplant to x
+    heat_output.loc[heat_output['powerplant'].isin(['electricity','others']), 'powerplant'] = 'x'
+    
+    input_new_rows_heat = input[input['sectors']=='09_total_transformation_sector'].copy()
+    #if heat_output['sub2sectors'] is x though, keep it as x. just so we dont get nas, eventually wed rather have a sub2sector for this (which is 'other' in chp)
+    input_new_rows_heat['powerplant'] = ['_'.join(x.split('_')[3:]) if len(x.split('_')) > 3 else 'x' for x in input_new_rows_heat['sub2sectors']]
+    # input_new_rows_heat['powerplant'] = input_new_rows_heat['sub2sectors'].str.split('_', n=3).str[-1]
+    # input_new_rows_heat.loc[input_new_rows_heat['sub2sectors'] == 'x', 'powerplant'] = 'x'
+    #remove any PP rows
+    input_new_rows_heat = input_new_rows_heat[~input_new_rows_heat['TECHNOLOGY'].str.contains('PP')]
+    #and also define whether it is CHP or HP based on the technology name:
+    input_new_rows_heat['powerplant_type'] = np.where(input_new_rows_heat['TECHNOLOGY'].str.contains('CHP'), 'CHP', 'HP')
+    input_new_rows_heat = input_new_rows_heat[['powerplant','powerplant_type','sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']].drop_duplicates()
+    
+    #SOMETIMES WE GET EMPTY DATAFRAMES FOR HEAT, SO IF THEY ARE EMPTY WE WILL JUST RETURN AN EMPTY DATAFRAME:
+    if input_new_rows_heat.empty and heat_output.empty:
+        input_new_rows_heat_merged = pd.DataFrame(columns=input_new_rows_elec_merged.columns)
+    else:
+        input_new_rows_heat_merged = input_new_rows_heat.merge(heat_output.drop(columns=['sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors']), on=['powerplant','powerplant_type'], how='right')
+        input_new_rows_heat_merged['fuels'] = '18_heat'
+        input_new_rows_heat_merged['subfuels'] = 'x'
+    
+    ################
+    #COMBINE
+    ################
+    input_new_rows = pd.concat([input_new_rows_elec_merged, input_new_rows_heat_merged], ignore_index=True)
+    
+    #make sure powerplant	powerplant_type are gone
+    input_new_rows = input_new_rows.drop(columns=['powerplant','powerplant_type'])
+
+    #groupby and sum up the VALUE col
+    input_new_rows = input_new_rows.groupby(['sectors','sub1sectors','sub2sectors','sub3sectors','sub4sectors', 'fuels','subfuels','YEAR']).sum().reset_index()
+    
+    #set multiplier to 1
+    input_new_rows['MULTIPLIER'] = 1
+    input_new_rows['TO_USE'] = True
+    input_new_rows['TECHNOLOGY'] = 'x'
+    input_new_rows['FUEL'] = 'x'
+    input_new_rows['REGION'] = economy
+    
+    return input_new_rows
+
+
+def convert_excel_results_file_to_results_dfs(excel_file_path):
+    """Helper function i created for post hoc creation files so they could be used to create files for the outlook EBT data system. Takes in the excel file and returns the wide and tall results dfs. 
+
+    Args:
+        excel_file_path (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    wide_results_dfs = {}
+    tall_results_dfs = {}
+    with pd.ExcelFile(excel_file_path) as xls:
+        for sheet in xls.sheet_names:
+            df = pd.read_excel(xls, sheet)
+            #drop 'Unnamed: 0'
+            df.drop(columns=['Unnamed: 0'], inplace=True, errors='ignore')
+            wide_results_dfs[sheet] = df
+            
+            cols = df.columns.tolist()
+            unwanted_indices = {'YEAR', 'VALUE'}
+            indices = [ele for ele in cols if ele not in unwanted_indices]
+            #drop any numerical cols
+            indices = [ele for ele in indices if not isinstance(ele, (int, float))]
+            if 'VALUE' in df.columns:
+                #We dont have years in this data so we'll just leave it as its tall already.
+                tall_df = df.copy()
+            else:
+                tall_df = pd.melt(df,id_vars=indices,var_name='YEAR',value_name='VALUE').copy()
+            tall_df = tall_df.sort_values(by=indices)
+        
+            tall_results_dfs[sheet] = tall_df
+            
+    return wide_results_dfs, tall_results_dfs
+
+def recreate_output_ebt_files(excel_file_path, EBT_output_energy_path, EBT_output_capacity_path, economy, scenario):
+    """Helper function i created for post hoc creation files so they could be used to create files for the outlook EBT data system. Takes in the excel file and returns the wide and tall results dfs. 
+    E.g. runt this from main.py: post_processing_functions.recreate_output_ebt_files('19_THA_results_Target_03-12-1207.xlsx', 'energy', 'capacity', '19_THA', 'Target')
+    """
+    wide_results_dfs, tall_results_dfs = convert_excel_results_file_to_results_dfs(excel_file_path)
+    
+    extract_and_format_final_output_for_EBT(tall_results_dfs, EBT_output_energy_path, EBT_output_capacity_path, scenario, economy)
+#%%
+    

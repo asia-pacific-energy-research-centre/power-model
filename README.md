@@ -11,9 +11,9 @@ Make sure you run this command in the folder you want.
 
 You need to create a conda environment. To install, move to your working directory and copy and paste the following in your command line:
 
-`conda env create --prefix ./env --file ./config/environment.yml`
+`conda env create --prefix ./power_model_env --file ./config/environment.yml`
 
-`conda activate ./env`
+`conda activate ./power_model_env`
 
 ## 2. To run the model 
 Make sure you did Step 1 (only need to do it once).
@@ -44,6 +44,8 @@ If the model solves successfully, a bunch of CSV files will be written to the sa
 
 If there is an error message saying the model is infeasible, check your model data. You can also double check the process_log_{economy}_{scenario}.txt file for outputs from the solving process. If the model is infeasible, the results files will not be written and you will get a "file not found" error message or something. This is your clue that the model did not solve. You always want to see a message in the solver output saying "OPTIMAL LP SOLUTION FOUND".
 
+You may find issues with the 'datafile_from_python_ECONOMYNAME_SCENARIO.txt' file not being created and this causing the solver to not work. One possible reason that is hard to spot is that installing/uninstalling otoole might fix it. this is because when otoole is installed it seems to record the location of itself in its code. So if you install it in one location, then move it, it will still be looking for the old location. To fix this, uninstall otoole, then reinstall it in the new location. I have put an issue on Otooles github about this so maybe it will be fixed.
+
 ## 4. Adding results to config yml files
 To add results (e.g., capacity factor) you need to edit the following files:
 - osemosys.txt
@@ -54,7 +56,7 @@ The `osemosys_fast.txt` file is where the calculations occur. Following the patt
 ## 5. Using results
 Saved in the results folder will be a few different files. The ones with name ~ tall_...xlsx, will be a combination of all the results in one csv. 
 
-Also, if you have set the variable save_results_vis_and_inputs to True in the main.py file, then you will also have a folder in results/ with the FILEDATEID and some general settings in it's name (i.e. /2023-04-11-134916_19_THA_Reference_coin_mip/) which will contain all the resutls, input, intermediate and visualisation files. This can be useful for debugging and testing.
+Also, if you have set the variable SAVE_RESULTS_VIS_AND_INPUTS to True in the main.py file, then you will also have a folder in results/ with the FILEDATEID and some general settings in it's name (i.e. /2023-04-11-134916_19_THA_Reference_coin_mip/) which will contain all the resutls, input, intermediate and visualisation files. This can be useful for debugging and testing.
 
 ### Extras: 
 ## Creating visualisation of RES

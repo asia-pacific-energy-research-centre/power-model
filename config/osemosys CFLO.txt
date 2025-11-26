@@ -1,3 +1,6 @@
+#please note that ive wirttedn instructions in the code prefaced with a TODO tag for introducing the CFLO varaible into the model #TODO
+
+
 # OSeMOSYS_2017_11_08
 #
 # Open Source energy MOdeling SYStem
@@ -99,6 +102,11 @@ param AccumulatedAnnualDemand{r in REGION, f in FUEL, y in YEAR};
 #
 param CapacityToActivityUnit{r in REGION, t in TECHNOLOGY};
 param CapacityFactor{r in REGION, t in TECHNOLOGY, l in TIMESLICE, y in YEAR};
+
+#TODO INSERT NEW CAP FACTOR FOR LOWERLIMIT FOR PRODUCTION CALLED CFLO
+param CapacityFactorLo{r in REGION, t in TECHNOLOGY, l in TIMESLICE, y in YEAR};
+#TODO INSERT NEW CAP FACTOR FOR LOWERLIMIT FOR PRODUCTION CALLED CFLO
+
 param AvailabilityFactor{r in REGION, t in TECHNOLOGY, y in YEAR};
 
 param ResidualCapacity{r in REGION, t in TECHNOLOGY, y in YEAR};
@@ -122,7 +130,6 @@ param MinStorageCharge{r in REGION, s in STORAGE, y in YEAR};
 param OperationalLifeStorage{r in REGION, s in STORAGE};
 param CapitalCostStorage{r in REGION, s in STORAGE, y in YEAR};
 param ResidualStorageCapacity{r in REGION, s in STORAGE, y in YEAR};
-param StorageTag{r in REGION, s in STORAGE}, default 1;
 #
 #########			Capacity Constraints		#############
 #
@@ -194,6 +201,11 @@ check{r in REGION, t in TECHNOLOGY, y in YEAR:TotalAnnualMaxCapacity[r,t,y]<>-1 
 printf "Checking Annual production by technology bounds for r in REGION, t in TECHNOLOGY, y in YEAR \n";
 #
 check{r in REGION, t in TECHNOLOGY, y in YEAR:TotalAnnualMaxCapacity[r,t,y]<>0 && TotalAnnualMaxCapacity[r,t,y] <> -1 && TotalTechnologyAnnualActivityLowerLimit[r,t,y]<>0 && AvailabilityFactor[r,t,y]<>0 && CapacityToActivityUnit[r,t]<>0}: sum{l in TIMESLICE: CapacityFactor[r,t,l,y]<>0 && YearSplit[l,y]<>0}(CapacityFactor[r,t,l,y]*YearSplit[l,y])*TotalAnnualMaxCapacity[r,t,y]* AvailabilityFactor[r,t,y]*CapacityToActivityUnit[r,t] >= TotalTechnologyAnnualActivityLowerLimit[r,t,y];
+
+#TODO INSERT NEW CAP FACTOR FOR LOWERLIMIT FOR PRODUCTION CALLED CFLO IN THE FORMULA ABOVE. IT MIGHT NOT BE NECESSARY BUT HUNCH TELLS ME OTHERWISE
+#check{r in REGION, t in TECHNOLOGY, y in YEAR:TotalAnnualMaxCapacity[r,t,y]<>0 && TotalAnnualMaxCapacity[r,t,y] <> -1 && TotalTechnologyAnnualActivityLowerLimit[r,t,y]<>0 && AvailabilityFactor[r,t,y]<>0 && CapacityToActivityUnit[r,t]<>0}: sum{l in TIMESLICE: CapacityFactor[r,t,l,y]<>0 && YearSplit[l,y]<>0}(CapacityFactor[r,t,l,y]*YearSplit[l,y])*TotalAnnualMaxCapacity[r,t,y]* AvailabilityFactor[r,t,y]*CapacityToActivityUnit[r,t] >= TotalTechnologyAnnualActivityLowerLimit[r,t,y];
+#TODO INSERT NEW CAP FACTOR FOR LOWERLIMIT FOR PRODUCTION CALLED CFLO IN THE FORMULA ABOVE. IT MIGHT NOT BE NECESSARY BUT HUNCH TELLS ME OTHERWISE
+
 #
 #####    'Time Slice' check     #####
 printf "Checking TimeSlices/YearSplits for y in YEAR \n";
@@ -394,6 +406,13 @@ s.t. CAa4_Constraint_Capacity{r in REGION, l in TIMESLICE, t in TECHNOLOGY, y in
 	<=
 	TotalCapacityAnnual[r,t,y] * CapacityFactor[r,t,l,y] * CapacityToActivityUnit[r,t];
 
+#TODO DOUBLE CHECK THAT BELOW WORKS AS EXPECTED WHEN INTRODUCED ALONG WITH THE OTHER CAHNGES INVOLVING CapacityFactorLo
+s.t. CAa4_Constraint_Capacity{r in REGION, l in TIMESLICE, t in TECHNOLOGY, y in YEAR}:
+	RateOfTotalActivity[r,t,l,y]
+	>
+	TotalCapacityAnnual[r,t,y] * CapacityFactorLo[r,t,l,y] * CapacityToActivityUnit[r,t];
+#TODO DOUBLE CHECK THAT BELOW WORKS AS EXPECTED WHEN INTRODUCED ALONG WITH THE OTHER CAHNGES INVOLVING CapacityFactorLo
+
 s.t. CAa5_TotalNewCapacity{r in REGION, t in TECHNOLOGY, y in YEAR: CapacityOfOneTechnologyUnit[r,t,y]<>0}:
 	CapacityOfOneTechnologyUnit[r,t,y] * NumberOfNewTechnologyUnits[r,t,y]
 	=
@@ -411,6 +430,13 @@ s.t. CAb1_PlannedMaintenance{r in REGION, t in TECHNOLOGY, y in YEAR: Availabili
 	sum{l in TIMESLICE} (TotalCapacityAnnual[r,t,y] * CapacityFactor[r,t,l,y] * YearSplit[l,y])
 	* AvailabilityFactor[r,t,y] * CapacityToActivityUnit[r,t];
 
+#TODO DOUBLE CHECK THAT BELOW WORKS AS EXPECTED WHEN INTRODUCED ALONG WITH THE OTHER CAHNGES INVOLVING CapacityFactorLo
+s.t. CAb1_PlannedMaintenance{r in REGION, t in TECHNOLOGY, y in YEAR: AvailabilityFactor[r,t,y] < 1}:
+	sum{l in TIMESLICE} RateOfTotalActivity[r,t,l,y] * YearSplit[l,y]
+	>
+	sum{l in TIMESLICE} (TotalCapacityAnnual[r,t,y] * CapacityFactorLo[r,t,l,y] * YearSplit[l,y])
+	* AvailabilityFactor[r,t,y] * CapacityToActivityUnit[r,t];
+#TODO DOUBLE CHECK THAT BELOW WORKS AS EXPECTED WHEN INTRODUCED ALONG WITH THE OTHER CAHNGES INVOLVING CapacityFactorLo
 #
 #########	        Energy Balance A    	 	#############
 #
@@ -608,9 +634,6 @@ s.t. SC4_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWee
 s.t. SC4_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint{r in REGION, s in STORAGE, ls in SEASON, ld in DAYTYPE, lh in DAILYTIMEBRACKET, y in YEAR}: if ld > min{ldld in DAYTYPE} min(ldld) then (StorageLevelDayTypeFinish[r,s,ls,ld-1,y]+sum{lhlh in DAILYTIMEBRACKET:lh-lhlh>0} NetChargeWithinDay[r,s,ls,ld,lhlh,y])-StorageUpperLimit[r,s,y] <= 0;
 s.t. SC5_MaxChargeConstraint{r in REGION, s in STORAGE, ls in SEASON, ld in DAYTYPE, lh in DAILYTIMEBRACKET, y in YEAR}: RateOfStorageCharge[r,s,ls,ld,lh,y] <= StorageMaxChargeRate[r,s];
 s.t. SC6_MaxDischargeConstraint{r in REGION, s in STORAGE, ls in SEASON, ld in DAYTYPE, lh in DAILYTIMEBRACKET, y in YEAR}: RateOfStorageDischarge[r,s,ls,ld,lh,y] <= StorageMaxDischargeRate[r,s];
-s.t. SC7_WeeklyBalance{r in REGION, s in STORAGE, ls in SEASON, y in YEAR: StorageTag[r,s] = 2}: sum{ld in DAYTYPE, lh in DAILYTIMEBRACKET}NetChargeWithinDay[r,s,ls,ld,lh,y]*DaysInDayType[ls,ld,y] = 0;
-s.t. SC8_YearlyBalance{r in REGION, s in STORAGE, y in YEAR: StorageTag[r,s] =1}: sum{ls in SEASON, ld in DAYTYPE, lh in DAILYTIMEBRACKET} NetChargeWithinYear[r,s,ls,ld,lh,y] = 0;
-s.t. SC9_PeriodBalance{s in STORAGE, r in REGION}: sum{y in YEAR, l in TIMESLICE, ls in SEASON, ld in DAYTYPE, lh in DAILYTIMEBRACKET} NetChargeWithinYear[r,s,ls,ld,lh,y] = 0;
 #
 #########		Storage Investments				#############
 #

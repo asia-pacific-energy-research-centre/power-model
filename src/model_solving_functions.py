@@ -20,6 +20,7 @@ if os.getcwd().split('\\')[-1] == 'src':
 
 def solve_model(config_dict,paths_dict):
     """Use subprocess to run the model file in the tmp directory. This is done using the command line. The methods used in the command line are mostly detailed in https://otoole.readthedocs.io/en/latest/functionality.html . The results are saved in the tmp directory for the economy and scenario we are running the model for. They will be processed after this function"""
+    
     #create path variables
     tmp_directory = paths_dict['tmp_directory']
     path_to_new_data_config = paths_dict['path_to_new_data_config']

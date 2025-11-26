@@ -160,10 +160,14 @@ def create_data_config_with_short_names_as_keys(config_dict):
             del data_config_short_names[key]
     return data_config_short_names
 
-def raise_error_if_var_name_not_in_dict(x):
+def raise_error_if_var_name_not_in_dict(x, col, wb=None):
     #not sure if this is the best way to do this but it works
+    #it 
+    # seemed like we were using col befor ebut i dont know where that came from
+    breakpoint()
     logger.error(f'{x} is not in the long_variable_names_to_short_variable_names dictionary for the column {col}. Please add it to the dictionary or change it in the input data.')
-    wb.close()
+    if wb != None:
+        wb.close()
     sys.exit()
 
 def edit_input_data(data_config_short_names, scenario, economy, model_end_year,model_start_year,sheet,sheet_name,wb,long_variable_names_to_short_variable_names,use_long_var_names=False):#123 is config short anmes still going tp have dtuypes and stuff?
@@ -205,7 +209,7 @@ def edit_input_data(data_config_short_names, scenario, economy, model_end_year,m
                 sys.exit()
             elif col in long_variable_names_to_short_variable_names.keys() and use_long_var_names == False:
                 #we are having issues with the values in our input data being too long for coinc cbc. so we will attempt to decrease their lgnth.
-                sheet[col] = sheet[col].apply(lambda x: long_variable_names_to_short_variable_names[col][x] if x in long_variable_names_to_short_variable_names[col].keys() else raise_error_if_var_name_not_in_dict(x))
+                sheet[col] = sheet[col].apply(lambda x: long_variable_names_to_short_variable_names[col][x] if x in long_variable_names_to_short_variable_names[col].keys() else raise_error_if_var_name_not_in_dict(x,col, wb))
             else:
                 pass
         #check for VALUE col even thogh it is not in the indices list
@@ -235,10 +239,10 @@ def edit_input_data(data_config_short_names, scenario, economy, model_end_year,m
         #we are having issues with the values in our input data being too long for coinc cbc. so we will attempt to decrease their lgnth.
         #if col is 'REGION' then change col to the last three letters of the col123
         if sheet_name == 'REGION' and use_long_var_names == False:
-            sheet['VALUE'] = sheet['VALUE'].apply(lambda x: long_variable_names_to_short_variable_names[sheet_name][x] if x in long_variable_names_to_short_variable_names[sheet_name].keys() else raise_error_if_var_name_not_in_dict(x))
+            sheet['VALUE'] = sheet['VALUE'].apply(lambda x: long_variable_names_to_short_variable_names[sheet_name][x] if x in long_variable_names_to_short_variable_names[sheet_name].keys() else raise_error_if_var_name_not_in_dict(x,sheet_name, wb))
         elif sheet_name in long_variable_names_to_short_variable_names.keys() and use_long_var_names == False:
             #use the long_variable_names_to_short_variable_names dict to change the values in the sheet
-            sheet['VALUE'] = sheet['VALUE'].apply(lambda x: long_variable_names_to_short_variable_names[sheet_name][x] if x in long_variable_names_to_short_variable_names[sheet_name].keys() else raise_error_if_var_name_not_in_dict(x))
+            sheet['VALUE'] = sheet['VALUE'].apply(lambda x: long_variable_names_to_short_variable_names[sheet_name][x] if x in long_variable_names_to_short_variable_names[sheet_name].keys() else raise_error_if_var_name_not_in_dict(x,sheet_name, wb))
         else:
             pass
 
@@ -326,12 +330,27 @@ def convert_workbook_to_datafile(paths_dict, config_dict, long_var_names=False):
     if not long_var_names:
         command = f"otoole convert excel datafile {paths_dict['path_to_combined_input_data_workbook']} {paths_dict['path_to_input_data_file']} {paths_dict['path_to_new_data_config']}"
 
-        result = subprocess.run(command,shell=True, capture_output=True, text=True)
+        p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
+        if p.stdout is not None:
+            for line in p.stdout:
+                print(line, end='')  # print to console in real-time
+                logger.info(line)  # also log the output
+        else:
+            logger.info("No output from subprocess in convert_workbook_to_datafile()")
+
+        p.wait()  # wait for the subprocess to finish
+
         logger.info(f"Running the following command to convert the workbook to a datafile:\n{command}")
-        logger.info(command+'\n')
-        logger.info(result.stdout+'\n')
-        logger.info(result.stderr+'\n')
         logger.info(f"Data file in text format has been written and saved in the tmp folder as {paths_dict['path_to_input_data_file']}.\n")
+
+
+        # result = subprocess.run(command,shell=True, capture_output=True, text=True)
+        # logger.info(f"Running the following command to convert the workbook to a datafile:\n{command}")
+        # logger.info(command+'\n')
+        # logger.info(result.stdout+'\n')
+        # logger.info(result.stderr+'\n')
+        # logger.info(f"Data file in text format has been written and saved in the tmp folder as {paths_dict['path_to_input_data_file']}.\n")
     else:
         command = f"otoole convert excel datafile {paths_dict['path_to_combined_input_data_workbook_long_var_names']} {paths_dict['path_to_input_data_file_long_var_names']} {paths_dict['path_to_new_data_config']}"
         result = subprocess.run(command,shell=True, capture_output=True, text=True)
@@ -439,24 +458,26 @@ def write_model_run_specs_to_file(paths_dict, config_dict, FILE_DATE_ID):
 
     return
 
-def create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, config_dict,keep_current_tmp_files):
+def create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, config_dict,USE_TMP_FILES_FROM_PREVIOUS_RUN,EMPTY_TMP_FOLDER_BEFORE_RUNNING):
     #create the tmp and results directories if they dont exist. ALso check if there are files in the tmp directory and if so, move them to a new folder with the FILE_DATE_ID in the name. 
     #EXCEPT if osemosys_cloud_input is y, then we dont want to do this because the user will be running main.py to extract results form the cloud output, as tehy ahve already done it once to prepare data now they are doing it once to extract results, and we dont want to move the files in the tmp directory in between those two runs
-
     #TMP
+    if EMPTY_TMP_FOLDER_BEFORE_RUNNING:
+        if os.path.exists(tmp_directory):
+            shutil.rmtree(tmp_directory)
     if not os.path.exists(tmp_directory):
         os.makedirs(tmp_directory)
     else:
         #if theres already file in the tmp directory then we should move those to a new folder so we dont overwrite them:
         #check if there are files:
-        if len(os.listdir(tmp_directory)) > 0 and config_dict['osemosys_cloud_input'] != 'y' and not keep_current_tmp_files:
-            new_temp_dir = f"./tmp/{tmp_directory}/{FILE_DATE_ID}"
-            #make the new temp directory:
-            os.makedirs(new_temp_dir)
-            #move all files (BUT NOT FOLDERS!):
-            for file in os.listdir(tmp_directory):
-                if os.path.isfile(f'{tmp_directory}/{file}'):
-                    shutil.move(f'{tmp_directory}/{file}', new_temp_dir)
+        if (len(os.listdir(tmp_directory)) > 0) and (config_dict['osemosys_cloud_input'] != 'y') and (not USE_TMP_FILES_FROM_PREVIOUS_RUN):
+                new_temp_dir = f"./{tmp_directory}/{FILE_DATE_ID}"
+                #make the new temp directory:
+                os.makedirs(new_temp_dir)
+                #move all files (BUT NOT FOLDERS!):
+                for file in os.listdir(tmp_directory):
+                    if os.path.isfile(f'{tmp_directory}/{file}'):
+                        shutil.move(f'{tmp_directory}/{file}', new_temp_dir)
 
     #RESULTS
     if not os.path.exists(results_directory):#no need to check if the results dir exists because the data will be saved with FILE_DATE_ID in the name, its just too hard to do that with the tmp directory
@@ -524,7 +545,7 @@ def write_data_config_to_new_file(paths_dict,config_dict):
 
 ##################################################################################
 
-def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files=False):
+def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,USE_TMP_FILES_FROM_PREVIOUS_RUN=False,EMPTY_TMP_FOLDER_BEFORE_RUNNING=False):
     """set up the paths to the various files and folders we will need to run the model. This will create a dictionary for the paths so we dont have to keep passing lots of arguments to functions"""
     solving_method = config_dict['solving_method']
     scenario = config_dict['scenario']
@@ -545,7 +566,7 @@ def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files=F
     #create path to save copy of outputs to txt file in case of error:
     log_file_path = f'{tmp_directory}/process_log_{economy}_{scenario}_{FILE_DATE_ID}.txt'
 
-    create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, config_dict,keep_current_tmp_files)
+    create_new_directories(tmp_directory, results_directory,visualisation_directory, FILE_DATE_ID, config_dict,USE_TMP_FILES_FROM_PREVIOUS_RUN,EMPTY_TMP_FOLDER_BEFORE_RUNNING)
 
     #create model run specifications txt file using the input variables as the details and the FILE_DATE_ID as the name:
     model_run_specifications_file = f'{tmp_directory}/specs_{FILE_DATE_ID}.txt'
@@ -585,6 +606,7 @@ def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files=F
 
     #PUT EVERYTHING IN A DICTIONARY
     paths_dict = {}
+    paths_dict['FILE_DATE_ID'] = FILE_DATE_ID
     paths_dict['tmp_directory'] = tmp_directory
     paths_dict['results_directory'] = results_directory
     paths_dict['visualisation_directory'] = visualisation_directory
@@ -609,6 +631,8 @@ def set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files=F
     paths_dict['tall_results_dfs_pickle'] = f'{tmp_directory}/tall_results_dfs_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
     paths_dict['paths_dict_pickle'] = f'{tmp_directory}/paths_dict_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
     paths_dict['config_dict_pickle'] = f'{tmp_directory}/config_dict_{economy}_{scenario}_{FILE_DATE_ID}.pickle'
+    paths_dict['EBT_output_energy'] = f'{results_directory}/EBT_energy_{economy}_{scenario}_{FILE_DATE_ID}.csv'
+    paths_dict['EBT_output_capacity'] = f'{results_directory}/EBT_generation_capacity_{economy}_{scenario}_{FILE_DATE_ID}.csv'
     
     aggregated_results_and_inputs_folder_name = f"{FILE_DATE_ID}_{config_dict['economy']}_{config_dict['scenario']}_{config_dict['solving_method']}"
     paths_dict['aggregated_results_and_inputs_folder_name'] = aggregated_results_and_inputs_folder_name

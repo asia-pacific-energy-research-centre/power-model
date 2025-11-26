@@ -20,10 +20,11 @@ import pickle as pickle
 #LESS IMPORTANT VARIABLES TO SET (their default values are fine):
 FILE_DATE_ID = time.strftime("%m-%d-%H%M")
 root_dir = '.' # because this file is in src, the root may change if it is run from this file or from command line
-keep_current_tmp_files = False
-dont_solve = False
+USE_TMP_FILES_FROM_PREVIOUS_RUN = False
+DONT_SOLVE = False
 plotting = True
-save_results_vis_and_inputs = True
+SAVE_RESULTS_VIS_AND_INPUTS = True
+EMPTY_TMP_FOLDER_BEFORE_RUNNING = True
 ################################################################################
 
 def main(input_data_sheet_file):
@@ -43,7 +44,7 @@ def main(input_data_sheet_file):
     # config_dict['data_config_file'] ="config.yaml"
     # config_dict['solving_method'] = 'coin'#or glpsol or cloud
 
-    paths_dict = model_preparation_functions.set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,keep_current_tmp_files)
+    paths_dict = model_preparation_functions.set_up_paths_dict(root_dir,FILE_DATE_ID,config_dict,USE_TMP_FILES_FROM_PREVIOUS_RUN,EMPTY_TMP_FOLDER_BEFORE_RUNNING)
 
     ################################################################################
     #SET UP LOGGING
@@ -75,7 +76,7 @@ def main(input_data_sheet_file):
     #SOLVE MODEL
     ################################################################################
 
-    if config_dict['solving_method'] != 'cloud' and not dont_solve:
+    if config_dict['solving_method'] != 'cloud' and not DONT_SOLVE:
         logging.info(f"\n######################## \n Running solve process using {config_dict['osemosys_model_script']} for {config_dict['solving_method']} {config_dict['economy']} {config_dict['scenario']}")
         model_solving_functions.solve_model(config_dict,paths_dict)
 
@@ -99,26 +100,24 @@ def main(input_data_sheet_file):
         post_processing_functions.save_results_as_long_csvs(paths_dict,config_dict,tall_results_dfs)
 
         post_processing_functions.save_results_as_pickle(paths_dict,tall_results_dfs,config_dict)
+        
+        post_processing_functions.extract_and_format_final_output_for_EBT(tall_results_dfs, paths_dict['EBT_output_energy'], paths_dict['EBT_output_capacity'], config_dict['scenario'], config_dict['economy'])
         ##########################
         #Visualisation:
         ##########################
         post_processing_functions.create_res_visualisation(paths_dict,config_dict)
         
-        if save_results_vis_and_inputs:
+        if SAVE_RESULTS_VIS_AND_INPUTS:
             post_processing_functions.save_results_visualisations_and_inputs_to_folder(paths_dict,save_plotting=False,save_results_and_inputs=True)
 
         post_processing_functions.TEST_output(paths_dict,config_dict)
 
         if plotting:
             plotting_functions.plotting_handler(tall_results_dfs=tall_results_dfs,paths_dict=paths_dict,config_dict=config_dict,load_from_pickle=True, pickle_paths=None)
-
-        if save_results_vis_and_inputs:
+        
+        if SAVE_RESULTS_VIS_AND_INPUTS:
             post_processing_functions.save_results_visualisations_and_inputs_to_folder(paths_dict,save_plotting=True, save_results_and_inputs=False)
-
 #%%
-
-
-
 ################################################################################
 #FOR RUNNING THROUGH JUPYTER INTERACTIVE NOTEBOOK (FINNS SETUP, allows for running the function outside of the command line through jupyter interactive)
 ################################################################################
@@ -135,7 +134,15 @@ def is_notebook() -> bool:
         return False      # Probably standard Python interpreter
     
 if is_notebook():
-    input_data_sheet_file="data-sheet-power_36TS.xlsx"#"simplicity_data.xlsx"#"data-sheet-power_36TS.xlsx"##set this based on the data sheet you want to run if you are running this from jupyter notebook
+    input_data_sheet_file="09_ROK_data_REF9_wip1.xlsx"#"simplicity_data.xlsx"#"data-sheet-power_36TS.xlsx"##set this based on the data sheet you want to run if you are running this from jupyter notebook
+    # #make directory the root of the project
+    # if os.getcwd().split('\\')[-1] == 'src':
+    #     os.chdir('..')
+    #     print("Changed directory to root of project")
+    
+    # main(input_data_sheet_file)
+    
+    # input_data_sheet_file="20_USA_data_REF9 1.xlsx"#"simplicity_data.xlsx"#"data-sheet-power_36TS.xlsx"##set this based on the data sheet you want to run if you are running this from jupyter notebook
     #make directory the root of the project
     if os.getcwd().split('\\')[-1] == 'src':
         os.chdir('..')
@@ -144,7 +151,7 @@ if is_notebook():
     main(input_data_sheet_file)
 
 elif __name__ == '__main__':
-
+ 
     if len(sys.argv) != 2:
         msg = "Usage: python {} <input_data_sheet_file>"
         print(msg.format(sys.argv[0]))
@@ -153,3 +160,7 @@ elif __name__ == '__main__':
         input_data_sheet_file = sys.argv[1]
         main(input_data_sheet_file)
 # %%
+
+
+
+

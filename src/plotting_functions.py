@@ -1,3 +1,4 @@
+#%%
 # making changes to the graphing.
 import pandas as pd
 import numpy as np
@@ -25,13 +26,15 @@ warnings.filterwarnings("ignore", message="The default value of numeric_only in 
 
 #load in technology, emissions and colors mappings from excel file, using the sheet name as the key
 mapping = pd.read_excel('config/plotting_config_and_timeslices.xlsx', sheet_name=None)
-powerplant_mapping = mapping['POWERPLANT'].set_index('long_name').to_dict()['plotting_name']
-input_fuel_mapping = mapping['INPUT_FUEL'].set_index('long_name').to_dict()['plotting_name']
-emissions_mapping = mapping['EMISSION'].set_index('long_name').to_dict()['plotting_name']
+powerplant_mapping = mapping['POWERPLANT']
+input_fuel_mapping = mapping['INPUT_FUEL']
+fuel_mapping = mapping['FUEL']
 technology_color_dict = mapping['plotting_name_to_color'].set_index('plotting_name').to_dict()['color']
-timeslice_dict = OrderedDict(mapping['timeslices'].set_index('timeslice').to_dict(orient='index'))
 
-def plotting_handler(tall_results_dfs=None,paths_dict=None, config_dict=None,load_from_pickle=True,pickle_paths=None):
+#%%
+CREATE_COSTS_DASHBOARD=False
+
+def plotting_handler(tall_results_dfs=None,paths_dict={}, config_dict={},load_from_pickle=True,pickle_paths=None):
     """Handler for plotting functions, pickle path is a list of two paths, the first is the path to the pickle of tall_results_dfs, the second is the path to the pickle of paths_dict. You will need to set them manually."""
     if load_from_pickle:
         if pickle_paths is None:
@@ -46,126 +49,372 @@ def plotting_handler(tall_results_dfs=None,paths_dict=None, config_dict=None,loa
     shutil.copy('config/plotting_config_and_timeslices.xlsx', paths_dict['visualisation_directory'])
 
     #begin plotting:
-    fig_generation, fig_generation_title = plot_generation_annual(tall_results_dfs, paths_dict)
-
+    fig_gen,title_gen, fig_heat,title_heat, HEAT_DATA_AVAILABLE = plot_generation_and_heat_annual(tall_results_dfs, paths_dict)
+    
+    fig_use_fuel,title_use_fuel, fig_use_tech_area, title_use_tech_area, fig_use_tech_line, title_use_tech_line = plot_input_use_by_fuel_and_technology(tall_results_dfs, paths_dict)
+    
     fig_emissions, fig_emissions_title = plot_emissions_annual(tall_results_dfs, paths_dict)
 
     fig_capacity, fig_capacity_title = plot_capacity_annual(tall_results_dfs, paths_dict)
 
     fig_capacity_factor,fig_capacity_factor_title = plot_capacity_factor_annual(tall_results_dfs, paths_dict)
-
-    figs_list_average_generation_by_timeslice,figs_list_average_generation_by_timeslice_title = plot_average_generation_by_timeslice(tall_results_dfs, paths_dict)
+    figs_list_average_generation_by_timeslice,figs_list_average_generation_by_timeslice_title = plot_average_generation_by_timeslice(tall_results_dfs, paths_dict, config_dict['economy'])
     
     fig_8th_graph_generation, fig_8th_graph_generation_title = plot_8th_graphs(paths_dict,config_dict)
 
+    fig_cost_per_unit_production,title_cost_per_unit_production, fig_fixed_and_variable,title_fixed_and_variable = plot_cost_per_unit_production(tall_results_dfs, paths_dict, config_dict, CREATE_COSTS_DASHBOARD=CREATE_COSTS_DASHBOARD)
     #put all figs in a list
-    figs = [fig_8th_graph_generation,fig_generation, fig_emissions, fig_capacity]#+ figs_list_average_generation_by_timeslice #found timeselices to be too complicated to plot in dashboard so left them out
+    figs = [fig_8th_graph_generation,fig_gen, fig_emissions, fig_capacity, fig_heat, fig_use_tech_line]#, fig_cost_per_unit_production, fig_fixed_and_variable]#, fig_use_fuel]#+ figs_list_average_generation_by_timeslice #found timeselices to be too complicated to plot in dashboard so left them out
     # fig_capacity_factor,#we wont plot capacity factor in dashboard
-    subplot_titles = [fig_8th_graph_generation_title,fig_generation_title, fig_emissions_title, fig_capacity_title] #+ figs_list_average_generation_by_timeslice_title
+    subplot_titles = [fig_8th_graph_generation_title,title_gen, fig_emissions_title, fig_capacity_title, title_heat, title_use_tech_line]#, title_cost_per_unit_production, title_fixed_and_variable]#, title_use_fuel] #+ figs_list_average_generation_by_timeslice_title
+    
+    if not HEAT_DATA_AVAILABLE:
+        figs.remove(fig_heat)
+        subplot_titles.remove(title_heat)
 
     put_all_graphs_in_one_html(figs, paths_dict)
-    create_dashboard(figs, paths_dict,subplot_titles)
-
-
-def extract_storage_charge_and_discharge(tall_results_dfs):
-    """Extract storage charge and discharge from ProductionByTechnology sheet. Note that the final data will not have been summed up by technology, timeslice or year yet."""
-    try:
-        storage_discharge = tall_results_dfs['ProductionByTechnology'].copy()
-    except KeyError:
-        storage_discharge = tall_results_dfs['ProductionByTechnolo'].copy()
-    storage_charge = tall_results_dfs['UseByTechnology'].copy()
-
-    #MAP TECHNOLOGY TO READABLE NAMES
-    storage_charge['TECHNOLOGY'] = storage_charge['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_storage_charge_and_discharge', ignore_missing_mappings=True, print_warning_messages=False))
-    storage_discharge['TECHNOLOGY'] = storage_discharge['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_storage_charge_and_discharge', ignore_missing_mappings=True, print_warning_messages=False))
-    #filter for only storage
-    storage_charge = storage_charge[storage_charge['TECHNOLOGY'] == 'Storage']
-    storage_discharge = storage_discharge[storage_discharge['TECHNOLOGY'] == 'Storage']
-    # #filter for POW_TBATT and POW_TDAM in TECHNOLOGY #LATER ON WE COULD JUST EXTRACT STORAGE FROM THE MAPPED TECHNOLOGIES, BUT FOR NOW, STICK WITH SIMPLE
-    # storage_charge = storage_charge[storage_charge['TECHNOLOGY'].isin(['POW_TBATT','POW_TDAM'])]
-    # storage_discharge = storage_discharge[storage_discharge['TECHNOLOGY'].isin(['POW_TBATT','POW_TDAM'])]
-
-    #if they are empty raise a warning
-    if storage_charge.empty:
-        warnings.warn('Storage charge is empty')
-    if storage_discharge.empty:
-        warnings.warn('Storage discharge is empty')
-        
-    #rename TECHNOLOGY according to if its charge or discharge
-    storage_charge['TECHNOLOGY'] = 'Storage_charge'
-    storage_discharge['TECHNOLOGY'] = 'Storage_discharge'
-
-    #make value for charge negative
-    storage_charge['VALUE'] = -storage_charge['VALUE']
-    return storage_charge,storage_discharge
+    create_dashboard(figs, paths_dict,subplot_titles, dashboard_title='all_graphs')
     
-def extract_and_map_ProductionByTechnology(tall_results_dfs):
-    """Extract generation (and other) data from ProductionByTechnology sheet. But also extract storage charge and discharge and handle it separately then append them generation. Also convert to TWh. Note that the final data will not have been summed up by technology, timeslice or year yet."""
-    generation = tall_results_dfs['ProductionByTechnology'].copy()
-    
-    generation = drop_categories_not_in_mapping(generation, powerplant_mapping)
-    #map TECHNOLOGY to readable names:
-    generation['TECHNOLOGY'] = generation['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'extract_and_map_ProductionByTechnology'))
 
-    #drop storage as it is handled separately
-    generation = generation[generation['TECHNOLOGY'] != 'Storage']
-    storage_charge,storage_discharge = extract_storage_charge_and_discharge(tall_results_dfs)
-    #append storage charge and discharge to generation
-    generation = pd.concat([generation,storage_charge,storage_discharge])
-    #convert to TWh by /3.6
-    generation['VALUE'] = generation['VALUE']/3.6
-    return generation
-
-def plot_generation_annual(tall_results_dfs, paths_dict):
-    """Using data from ProductionByTechnology sheet , plot generation by technology. Also plot total demand as a line on the same graph"""
-    generation = extract_and_map_ProductionByTechnology(tall_results_dfs)
-    #sum generation by technology and year
-    generation = generation.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
-
-    #drop Storage_charge and Storage_discharge as they are not forms of generation
-    generation = generation[generation['TECHNOLOGY'] != 'Storage_charge']
-    generation = generation[generation['TECHNOLOGY'] != 'Storage_discharge']
-    generation = generation[generation['TECHNOLOGY'] != 'Transmission']
-    generation = generation[generation['TECHNOLOGY'] != 'Storage']
-
-    demand = tall_results_dfs['Demand'].copy()
-    #sum demand by year
-    demand = demand.groupby(['YEAR']).sum().reset_index()
-    #convert to TWh by /3.6
-    demand['VALUE'] = demand['VALUE']/3.6
-    #create a column called TECHNOLOGY with value 'Demand'
-    demand['TECHNOLOGY'] = 'Demand'
+def format_costs(fixed_cost_df, variable_cost_df):     
+    #sum costs by technology and year
+    fixed_cost_df = fixed_cost_df.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
+    variable_cost_df = variable_cost_df.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
+    #drop unnecessary techs
+    fixed_cost_df = fixed_cost_df[fixed_cost_df['TECHNOLOGY'].str.contains('Storage') == False]
+    variable_cost_df = variable_cost_df[variable_cost_df['TECHNOLOGY'].str.contains('Storage') == False]
     
     #order by value
-    generation = generation.sort_values(by=['YEAR','VALUE'],ascending=False)
+    fixed_cost_df = fixed_cost_df.sort_values(by=['YEAR','VALUE'],ascending=False)
+    variable_cost_df = variable_cost_df.sort_values(by=['YEAR','VALUE'],ascending=False)
+    return fixed_cost_df, variable_cost_df
+
+def plot_cost_per_unit_production(tall_results_dfs, paths_dict, config_dict, CREATE_COSTS_DASHBOARD=True):
+
+    generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)
+    fixed_cost_df, variable_cost_df = extract_and_map_Costs(tall_results_dfs, powerplant_mapping)
+    generation, heat = format_generation_and_heat_df(generation, heat)
+    fixed_cost_df, variable_cost_df = format_costs(fixed_cost_df, variable_cost_df)
+    #concat then sum together heat and generation:
+    output = pd.concat([generation,heat]).groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
+    
+    # Join fixed, variable, and production dataframes on 'Technology','YEAR'
+    total_cost_df = pd.merge(pd.merge(fixed_cost_df, variable_cost_df, on=['TECHNOLOGY','YEAR'], suffixes=('_fixed', '_variable')), output, on=['TECHNOLOGY','YEAR'])
+    #reanme VALUE_variable and VALUE_fixed to Variable Cost and Fixed Cost
+    total_cost_df = total_cost_df.rename(columns={'VALUE_variable':'Variable Cost','VALUE_fixed':'Fixed Cost'})
+    total_cost_df['Total Variable Cost'] = total_cost_df['Fixed Cost'] + (total_cost_df['Variable Cost']*total_cost_df['VALUE'])
+    total_cost_df['Total Cost'] = total_cost_df['Fixed Cost'] + total_cost_df['Total Variable Cost']
+    # Use production data to calculate the cost per unit of production
+    total_cost_df['Cost Per Unit Production'] = total_cost_df['Total Cost'] / total_cost_df['VALUE']
+
+    # Create a graph with the total cost per unit of production as a line over time
+    title_cost_per_unit_production = f"Total cost per unit of Production"
+    fig_cost_per_unit_production = px.line(total_cost_df, x='YEAR', y='Cost Per Unit Production', title=title_cost_per_unit_production, color='TECHNOLOGY', color_discrete_map=create_color_dict(total_cost_df['TECHNOLOGY']))
+
+    # Save as HTML
+    fig_cost_per_unit_production.write_html(paths_dict['visualisation_directory'] + '/total_cost_per_unit_production.html', auto_open=False)
+    
+    #then create a graph with a line for variable cost and a line for fixed cost, with different colors foreach technology
+    fixed_and_variable = total_cost_df[['YEAR','TECHNOLOGY','Fixed Cost','Variable Cost']].copy()
+    fixed_and_variable = fixed_and_variable.melt(id_vars=['YEAR','TECHNOLOGY'], value_vars=['Fixed Cost','Variable Cost'], var_name='Cost Type', value_name='Cost')
+    title_fixed_and_variable = f"Fixed and variable Cost"
+    fig_fixed_and_variable = px.line(fixed_and_variable, x='YEAR', y='Cost', title=title_fixed_and_variable, color='TECHNOLOGY', line_dash='Cost Type', color_discrete_map=create_color_dict(fixed_and_variable['TECHNOLOGY']))
+    
+    # Save as HTML
+    fig_fixed_and_variable.write_html(paths_dict['visualisation_directory'] + '/fixed_and_variable_cost.html', auto_open=False)
+    
+    # #now create a graph for each technology which will show the fixed and  variable costs over time. we will need to use two y axes for this as the values are very different
+    # for technology in total_cost_df['TECHNOLOGY'].unique():
+    #     technology_df = total_cost_df[total_cost_df['TECHNOLOGY'] == technology].copy()
+    #     # technology_df = technology_df.melt(id_vars=['YEAR','TECHNOLOGY'], value_vars=['VALUE_fixed','VALUE_variable'], var_name='Cost Type', value_name='Cost')
+    #     title = f"Fixed and Variable Cost for {technology}"
+    #     fig =  make_subplots(specs=[[{"secondary_y": True}]])
+    #     fig.add_trace(go.Scatter(x=technology_df['YEAR'], y=technology_df['VALUE_fixed'], name='Fixed Cost', line=dict(color='red')), secondary_y=False)
+    #     fig.add_trace(go.Scatter(x=technology_df['YEAR'], y=technology_df['VALUE_variable'], name='Variable Cost', line=dict(color='blue')), secondary_y=True)
+    #     fig.update_layout(title=title)
+    #     fig.update_xaxes(title_text="Year")
+    #     fig.update_yaxes(title_text="Fixed Cost", secondary_y=False)
+    #     fig.update_yaxes(title_text="Variable Cost", secondary_y=True)
+    #     fig.write_html(paths_dict['visualisation_directory'] + f'/fixed_and_variable_cost_{technology}.html', auto_open=False)
+    if CREATE_COSTS_DASHBOARD:
+        create_costs_by_tech_dashboard(fixed_cost_df, variable_cost_df, paths_dict, config_dict)
+        
+    return fig_cost_per_unit_production,title_cost_per_unit_production, fig_fixed_and_variable,title_fixed_and_variable
+
+
+def create_costs_by_tech_dashboard(fixed_costs, variable_costs, paths_dict, subplot_titles):
+    figs = []
+    subplot_titles = []
+
+    # Generate cost plots for each technology
+    for technology in fixed_costs['TECHNOLOGY'].unique():
+        technology_fixed = fixed_costs[fixed_costs['TECHNOLOGY'] == technology].copy()
+        technology_variable = variable_costs[variable_costs['TECHNOLOGY'] == technology].copy()
+        
+        title = f"Fixed and Variable Cost for {technology}"
+        subplot_titles.append(title)
+        
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+        fig.add_trace(go.Scatter(x=technology_fixed['YEAR'], y=technology_fixed['VALUE'], name='Fixed Cost', line=dict(color='red')), secondary_y=False)
+        fig.add_trace(go.Scatter(x=technology_variable['YEAR'], y=technology_variable['VALUE'], name='Variable Cost', line=dict(color='blue')), secondary_y=True)
+        fig.update_layout(title=title)
+        fig.update_xaxes(title_text="Year")
+        fig.update_yaxes(title_text="Fixed Cost", secondary_y=False)
+        fig.update_yaxes(title_text="Variable Cost", secondary_y=True)
+        
+        figs.append(fig)
+
+    # Create the dashboard HTML
+    create_dashboard(figs, paths_dict, subplot_titles, dashboard_title='costs_by_tech')
+
+        
+def extract_and_map_ProductionByTechnology(tall_results_dfs):
+    """Extract generation (and other) data from ProductionByTechnology sheet. But also extract storage charge and discharge and handle it separately then append them generation. Also convert to TWh. Note that the final data will not have been summed up by technology, timeslice or year yet.
+    """
+    ###GENERATION and STORAGE DISCHARGE###
+    production = tall_results_dfs['ProductionByTechnology'].copy()
+        
+    #merge with powerplant_mapping to get the readable name and drop any rows that have the column DROP. then identify any nissing technologies
+    production = map_to_readable_names(production, powerplant_mapping, 'TECHNOLOGY', 'powerplant_mapping', 'extract_and_map_ProductionByTechnology', ignore_missing_mappings=False, print_warning_messages=False)
+        
+    # #map TECHNOLOGY to readable names:
+    # production['TECHNOLOGY'] = production['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'powerplant_mapping', 'extract_and_map_ProductionByTechnology'))
+    
+    heat = production[production['FUEL'].str.contains('heat') == True]
+    generation = production[production['FUEL'].str.contains('heat') == False]
+
+    ###STORAGE CHARGE###
+    storage_charge = tall_results_dfs['UseByTechnology'].copy()
+        
+    #merge with powerplant_mapping to get the readable name and drop any rows that have the column DROP. then identify any nissing technologies
+    storage_charge = map_to_readable_names(storage_charge, powerplant_mapping, 'TECHNOLOGY', 'powerplant_mapping', 'extract_and_map_ProductionByTechnology', ignore_missing_mappings=False, print_warning_messages=False)
+        
+    storage_charge = storage_charge[storage_charge['TECHNOLOGY'].str.contains('Storage') == True]
+    
+    #filter for only techs with storage in name in storage_charge (nothing needs to be done for generation as that also contains storage)
+    storage_charge_elec = storage_charge[storage_charge['FUEL'].str.contains('heat') == False] 
+    storage_charge_heat  = storage_charge[storage_charge['FUEL'].str.contains('heat') == True]
+    
+    # #if they are empty raise a warning
+    # if storage_charge_elec.empty:
+    #     warnings.warn('Storage charge is empty')
+    # if storage_charge_heat.empty:
+    #     warnings.warn('Storage charge is empty')#potetnailly we dont have storage of heat
+        
+    #make negative
+    storage_charge_elec['VALUE'] = -storage_charge_elec['VALUE']
+    storage_charge_heat['VALUE'] = -storage_charge_heat['VALUE']
+
+    #append storage charge and discharge to generation
+    generation = pd.concat([generation,storage_charge_elec])
+    heat = pd.concat([heat,storage_charge_heat])
+    
+    #convert generation to TWh by /3.6
+    generation['VALUE'] = generation['VALUE']/3.6
+    
+    return generation, heat
+
+def extract_and_map_Costs(tall_results_dfs, powerplant_mapping):
+    """Extract costs from the AnnualFixedOperatingCost and AnnualVariableOperatingCost sheets.
+       Also map TECHNOLOGY to readable names and handle potential issues like missing sheets or columns.
+    """
+    fixed_cost_df = tall_results_dfs['AnnualFixedOperatingCost'].copy()  
+    variable_cost_df = tall_results_dfs['AnnualVariableOperatingCost'].copy()
+    
+    #merge 
+    fixed_cost_df = map_to_readable_names(fixed_cost_df, powerplant_mapping, 'TECHNOLOGY', 'powerplant_mapping', 'extract_and_map_Costs', ignore_missing_mappings=False, print_warning_messages=False)
+    
+    variable_cost_df = map_to_readable_names(variable_cost_df, powerplant_mapping, 'TECHNOLOGY', 'powerplant_mapping', 'extract_and_map_Costs', ignore_missing_mappings=False, print_warning_messages=False)
+
+    return fixed_cost_df, variable_cost_df
+
+
+def extract_and_map_UseByTechnology(tall_results_dfs):
+    """Extract generation (and other) data from UseByTechnology sheet. But also extract storage charge and discharge and handle it separately then append them generation. Also convert to TWh. Note that the final data will not have been summed up by technology, timeslice or year yet.
+    
+    """
+    ###GENERATION and STORAGE DISCHARGE###
+    input_use = tall_results_dfs['UseByTechnology'].copy()
+        
+    input_use = map_to_readable_names(input_use, powerplant_mapping, 'TECHNOLOGY', 'powerplant_mapping', 'extract_and_map_UseByTechnology', ignore_missing_mappings=False, print_warning_messages=False)
+    input_use = map_to_readable_names(input_use, fuel_mapping, 'FUEL', 'fuel_mapping', 'extract_and_map_UseByTechnology', ignore_missing_mappings=False, print_warning_messages=False)
+    
+    # ###STORAGE CHARGE###
+    # storage_charge = tall_results_dfs['UseByTechnology'].copy() #TODO IS STORAGE A THING FOR INPUT? also might it be dischagrge?
+        
+    # #filter for only techs with storage in name in storage_charge (nothing needs to be done for generation as that also contains storage)
+    # storage_charge = storage_charge[storage_charge['TECHNOLOGY'].str.contains('Storage') == True]
+    # #if they are empty raise a warning
+    # if storage_charge.empty:
+    #     warnings.warn('Storage charge is empty')
+    # #make negative
+    # storage_charge['VALUE'] = -storage_charge['VALUE']#TODO IS STORAGE A THING FOR INPUT? also might it be dischagrge?
+
+    # #append storage charge and discharge to generation
+    # input_use = pd.concat([input_use,storage_charge])
+    
+    # #convert to TWh by /3.6
+    # input_use['VALUE'] = input_use['VALUE']/3.6#any need to convert elec to pj or anyhting?
+    return input_use
+
+
+def format_input_use(input_use):
+    #sum input_use by technology and year
+    input_use = input_use.groupby(['FUEL', 'TECHNOLOGY', 'YEAR']).sum().reset_index()
+
+    #drop anything with storage in the name as they are not forms of input_use#TODO IS STORAGE A THING FOR INPUT? also might it be dischagrge?
+    input_use = input_use[input_use['TECHNOLOGY'].str.contains('Storage') == False]
+    input_use = input_use[input_use['TECHNOLOGY'] != 'Transmission']
+
+    # demand = tall_results_dfs['Demand'].copy()#TODO
+    # #sum demand by year
+    # demand = demand.groupby(['YEAR']).sum().reset_index()
+    # #convert to TWh by /3.6
+    # demand['VALUE'] = demand['VALUE']/3.6
+    # #create a column called TECHNOLOGY with value 'Demand'
+    # demand['TECHNOLOGY'] = 'Demand'
+    
+    #order by value
+    input_use = input_use.sort_values(by=['YEAR','VALUE'],ascending=False)
+    
+    #sum input_use by technology and year
+    input_use_fuel = input_use.groupby(['FUEL','YEAR']).sum().reset_index()
+    input_use_tech = input_use.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
+    return input_use_fuel, input_use_tech
+    
+def plot_input_use_by_fuel_and_technology(tall_results_dfs, paths_dict):
+    """REGION	TIMESLICE	TECHNOLOGY	FUEL
+    Plot the UseByTechnology sheet from output by the technology and fuel cols. will need to drop the timeselice col. Think it will be in pj.
+    tall_results_dfs['UseByTechnology']
+    """
+    input_use = extract_and_map_UseByTechnology(tall_results_dfs)#TODO DO OMTHING WITH HEAT
+    input_use_fuel, input_use_tech = format_input_use(input_use)
+        
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the YEAR
-    title = 'Generation by technology TWh'
-    fig = px.area(generation, x="YEAR", y="VALUE", color='TECHNOLOGY',title=title,color_discrete_map=create_color_dict(generation['TECHNOLOGY']))
-    #and add line with points for demand
-    fig.add_scatter(x=demand['YEAR'], y=demand['VALUE'], mode='lines+markers', name='Demand', line=dict(color=technology_color_dict['Demand']), marker=dict(color=technology_color_dict['Demand']))
+    title_use_tech_area = 'Input use by technology PJ'
+    fig_use_tech_area = px.area(input_use_tech, x="YEAR", y="VALUE", color='TECHNOLOGY',title=title_use_tech_area,color_discrete_map=create_color_dict(input_use['TECHNOLOGY']))
+    #save as html
+    fig_use_tech_area.write_html(paths_dict['visualisation_directory']+'/annual_use_by_tech_area.html', auto_open=False)
+    
+    title_use_tech_line = 'Input use by technology PJ'
+    fig_use_tech_line = px.line(input_use_tech, x="YEAR", y="VALUE", color='TECHNOLOGY',title=title_use_tech_line,color_discrete_map=create_color_dict(input_use['TECHNOLOGY']))
+    #save as html
+    fig_use_tech_line.write_html(paths_dict['visualisation_directory']+'/annual_use_by_tech_line.html', auto_open=False)
+    
+    title_use_fuel = 'Input use by fuel PJ'
+    fig_use_fuel = px.area(input_use_fuel, x="YEAR", y="VALUE", color='FUEL',title=title_use_fuel,color_discrete_map=create_color_dict(input_use['FUEL']))
+    #save as html
+    fig_use_fuel.write_html(paths_dict['visualisation_directory']+'/annual_use_by_fuel.html', auto_open=False)
+
+    return fig_use_fuel,title_use_fuel, fig_use_tech_area, title_use_tech_area, fig_use_tech_line, title_use_tech_line
+
+def format_generation_and_heat_df(generation, heat, keep_timeslice_col=False, INCLUDE_STORAGE=False):
+    if keep_timeslice_col:
+        group_cols = ['TECHNOLOGY','TIMESLICE','YEAR']
+        sort_cols = ['TIMESLICE','YEAR','VALUE']
+    else:
+        group_cols = ['TECHNOLOGY','YEAR']
+        sort_cols = ['YEAR','VALUE']
+    #sum generation by technology and year
+    generation = generation.groupby(group_cols).sum().reset_index()
+    heat = heat.groupby(group_cols).sum().reset_index()
+    
+    if not INCLUDE_STORAGE:
+        #drop anything with storage in the name as they are not forms of generation
+        generation = generation[generation['TECHNOLOGY'].str.contains('Storage') == False]
+        heat = heat[heat['TECHNOLOGY'].str.contains('Storage') == False]#dont know if this matters for heat tbh
+    generation = generation[generation['TECHNOLOGY'] != 'Transmission']
+    heat = heat[heat['TECHNOLOGY'] != 'Transmission']
+    
+    #order by value
+    generation = generation.sort_values(by=sort_cols,ascending=False)
+    heat = heat.sort_values(by=sort_cols,ascending=False)
+    return generation, heat
+
+def extract_and_format_elec_demand(tall_results_dfs,keep_timeslice_col=False):
+    if keep_timeslice_col:
+        group_cols = ['TIMESLICE','YEAR']
+        sort_cols = ['TIMESLICE','YEAR','VALUE']
+    else:
+        group_cols = ['YEAR']
+        sort_cols = ['YEAR','VALUE']
+    elec_demand = tall_results_dfs['Demand'].loc[tall_results_dfs['Demand']['FUEL'].str.contains('heat') == False].copy()
+    #sum elec_demand by year
+    elec_demand = elec_demand.groupby(group_cols).sum().reset_index()
+    #convert to TWh by /3.6
+    elec_demand['VALUE'] = elec_demand['VALUE']/3.6
+    #create a column called TECHNOLOGY with value 'Demand'
+    elec_demand['TECHNOLOGY'] = 'Demand'
+    #sort
+    elec_demand = elec_demand.sort_values(by=sort_cols,ascending=False)
+    return elec_demand
+
+def plot_generation_and_heat_annual(tall_results_dfs, paths_dict):
+    """Using data from ProductionByTechnology sheet , plot generation and heat by technology. Also plot total demand as a line on the same graph. gen and heart are done at same time because they come from same spreadsheet
+    
+    
+    tall_results_dfs - tall_results_dfs contains all the data from the output files. It is a dictionary with the sheet name as the key and the dataframe as the value.
+    paths_dict - paths_dict contains all the paths to the input and output files. It is a dictionary with the path name as the key and the path as the value.
+    """
+    generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)
+    elec_demand = extract_and_format_elec_demand(tall_results_dfs)
+    generation, heat = format_generation_and_heat_df(generation, heat)
+    #NB we found that we werent gettig any heat from the demand sheet so we dont need this. but leaving it here just in case
+    # heat_demand = tall_results_dfs['Demand'].loc[tall_results_dfs['Demand']['FUEL'].str.contains('heat') == True].copy()
+    # #sum heat_demand by year
+    # heat_demand = heat_demand.groupby(['YEAR']).sum().reset_index()
+    # #convert to TWh by /3.6
+    # heat_demand['VALUE'] = heat_demand['VALUE']/3.6
+    # #create a column called TECHNOLOGY with value 'Demand'
+    # heat_demand['TECHNOLOGY'] = 'Demand'#
+    
+
+    #PLOT GENERATION
+    #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the YEAR
+    title_gen = 'Generation by technology TWh'
+    fig_gen = px.area(generation, x="YEAR", y="VALUE", color='TECHNOLOGY',title=title_gen,color_discrete_map=create_color_dict(generation['TECHNOLOGY']))
+    #and add line with points for elec_demand
+    fig_gen.add_scatter(x=elec_demand['YEAR'], y=elec_demand['VALUE'], mode='lines+markers', name='Demand', line=dict(color=technology_color_dict['Demand']), marker=dict(color=technology_color_dict['Demand']))
     
     #save as html
-    fig.write_html(paths_dict['visualisation_directory']+'/annual_generation.html', auto_open=False)
+    fig_gen.write_html(paths_dict['visualisation_directory']+'/annual_generation.html', auto_open=False)
 
-    return fig,title
+    #PLOT HEAT
+    title_heat = 'Heat by technology PJ'
+    fig_heat = px.area(heat, x="YEAR", y="VALUE", color='TECHNOLOGY',title=title_heat,color_discrete_map=create_color_dict(heat['TECHNOLOGY']))
+    
+    #and add line with points for heat_demand
+    # fig_heat.add_scatter(x=heat_demand['YEAR'], y=heat_demand['VALUE'], mode='lines+markers', name='Demand', line=dict(color=technology_color_dict['Demand']), marker=dict(color=technology_color_dict['Demand']))
+    
+    #save as html
+    fig_heat.write_html(paths_dict['visualisation_directory']+'/annual_heat_production.html', auto_open=False)    
+    
+    if len(heat) == 0:
+        HEAT_DATA_AVAILABLE = False
+    else:
+        HEAT_DATA_AVAILABLE = True
+        
+    return fig_gen,title_gen, fig_heat,title_heat, HEAT_DATA_AVAILABLE
+
+def format_emissions_df(emissions):
+    emissions = map_to_readable_names(emissions, input_fuel_mapping, 'TECHNOLOGY', 'input_fuel_mapping', 'format_emissions_df', ignore_missing_mappings=False, print_warning_messages=False)
+    
+    # sum emissions by technology and year
+    #to split ccs and not ccs into two different techs we will set EMISSION  col to '' if it is C02 and if it is C02cap we will change it to _CCS leave it otherwise. then concat it to TECHNOLOGY col:
+    mapping_dict = {'CO2':'','CO2cap':'_CCS'}
+    emissions['TECHNOLOGY'] = emissions['TECHNOLOGY'] + emissions['EMISSION'].apply(lambda x: mapping_dict[x])
+    emissions = emissions.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
+    
+    #order the FUEL by value
+    emissions = emissions.sort_values(by=['YEAR','VALUE'], ascending=False)
+    return emissions
 
 def plot_emissions_annual(tall_results_dfs, paths_dict):
     """Plot emissions by year by technology
     #note that we could change the nane in legend from technology to input fuel or something"""
     #load emissions
     emissions = tall_results_dfs['AnnualTechnologyEmission'].copy()
-    
-    #drop technologies not in INPUT_FUEL mapping
-    emissions = drop_categories_not_in_mapping(emissions, input_fuel_mapping, column='TECHNOLOGY')#Note the column is TECHNOLOGY here, not emission. this is a concious choice
-
-    #map TECHNOLOGY to readable names:
-    emissions['TECHNOLOGY'] = emissions['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, input_fuel_mapping,'plot_emissions_annual'))
-    
-    # sum emissions by technology and year
-    emissions = emissions.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
-    #order the FUEL by value
-    emissions = emissions.sort_values(by=['YEAR','VALUE'], ascending=False)
-    
+    emissions = format_emissions_df(emissions)
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the time
     title = 'Emissions by technology MTC02'
     fig = px.area(emissions, x="YEAR", y="VALUE", color='TECHNOLOGY', title=title,color_discrete_map=create_color_dict(emissions['TECHNOLOGY']))
@@ -174,16 +423,12 @@ def plot_emissions_annual(tall_results_dfs, paths_dict):
 
     return fig,title
 
-def plot_capacity_annual(tall_results_dfs, paths_dict):
-    """Plot capacity by technology"""
-    #load capacity
-    capacity = tall_results_dfs['TotalCapacityAnnual'].copy()#'CapacityByTechnology']#couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
-
-    #drop technologies not in powerplant_mapping
-    capacity = drop_categories_not_in_mapping(capacity, powerplant_mapping)
-    #map TECHNOLOGY to readable names:
-    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'plot_capacity_annual'))
+def format_capacity(capacity, INCLUDE_STORAGE=True):
+    capacity = map_to_readable_names(capacity, powerplant_mapping, 'TECHNOLOGY', 'powerplant_mapping', 'format_capacity', ignore_missing_mappings=False, print_warning_messages=False)
     
+    if not INCLUDE_STORAGE:
+        #drop anything with storage in the name as they are not forms of generation
+        capacity = capacity[capacity['TECHNOLOGY'].str.contains('Storage') == False]
     #remove transmission from technology
     capacity = capacity.loc[capacity['TECHNOLOGY'] != 'Transmission']
 
@@ -193,6 +438,14 @@ def plot_capacity_annual(tall_results_dfs, paths_dict):
 
     #order the technologies by capacity
     capacity = capacity.sort_values(by=['YEAR','VALUE'], ascending=False)
+    return capacity
+
+def plot_capacity_annual(tall_results_dfs, paths_dict):
+    """Plot capacity by technology"""
+    #load capacity
+    capacity = tall_results_dfs['TotalCapacityAnnual'].copy()
+    #'CapacityByTechnology']#couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
+    capacity = format_capacity(capacity)
     title = 'Capacity by technology GW'
     fig = px.area(capacity, x="YEAR", y="VALUE", color='TECHNOLOGY', title=title,color_discrete_map=create_color_dict(capacity['TECHNOLOGY']))
     #save as html
@@ -201,25 +454,23 @@ def plot_capacity_annual(tall_results_dfs, paths_dict):
     return fig,title
 
 def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
-    
-    generation = extract_and_map_ProductionByTechnology(tall_results_dfs)
+    """plots generation/capacity/8760/1000 > since gen is in TWh and cap in GW, divide by 8760 hours to get 1 (or less than 1)
 
-    #extract capcity data
-    capacity = tall_results_dfs['TotalCapacityAnnual'].copy()#'CapacityByTechnology']
-    
-    capacity = drop_categories_not_in_mapping(capacity, powerplant_mapping)
-    #couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
-    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'plot_capacity_factor_annual'))
+    Args:
+        tall_results_dfs (_type_): _description_
+        paths_dict (_type_): _description_
 
-    #sum generation and capacity by technology and year
-    capacity = capacity.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
-    generation = generation.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
+    Returns:
+        _type_: _description_
+    """
+    generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)
+    generation, heat = format_generation_and_heat_df(generation, heat)
+    
+    capacity = tall_results_dfs['TotalCapacityAnnual'].copy()
+    capacity = format_capacity(capacity)
 
     #join both dataframes on technology and year
     generation_capacity = generation.merge(capacity, on=['TECHNOLOGY','YEAR'], suffixes=('_gen_TWh','_cap_gw'))
-    
-    #drop transmission from technology for both gen and capacity
-    generation_capacity = generation_capacity.loc[generation_capacity['TECHNOLOGY'] != 'Transmission']
 
     #calculate capacity factor as generation/capacity/8760/1000 > since gen is in TWh and cap in GW, divide by 8760 hours to get 1 (or less than 1)
     generation_capacity['VALUE'] = (generation_capacity['VALUE_gen_TWh']/generation_capacity['VALUE_cap_gw'])/8.760
@@ -234,41 +485,23 @@ def plot_capacity_factor_annual(tall_results_dfs, paths_dict):
     fig.write_html(paths_dict['visualisation_directory']+'/annual_capacity_factor.html', auto_open=False)
     return fig,title
 
-def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
-    """Calculate average generation by timeslice for each technology and year. Also calculate average generation by technology and year for power plants, to Storage, from Storage and  demand"""
-    generation = extract_and_map_ProductionByTechnology(tall_results_dfs)
-    #sum generation by technology, timeslice and year
-    generation = generation.groupby(['TECHNOLOGY','YEAR','TIMESLICE']).sum().reset_index()
-
-    demand = tall_results_dfs['Demand'].copy()
-    #sum demand by year, timeslice
-    demand = demand.groupby(['YEAR','TIMESLICE']).sum().reset_index()#todo havent checked that demand by timeselice ends up alright
-    #convert to TWh by /3.6
-    demand['VALUE'] = demand['VALUE']/3.6
-    #create a column called TECHNOLOGY with value 'Demand'
-    demand['TECHNOLOGY'] = 'Demand'
-
+def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict, economy):
+    """Calculate average generation by timeslice for each technology and year. Also calculate average generation by technology and year for power plants, to Storage, from Storage and  demand"""   
+    ###GENERATION###
+    generation, heat = extract_and_map_ProductionByTechnology(tall_results_dfs)
+    elec_demand = extract_and_format_elec_demand(tall_results_dfs, keep_timeslice_col=True)
+    generation, heat = format_generation_and_heat_df(generation, heat, keep_timeslice_col=True, INCLUDE_STORAGE=True)
+    capacity = format_capacity(tall_results_dfs['TotalCapacityAnnual'].copy(), INCLUDE_STORAGE=True)#we made decision that it was good to keep storagfe in these cahrts for capacity, even if its not really a form of gen capacity.
     #concat generation and demand
-    generation = pd.concat([generation,demand])  
+    generation = pd.concat([generation,elec_demand])  
 
-    double_check_timeslice_details(timeslice_dict)
+    timeslice_dict = extract_timeslice_details(mapping, economy)
     #extract details about timeslice and put them into a column called TOTAL_HOURS
     generation['TOTAL_HOURS'] = generation['TIMESLICE'].apply(lambda x: timeslice_dict[x]['hours'])
     #calculate average generation by dividing by total hours times 1000
     generation['VALUE'] = generation['VALUE']/generation['TOTAL_HOURS'] * 1000
     generation = generation[generation['TECHNOLOGY'] != 'Transmission']
 
-    #get total capacity by technology and year
-    capacity = tall_results_dfs['TotalCapacityAnnual'].copy()#'CapacityByTechnology']
-    
-    
-    capacity = drop_categories_not_in_mapping(capacity, powerplant_mapping)
-    #couldnt find CapacityByTechnology in the results but TotalCapacityAnnual is there and it seemed to be the same
-    capacity['TECHNOLOGY'] = capacity['TECHNOLOGY'].apply(lambda x: extract_readable_name_from_mapping(x, powerplant_mapping,'plot_average_generation_by_timeslice'))
-
-    capacity = capacity.groupby(['TECHNOLOGY','YEAR']).sum().reset_index()
-    
-    capacity = capacity[capacity['TECHNOLOGY'] != 'Transmission']
     #make a TIMESLICE col and call it 'CAPACITY'
     capacity['TIMESLICE'] = 'CAPACITY'
 
@@ -277,8 +510,6 @@ def plot_average_generation_by_timeslice(tall_results_dfs, paths_dict):
     capacity = capacity.sort_values(by=['TIMESLICE','TECHNOLOGY'])
     #add capacity to the bottom of generation
     generation = pd.concat([generation,capacity])
-    #drop storage from technology as we have storage charge and discharge
-    generation = generation.loc[generation['TECHNOLOGY'] != 'Storage']
 
     #create a bar chart for a single year with the time slices on the x axis and the average generation on the y axis. We can plot the bar chart for every 10th year.
     #also filter out demand as we will plot that using scatter on the same graph
@@ -342,9 +573,15 @@ def plot_8th_graphs(paths_dict, config_dict):
 
     #extract data based on the config file
     #NOTEHTAT THIS WILL USE THE SAME SETTINGS AS THE 9TH OUTPUT FOR ECONOMY AND SCENARIO. it might be useful later to have a different config file for the 8th output
+    scenario = config_dict['scenario']
+   # if scenario == 'Target':
+   #     # scenario='Carbon Neutral'
+   #     scenario='Target'#TODO CHANGE THIS BACK TO TARGET WHEN YOU HAVE THE DATA
+    economy = config_dict['economy']
+    
     for sheet in expected_sheet_names:
-        data_8th[sheet] = data_8th[sheet][data_8th[sheet]['REGION'] == config_dict['economy']]
-        data_8th[sheet] = data_8th[sheet][data_8th[sheet]['SCENARIO'] == config_dict['scenario']]
+        data_8th[sheet] = data_8th[sheet][data_8th[sheet]['REGION'] == economy]
+        data_8th[sheet] = data_8th[sheet][data_8th[sheet]['SCENARIO'] == scenario]
         #now drop the columns we dont need
         data_8th[sheet] = data_8th[sheet].drop(columns=['REGION','SCENARIO'])
 
@@ -356,10 +593,10 @@ def plot_8th_graphs(paths_dict, config_dict):
     
     #NOW PLOT A DIFFERENT GRAPH FOR EACH SHEET WE EXPECT. YOU WILL AHVE TO CREATE A NEW FUNCTION FOR EACH GRAPH
     #plot generation by technology
-    fig_generation,title_generation = plot_8th_generation_by_tech(data_8th,paths_dict)
+    fig_generation,title_generation = plot_8th_generation_by_tech(data_8th,paths_dict,economy,scenario)
     return fig_generation,title_generation
 
-def plot_8th_generation_by_tech(data_8th,paths_dict):
+def plot_8th_generation_by_tech(data_8th,paths_dict,economy,scenario):
     generation = data_8th['generation_by_tech']
     #drop total TECHNOLOGY
     generation = generation[generation['TECHNOLOGY'] != 'Total']
@@ -370,7 +607,7 @@ def plot_8th_generation_by_tech(data_8th,paths_dict):
     generation['YEAR'] = generation['YEAR'].astype(int)
     
     generation = generation.sort_values(by=['VALUE'], ascending=False)
-    title = 'Generation TWh in 8th edition power model reference scenario'
+    title = f'Generation TWh in 8th edition power model {economy} {scenario}'
     #plot an area chart with color determined by the TECHNOLOGY column, and the x axis is the time
     fig = px.area(generation, x="YEAR", y="VALUE", color='TECHNOLOGY', title=title, color_discrete_map=create_color_dict(generation['TECHNOLOGY']))
 
@@ -388,7 +625,7 @@ def put_all_graphs_in_one_html(figs, paths_dict):
             dashboard.write(inner_html)
         dashboard.write("</body></html>" + "\n")
 
-def create_dashboard(figs, paths_dict,subplot_titles):
+def create_dashboard(figs, paths_dict,subplot_titles, dashboard_title):
     #create name of folder where you can find the dashboard
     base_folder = os.path.join('results', paths_dict['aggregated_results_and_inputs_folder_name'])
     #Note that we use the legend from the avg gen by timeslice graph because it contains all the categories used in the other graphs. If we showed the legend for other graphs we would get double ups 
@@ -431,37 +668,30 @@ def create_dashboard(figs, paths_dict,subplot_titles):
     #create title which is the folder where you can find the dashboard (base_folder)
     fig.update_layout(title_text=f"Dashboard for {base_folder}")
     #save as html
-    fig.write_html(paths_dict['visualisation_directory']+'/dashboard.html', auto_open=True)
+    fig.write_html(paths_dict['visualisation_directory']+f'/{dashboard_title}.html', auto_open=True)
 
 #########################UTILITY FUNCTIONS#######################
-def drop_categories_not_in_mapping(df, mapping, column='TECHNOLOGY'):
-    #drop technologies not in powerplant_mapping
-    df = df[df[column].isin(mapping.keys())]
-    #if empty raise a warning
-    if df.empty:
-        warnings.warn(f'Filtering data in {column} caused the dataframe to become empty')
-    return df
 
-def extract_readable_name_from_mapping(long_name,mapping, function_name, ignore_missing_mappings=False, print_warning_messages=True):
-    """Use the mappings of what categories we expect in the power model and map them to readable names"""
-    if long_name not in mapping.keys():
-        if ignore_missing_mappings:
-            if print_warning_messages:
-                logging.warning(f"Category {long_name} is not in the expected set of long_names in the mapping. This occured during extract_readable_name_from_mapping(), for the function {function_name}")
-            return long_name
+def map_to_readable_names(df, mapping, left_join_col, mapping_name, function_name, ignore_missing_mappings=False, print_warning_messages=True):
+    #merge with mapping to get the readable names and drop any rows that have the column DROP. then identify any nissing technologies using the join_cols and raise aerror if there are any
+    df = df.merge(mapping, left_on=left_join_col, right_on='long_name', how='left', indicator=True)
+    missing = df[df['_merge'] == 'left_only']
+    # drop merge col
+    df = df.drop(columns=['_merge'])
+    if not missing.empty and not ignore_missing_mappings:
+        if not print_warning_messages:
+            raise ValueError(f'The following categories are not in the expected set of long_names in the mapping {mapping_name}. This occured during {function_name}: {missing[left_join_col].unique()}')
         else:
-            logging.error(f"Category {long_name} is not in the expected set of long_names in the mapping. This occured during extract_readable_name_from_mapping(), for the function {function_name}")
-            raise ValueError(f"Category {long_name} is not in the expected set of long_names in the mapping. This occured during extract_readable_name_from_mapping(), for the function {function_name}")
-            return long_name
-    return mapping[long_name]
+            logging.warning(f'The following categories are not in the expected set of long_names in the mapping {mapping_name}. This occured during {function_name}: {missing[left_join_col].unique()}')
+            # print(f'The following categories are not in the expected set of long_names in the mapping {mapping_name}. This occured during {function_name}: {missing[left_join_col].unique()}')
+    #drop any rows that have the column DROP
+    df = df[df['DROP'] != True]
+    #drop cosl
+    df = df.drop(columns=[left_join_col, 'long_name','DROP'])
+    #reaplce the plotting_name col with the left_join_col col name
+    df.rename(columns={'plotting_name':left_join_col}, inplace=True)
+    return df
     
-# def extract_readable_name_from_emissions_technology(technology):
-#     """Use the set of fuels we expect in the power model, which have emission factors and map them to readable names"""
-#     if technology not in emissions_mapping.keys():
-#         logging.warning(f"Technology {technology} is not in the expected set of technologies during extract_readable_name_from_emissions_technology()")
-#         raise ValueError("Technology is not in the expected set of technologies")
-#         return technology
-#     return emissions_mapping[technology]
 
 def create_color_dict(technology_or_fuel_column):
     """Using the set of technologies, create a dictionary of colors for each. The colors for similar fuels and technologies should be similar. The color should also portray the vibe of the technology or fuel, for example coal should be dark and nuclear should be bright. Hydro should be blue, solar should be yellow, wind should be light blue? etc."""
@@ -469,26 +699,41 @@ def create_color_dict(technology_or_fuel_column):
         try:
             color = technology_color_dict[technology_or_fuel]
         except:
-            logging.warning(f"Technology {technology_or_fuel} is not in the expected set of technologies during create_color_dict()")
+            logging.warning(f"{technology_or_fuel_column} {technology_or_fuel} is not in the expected set of technologies during create_color_dict()")
             #raise ValueError("Technology is not in the expected set of technologies")
+            # print(f"Technology {technology_or_fuel} is not in the expected set of technologies during create_color_dict()")
             #supply random color
             color = '#%06X' % random.randint(0, 0xFFFFFF)
         technology_color_dict[technology_or_fuel] = color
     return technology_color_dict
 
 
-def double_check_timeslice_details(timeslice_dict):
+def extract_timeslice_details(mapping, economy):
     """timeslice_dict is a dictionary of the different details by timeslice. It was created using code by copy pasting the details from Alex's spreadhseet. The first entry is the key, the second is the proportion of the year that the timeslice makes up (all summing to 1), and the third is the number of hours in the timeslice (all summing to 8760)."""
 
+    #extract the economy from mapping['timeslices_economy'] by filtering for it via the column 'economy'
+    timeslice_dict = mapping['timeslices_economy'].copy()
+    timeslice_dict = timeslice_dict[timeslice_dict['economy'] == economy].drop(columns='economy')
+    timeslice_dict = OrderedDict(timeslice_dict.set_index('timeslice').to_dict(orient='index'))
+    
     # #double check that the sum of the proportions is 1 or close to 1
     assert sum([x['proportion_of_total'] for x in timeslice_dict.values()]) > 0.999
     #double check that the sum of the hours is 8760
     assert sum([x['hours'] for x in timeslice_dict.values()]) == 8760
     
+    return timeslice_dict
 
-# ##########################################################################################
-# #load the data
-# pickle_paths = ['./results/2023-04-12-113500_19_THA_Reference_coin_mip/tmp/tall_results_dfs_19_THA_Reference_2023-04-12-113500.pickle','./results/2023-04-12-113500_19_THA_Reference_coin_mip/tmp/paths_dict_19_THA_Reference_2023-04-12-113500.pickle', './results/2023-04-12-113500_19_THA_Reference_coin_mip/tmp_config_dict_19_THA_Reference_2023-04-12-113500.pickle']
+#%%
+# # ##########################################################################################
+# # # #load the data
+# pickle_paths = ['./results/12-18-1209_20_USA_Target_coin_mip/tmp/tall_results_dfs_20_USA_Target_12-18-1209.pickle','./results/12-18-1209_20_USA_Target_coin_mip/tmp/paths_dict_20_USA_Target_12-18-1209.pickle', './results/12-18-1209_20_USA_Target_coin_mip/tmp/config_dict_20_USA_Target_12-18-1209.pickle']
 # plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
 
+# # # #%%
+# # # # #load the data 05-17-1651_03_CDA_Reference_coin_mip
+# pickle_paths = ['./results/05-17-1651_03_CDA_Reference_coin_mip/tmp/tall_results_dfs_03_CDA_Reference_05-17-1651.pickle','./results/05-17-1651_03_CDA_Reference_coin_mip/tmp/paths_dict_03_CDA_Reference_05-17-1651.pickle', './results/05-17-1651_03_CDA_Reference_coin_mip/tmp/config_dict_03_CDA_Reference_05-17-1651.pickle']
+# plotting_handler(load_from_pickle=True, pickle_paths=pickle_paths)
 
+# plotting_functions.plotting_handler(tall_results_dfs=tall_results_dfs,paths_dict=paths_dict,config_dict=config_dict,load_from_pickle=True, pickle_paths=None)
+
+# %%

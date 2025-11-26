@@ -1,18 +1,20 @@
 #https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file
-name: power-model
+name: power_model_env
 channels:
   - anaconda
   - conda-forge
   - defaults 
   - pip
 dependencies:
- - pandas 
+ - python=3.9.15
+ - pandas=1.5.2
  - numpy 
  - glpk
  - pyyaml
  - plotly
  - pip
  - pip:
-   - otoole
+   - otoole==1.0.4
    - mip
-   - graphvis
+   - pydot
+   - graphviz
